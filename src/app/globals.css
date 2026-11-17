@@ -453,3 +453,10 @@ label.inline select { width: auto; }
 .reset-form { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; max-width: 300px; border: 1px solid rgba(255, 100, 100, 0.35); border-radius: 10px; background: rgba(0, 0, 0, 0.35); }
 .reset-form p { margin: 0; font-size: 0.85rem; }
 .reset-form .switch { font-size: 0.85rem; font-weight: 400; }
+.grid-controls .row { gap: 0.6rem 1.2rem; align-items: center; }
+.grid-controls .row > label { flex: 0 0 auto; min-width: 0; }
+.grid-controls select { max-width: 100%; }
+@media (max-width: 560px) {
+  .grid-controls .row, .grid-controls .row > label.inline { width: 100%; }
+  .grid-controls .row > label.inline select { flex: 1; }
+}
