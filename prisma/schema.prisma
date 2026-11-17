@@ -44,6 +44,9 @@ model User {
   cards      UserCard[]
   pulls      Pull[]
   featuredIn Card[]     @relation("CardSubject")
+
+  tradesSent     Trade[] @relation("TradeFrom")
+  tradesReceived Trade[] @relation("TradeTo")
 }
 
 model Account {
@@ -101,8 +104,9 @@ model Card {
   subjectId String?
   subject   User?   @relation("CardSubject", fields: [subjectId], references: [id], onDelete: SetNull)
 
-  owners UserCard[]
-  pulls  Pull[]
+  owners     UserCard[]
+  pulls      Pull[]
+  tradeItems TradeItem[]
 }
 
 model UserCard {
@@ -128,4 +132,55 @@ model Pull {
   card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
+}
+
+enum TradeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COUNTERED
+  CANCELLED
+  EXPIRED
+  FAILED
+}
+
+enum TradeSide {
+  // Carte donnée par l'auteur de la proposition
+  OFFER
+  // Carte demandée au destinataire
+  REQUEST
+}
+
+model Trade {
+  id         String      @id @default(cuid())
+  fromId     String
+  toId       String
+  status     TradeStatus @default(PENDING)
+  createdAt  DateTime    @default(now())
+  expiresAt  DateTime
+  resolvedAt DateTime?
+  // Proposition à laquelle celle-ci répond (contre-proposition)
+  parentId   String?
+
+  from     User        @relation("TradeFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to       User        @relation("TradeTo", fields: [toId], references: [id], onDelete: Cascade)
+  parent   Trade?      @relation("TradeCounter", fields: [parentId], references: [id], onDelete: SetNull)
+  counters Trade[]     @relation("TradeCounter")
+  items    TradeItem[]
+
+  @@index([toId, status])
+  @@index([fromId, status])
+}
+
+model TradeItem {
+  id       String    @id @default(cuid())
+  tradeId  String
+  cardId   String
+  side     TradeSide
+  quantity Int       @default(1)
+
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([tradeId, side, cardId])
 }

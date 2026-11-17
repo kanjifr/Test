@@ -37,7 +37,14 @@ export default async function CollectionPage({
     <section>
       <div className="page-head">
         <h1>{isMe ? "Ma collection" : `Collection de ${owner.name}`}</h1>
-        {!isMe && <Link href="/collection">← Ma collection</Link>}
+        {!isMe && (
+          <div className="row">
+            <Link href={`/echanges/nouveau?avec=${owner.id}`} className="btn">
+              ⇄ Proposer un échange
+            </Link>
+            <Link href="/collection">← Ma collection</Link>
+          </div>
+        )}
       </div>
       <div className="progress">
         <div className="progress-bar" style={{ width: `${pct}%` }} />

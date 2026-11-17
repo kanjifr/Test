@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { SITE_NAME } from "@/lib/game";
+import { pendingIncomingCount } from "@/lib/trades";
 
 export async function Nav() {
   const session = await auth();
   const user = session?.user;
+  const incoming = user?.id ? await pendingIncomingCount(user.id) : 0;
   return (
     <header className="nav">
       <Link href="/" className="brand">
@@ -15,6 +17,10 @@ export async function Nav() {
         <nav className="nav-links">
           <Link href="/">Booster</Link>
           <Link href="/collection">Collection</Link>
+          <Link href="/echanges" className="nav-trades">
+            Échanges
+            {incoming > 0 && <span className="nav-badge">{incoming}</span>}
+          </Link>
           <Link href="/classement">Classement</Link>
           <Link href="/profil">Profil</Link>
           {user.isAdmin && <Link href="/admin">Admin</Link>}

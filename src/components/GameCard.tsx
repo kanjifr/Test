@@ -2,7 +2,7 @@ import { ELEMENTS, RARITIES, type CardView } from "@/lib/game";
 
 type Props = {
   card: CardView;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   badge?: string;
   count?: number;
 };
@@ -61,7 +61,7 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
   );
 }
 
-export function CardBack({ size = "md", label }: { size?: "sm" | "md" | "lg"; label?: string }) {
+export function CardBack({ size = "md", label }: { size?: "xs" | "sm" | "md" | "lg"; label?: string }) {
   return (
     <div className={`gcard gcard-${size} gcard-back`}>
       <div className="back-inner">

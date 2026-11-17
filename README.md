@@ -7,6 +7,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - ✨ **4 raretés** : Commune 64 %, Rare 25 %, Épique 9 %, Légendaire 2 % (la dernière carte est toujours Rare ou mieux)
 - 🔥 **8 éléments** : Eau, Flamme, Foudre, Vent, Pierre, Brume, Fleur, Ombre
 - 📚 **Collection** avec progression, doublons et zoom sur les cartes
+- ⇄ **Échanges** entre membres : proposition, contre-proposition, acceptation ou refus. Seuls les doublons sont échangeables, une proposition expire après 48 h et chacun peut avoir 5 propositions en attente au maximum.
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
 - 🛠️ **Panel admin** : créer ou modifier des cartes (avatar Discord ou image envoyée), les désactiver, offrir un booster
@@ -77,11 +78,11 @@ src/auth.ts               Connexion Discord + vérification du serveur
 src/lib/game.ts           Raretés, éléments, logique de tirage
 src/app/actions.ts        Ouverture de booster (anti-triche : cooldown vérifié côté serveur)
 src/app/admin/            Panel admin
+src/app/echanges/         Échanges (actions serveur sécurisées, transactions atomiques)
 src/components/           Cartes, animation du booster, grille de collection
 ```
 
 ## Idées pour la suite
-- Échanges de cartes entre membres
 - Bot Discord qui annonce les tirages Légendaires
 - Monnaie virtuelle et boosters thématiques
 - Stockage des images sur Cloudflare R2
