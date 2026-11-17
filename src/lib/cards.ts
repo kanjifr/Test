@@ -17,5 +17,6 @@ export function toCardView(card: Card & { subject?: Pick<User, "image" | "consen
     attack: card.attack,
     defense: card.defense,
     imageUrl: image,
+    videoUrl: revoked || card.rarity !== "MYTHIQUE" ? null : card.videoUrl || null,
   };
 }

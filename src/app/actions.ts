@@ -4,7 +4,7 @@ import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { drawPack, PACK_COOLDOWN_MS, PACK_SIZE, type CardView } from "@/lib/game";
+import { drawBooster, PACK_COOLDOWN_MS, PACK_SIZE, PITY_HARD, type CardView } from "@/lib/game";
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
@@ -12,7 +12,14 @@ import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
 const rand = () => randomInt(0, 1_000_000) / 1_000_000;
 
 export type OpenResult =
-  | { ok: true; cards: (CardView & { isNew: boolean; count: number })[]; nextAt: number }
+  | {
+      ok: true;
+      cards: (CardView & { isNew: boolean; count: number })[];
+      nextAt: number;
+      /** Boosters ouverts depuis la dernière Mythique, après ce booster */
+      pity: number;
+      mythicAvailable: boolean;
+    }
   | { ok: false; error: string; nextAt?: number };
 
 export async function openPack(): Promise<OpenResult> {
@@ -22,7 +29,8 @@ export async function openPack(): Promise<OpenResult> {
     where: { active: true },
     include: { subject: { select: { image: true, consent: true } } },
   });
-  if (cards.length === 0) {
+  // Il faut au moins une carte non Mythique pour remplir un booster
+  if (!cards.some((c) => c.rarity !== "MYTHIQUE")) {
     return { ok: false, error: "Aucune carte n'est encore disponible. Reviens bientôt !" };
   }
 
@@ -41,9 +49,16 @@ export async function openPack(): Promise<OpenResult> {
     return { ok: false, error: "Ton prochain booster n'est pas encore prêt.", nextAt };
   }
 
-  const drawn = drawPack(cards, PACK_SIZE, rand);
+  // Pas de booster en parallèle (réservation ci-dessus) : le compteur de pity lu ici est fiable
+  const me = await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { pityCount: true } });
+  const booster = drawBooster(cards, PACK_SIZE, Math.min(me.pityCount, PITY_HARD - 1), rand);
+  const drawn = booster.cards;
+  const mythicAvailable = cards.some((c) => c.rarity === "MYTHIQUE");
 
   const result = await prisma.$transaction(async (tx) => {
+    if (booster.pityCount !== me.pityCount) {
+      await tx.user.update({ where: { id: user.id }, data: { pityCount: booster.pityCount } });
+    }
     const out: (CardView & { isNew: boolean; count: number })[] = [];
     for (const card of drawn) {
       const owned = await tx.userCard.upsert({
@@ -58,11 +73,17 @@ export async function openPack(): Promise<OpenResult> {
     return out;
   });
 
-  const lucky = drawn.filter((c) => c.rarity === "EPIQUE" || c.rarity === "LEGENDAIRE").length >= 2;
+  const lucky = drawn.filter((c) => c.rarity === "EPIQUE" || c.rarity === "LEGENDAIRE" || c.rarity === "MYTHIQUE").length >= 2;
   await checkAchievements(user.id, { luckyPack: lucky });
 
   revalidatePath("/collection");
-  return { ok: true, cards: result, nextAt: now.getTime() + PACK_COOLDOWN_MS };
+  return {
+    ok: true,
+    cards: result,
+    nextAt: now.getTime() + PACK_COOLDOWN_MS,
+    pity: booster.pityCount,
+    mythicAvailable,
+  };
 }
 
 export async function setConsent(formData: FormData) {

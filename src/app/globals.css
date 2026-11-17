@@ -460,3 +460,62 @@ label.inline select { width: auto; }
   .grid-controls .row, .grid-controls .row > label.inline { width: 100%; }
   .grid-controls .row > label.inline select { flex: 1; }
 }
+
+/* ====== Rareté Mythique ====== */
+.gcard-art video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rarity-mythique {
+  background: conic-gradient(from var(--spin, 0deg), #ff2e63, #ff8a00, #ffe14d, #ff2e63, #b25cff, #ff2e63);
+  animation: mythSpin 4s linear infinite;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 46, 99, 0.65);
+}
+.rarity-mythique .gcard-inner { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ec) 40%, #3a0010), #12000a 75%); }
+.rarity-mythique .gcard-rarity { background: linear-gradient(90deg, #ff2e63, #ffe14d, #ff2e63); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.rarity-mythique .gcard-holo { opacity: 0.7; animation-duration: 2.5s; }
+@property --spin { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes mythSpin { to { --spin: 360deg; } }
+
+.pack.aura-mythique { --aura: #ff2e63; }
+.pack.aura-mythique::before {
+  inset: -90%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 46, 99, 0.75) 0 7deg, rgba(255, 225, 77, 0.55) 7deg 10deg, transparent 10deg 20deg);
+  animation: rays 1.6s linear infinite, raysIn 0.8s ease-out both;
+}
+.pack.aura-mythique { animation: auraBuild 0.9s ease-in forwards, shake 0.25s 0.2s ease-in-out 6; }
+.stack-top.glow-mythique, .deal-card.glow-mythique { --aura: #ff2e63; }
+.stack-top.glow-mythique::before, .deal-card.glow-mythique::before {
+  content: ""; position: absolute; inset: -45%; z-index: -1; pointer-events: none; border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 46, 99, 0.6) 0 30%, transparent 62%),
+    repeating-conic-gradient(from 0deg, rgba(255, 46, 99, 0.55) 0 6deg, rgba(255, 225, 77, 0.4) 6deg 9deg, transparent 9deg 18deg);
+  mask-image: radial-gradient(circle, black 30%, transparent 70%);
+  animation: rays 3s linear infinite, raysIn 0.6s ease-out both;
+}
+.stack-top.glow-mythique .gcard { --gc: #ff2e63; animation: mythSpin 4s linear infinite, glowPulse 2s ease-out; }
+.stack-top.hidden { visibility: hidden; }
+
+/* Cinématique plein écran */
+.cinema { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; animation: fadeIn 0.4s; }
+.cinema video { max-width: 100%; max-height: 78vh; border-radius: 12px; box-shadow: 0 0 80px rgba(255, 46, 99, 0.45); }
+.cinema-title { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(1.4rem, 5vw, 2.4rem); letter-spacing: 0.3em; text-transform: uppercase; color: #ff2e63; text-shadow: 0 0 24px rgba(255, 46, 99, 0.9); animation: pulse 1.6s ease-in-out infinite; }
+.cinema-actions { display: flex; gap: 0.6rem; }
+
+/* Jauge de pity et taux */
+.pity { width: min(420px, 100%); display: flex; flex-direction: column; gap: 0.5rem; }
+.pity-head { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pity-label { color: #ff2e63; letter-spacing: 0.05em; }
+.pity-bar { position: relative; height: 12px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 46, 99, 0.35); overflow: hidden; }
+.pity-bar::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--soft); right: 0; background: repeating-linear-gradient(45deg, rgba(255, 46, 99, 0.18) 0 6px, transparent 6px 12px); }
+.pity-bar span { position: absolute; inset: 0 auto 0 0; z-index: 1; background: linear-gradient(90deg, #7a0f2b, #ff2e63, #ffb02e); box-shadow: 0 0 12px rgba(255, 46, 99, 0.6); }
+.pity-text { margin: 0; font-size: 0.85rem; color: var(--muted); text-align: center; }
+.pity-text b { color: var(--text); }
+.rates { font-size: 0.85rem; color: var(--muted); }
+.rates summary { cursor: pointer; text-align: center; color: var(--gold); }
+.rates ul { list-style: none; padding: 0; margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.rates li { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); padding: 0.2rem 0; font-weight: 700; }
+.rates p { margin: 0; }
+
+/* Champ vidéo (admin) */
+.video-field { border: 1px solid rgba(255, 46, 99, 0.35); border-radius: 10px; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.7rem; margin: 0; }
+.video-field legend { color: #ff2e63; font-weight: 700; padding: 0 0.4rem; }
+.small-text { margin: 0; font-size: 0.8rem; }
+.video-preview { width: 100%; max-height: 180px; border-radius: 8px; object-fit: cover; background: #000; }

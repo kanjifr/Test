@@ -6,6 +6,7 @@ import { toCardView } from "@/lib/cards";
 import { GameCard } from "@/components/GameCard";
 import { ELEMENTS, ELEMENT_KEYS, RARITIES, RARITY_ORDER } from "@/lib/game";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { MAX_VIDEO_MB } from "@/lib/uploads";
 import { deleteCard, resetCollection, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -98,7 +99,7 @@ export default async function AdminPage({
               <select name="rarity" defaultValue={editing?.rarity ?? "COMMUNE"}>
                 {RARITY_ORDER.map((r) => (
                   <option key={r} value={r}>
-                    {RARITIES[r].label} ({RARITIES[r].weight}%)
+                    {RARITIES[r].label} ({r === "MYTHIQUE" ? "pity" : `${RARITIES[r].weight}%`})
                   </option>
                 ))}
               </select>
@@ -154,6 +155,34 @@ export default async function AdminPage({
               <span>Retirer l&apos;image actuelle</span>
             </label>
           )}
+          <fieldset className="video-field">
+            <legend>Vidéo d&apos;obtention · Mythique uniquement</legend>
+            <p className="muted small-text">
+              Jouée en plein écran quand un membre obtient la carte, puis en boucle dans la carte. MP4 ou WEBM, {MAX_VIDEO_MB} Mo
+              max. Ignorée pour les autres raretés.
+            </p>
+            {editing?.videoUrl && (
+              <video className="video-preview" src={editing.videoUrl} muted loop autoPlay playsInline />
+            )}
+            <label>
+              Fichier vidéo
+              <input type="file" name="video" accept="video/mp4,video/webm" />
+            </label>
+            <label>
+              … ou URL de vidéo (https://…mp4)
+              <input
+                name="videoUrl"
+                type="url"
+                defaultValue={editing?.videoUrl?.startsWith("https://") ? editing.videoUrl : ""}
+              />
+            </label>
+            {editing?.videoUrl && (
+              <label className="switch">
+                <input type="checkbox" name="removeVideo" />
+                <span>Retirer la vidéo actuelle</span>
+              </label>
+            )}
+          </fieldset>
           <div className="row">
             <button type="submit" className="btn">
               {editing ? "Enregistrer" : "Créer la carte"}

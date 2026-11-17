@@ -2,7 +2,16 @@ import { auth, signIn, DEV_LOGIN_ENABLED } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PackOpener } from "@/components/PackOpener";
 import { CardBack, GameCard } from "@/components/GameCard";
-import { PACK_COOLDOWN_MS, PACK_SIZE, RARITIES, SITE_NAME } from "@/lib/game";
+import {
+  MYTHIC_BASE_CHANCE,
+  PACK_COOLDOWN_MS,
+  PACK_SIZE,
+  PITY_HARD,
+  PITY_SOFT,
+  RARITIES,
+  SITE_NAME,
+  SLOT_RARITIES,
+} from "@/lib/game";
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 
@@ -74,10 +83,11 @@ export default async function Home({
   }
 
   await checkAchievements(session.user.id);
-  const [user, recent] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true } }),
+  const [user, mythics, recent] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true } }),
+    prisma.card.count({ where: { active: true, rarity: "MYTHIQUE" } }),
     prisma.pull.findMany({
-      where: { card: { rarity: { in: ["EPIQUE", "LEGENDAIRE"] } } },
+      where: { card: { rarity: { in: ["EPIQUE", "LEGENDAIRE", "MYTHIQUE"] } } },
       orderBy: { createdAt: "desc" },
       take: 6,
       include: {
@@ -88,9 +98,32 @@ export default async function Home({
   ]);
   const nextAt = user?.lastPackAt ? user.lastPackAt.getTime() + PACK_COOLDOWN_MS : 0;
 
+  const fmt = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
+  const totalWeight = SLOT_RARITIES.reduce((sum, r) => sum + RARITIES[r].weight, 0);
+  const rates = [
+    ...SLOT_RARITIES.map((r) => ({
+      label: RARITIES[r].label,
+      color: RARITIES[r].color,
+      pct: `${fmt((RARITIES[r].weight / totalWeight) * 100)} par carte`,
+    })),
+    ...(mythics > 0
+      ? [{ label: RARITIES.MYTHIQUE.label, color: RARITIES.MYTHIQUE.color, pct: `${fmt(MYTHIC_BASE_CHANCE * 100)} par booster` }]
+      : []),
+  ];
+
   return (
     <>
-      <PackOpener initialNextAt={nextAt} serverNow={Date.now()} siteName={SITE_NAME} packSize={PACK_SIZE}>
+      <PackOpener
+        initialNextAt={nextAt}
+        serverNow={Date.now()}
+        siteName={SITE_NAME}
+        packSize={PACK_SIZE}
+        initialPity={Math.min(user?.pityCount ?? 0, PITY_HARD - 1)}
+        pityHard={PITY_HARD}
+        pitySoft={PITY_SOFT}
+        mythicAvailable={mythics > 0}
+        rates={rates}
+      >
         {recent.length > 0 && (
           <section className="feed">
             <h2>Derniers grands tirages</h2>

@@ -45,6 +45,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     epicOwned: owned.filter((o) => o.card.rarity === "EPIQUE").length,
     legendaryOwned: owned.filter((o) => o.card.rarity === "LEGENDAIRE").length,
     legendaryTotal: cards.filter((c) => c.rarity === "LEGENDAIRE").length,
+    mythicOwned: owned.filter((o) => o.card.rarity === "MYTHIQUE").length,
     tradesDone,
     featuredIn,
     bestElementDone: bestDone,

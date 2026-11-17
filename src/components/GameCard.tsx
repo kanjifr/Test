@@ -30,7 +30,18 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
           </span>
         </div>
         <div className="gcard-art">
-          {card.imageUrl ? (
+          {card.videoUrl && size !== "xs" ? (
+            <video
+              src={card.videoUrl}
+              poster={card.imageUrl ?? undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label={card.name}
+            />
+          ) : card.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={card.imageUrl} alt={card.name} loading="lazy" referrerPolicy="no-referrer" />
           ) : (
@@ -53,7 +64,9 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
             </span>
           </div>
         </div>
-        {(card.rarity === "EPIQUE" || card.rarity === "LEGENDAIRE") && <div className="gcard-holo" />}
+        {(card.rarity === "EPIQUE" || card.rarity === "LEGENDAIRE" || card.rarity === "MYTHIQUE") && (
+          <div className="gcard-holo" />
+        )}
       </div>
       {badge && <span className="gcard-badge">{badge}</span>}
       {count !== undefined && count > 1 && <span className="gcard-count">×{count}</span>}

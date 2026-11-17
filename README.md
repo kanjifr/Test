@@ -4,7 +4,9 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 
 - 🔐 **Connexion Discord**, avec accès limité aux membres de ton serveur si tu le souhaites
 - 🎴 **Boosters** de 5 cartes toutes les 4 h, avec une animation d'ouverture et de retournement des cartes
-- ✨ **4 raretés** : Commune 64 %, Rare 25 %, Épique 9 %, Légendaire 2 % (la dernière carte est toujours Rare ou mieux)
+- ✨ **5 raretés** : Commune 64 %, Rare 25 %, Épique 9 %, Légendaire 2 % par carte (la dernière carte est toujours Rare ou mieux), et **Mythique** via le système de pity
+- ✦ **Pity Mythique** : 1,5 % par booster, chance en hausse à partir du 46e booster sans Mythique, garantie au 60e. Jauge visible sur la page Booster. En moyenne, une Mythique arrive en 35 boosters.
+- 🎬 **Vidéo d'obtention** pour les cartes Mythiques (MP4/WEBM, 40 Mo max), jouée en plein écran puis en boucle dans la carte
 - 🔥 **8 éléments** : Eau, Flamme, Foudre, Vent, Pierre, Brume, Fleur, Ombre
 - 📚 **Collection** avec progression, doublons et zoom sur les cartes
 - ⇄ **Échanges** entre membres : proposition, contre-proposition, acceptation ou refus. Seuls les doublons sont échangeables, une proposition expire après 48 h et chacun peut avoir 5 propositions en attente au maximum.
@@ -47,6 +49,7 @@ Copie `.env.example` en `.env` et remplis :
 | `OWNER_DISCORD_IDS` | Ton ID Discord : tu es propriétaire du site (plusieurs IDs séparés par des virgules) |
 | `SITE_NAME` | Nom affiché du site |
 | `PACK_SIZE` / `PACK_COOLDOWN_HOURS` | Cartes par booster / délai entre deux boosters |
+| `MYTHIC_CHANCE` / `PITY_SOFT` / `PITY_HARD` | Chance de Mythique par booster / début de la hausse / booster garanti |
 
 Les taux de drop se règlent dans `src/lib/game.ts` (`RARITIES`), et les succès dans `src/lib/achievements.ts`.
 

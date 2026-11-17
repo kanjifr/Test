@@ -1,29 +1,43 @@
 import { randomBytes } from "node:crypto";
-import { mkdir, writeFile, readFile, unlink } from "node:fs/promises";
+import { mkdir, writeFile, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 
 export const UPLOAD_DIR = path.resolve(process.env.UPLOAD_DIR || "./uploads");
 export const UPLOAD_PREFIX = "/api/uploads/";
-export const FILE_RE = /^[a-f0-9]{24}\.(png|jpg|webp|gif)$/;
+export const FILE_RE = /^[a-f0-9]{24}\.(png|jpg|webp|gif|mp4|webm)$/;
 
-const TYPES: Record<string, string> = {
+const IMAGE_TYPES: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
   "image/webp": "webp",
   "image/gif": "gif",
+};
+const VIDEO_TYPES: Record<string, string> = {
+  "video/mp4": "mp4",
+  "video/webm": "webm",
 };
 export const MIME: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
   webp: "image/webp",
   gif: "image/gif",
+  mp4: "video/mp4",
+  webm: "video/webm",
 };
-const MAX_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_MB = 5;
+export const MAX_VIDEO_MB = 40;
 
-export async function saveUpload(file: File): Promise<string> {
-  const ext = TYPES[file.type];
-  if (!ext) throw new Error("Format d'image non supporté (PNG, JPG, WEBP ou GIF).");
-  if (file.size > MAX_BYTES) throw new Error("Image trop lourde (5 Mo max).");
+export async function saveUpload(file: File, kind: "image" | "video" = "image"): Promise<string> {
+  const ext = (kind === "video" ? VIDEO_TYPES : IMAGE_TYPES)[file.type];
+  if (!ext) {
+    throw new Error(
+      kind === "video" ? "Format de vidéo non supporté (MP4 ou WEBM)." : "Format d'image non supporté (PNG, JPG, WEBP ou GIF).",
+    );
+  }
+  const max = (kind === "video" ? MAX_VIDEO_MB : MAX_IMAGE_MB) * 1024 * 1024;
+  if (file.size > max) {
+    throw new Error(kind === "video" ? `Vidéo trop lourde (${MAX_VIDEO_MB} Mo max).` : `Image trop lourde (${MAX_IMAGE_MB} Mo max).`);
+  }
   const buf = Buffer.from(await file.arrayBuffer());
   const name = `${randomBytes(12).toString("hex")}.${ext}`;
   await mkdir(UPLOAD_DIR, { recursive: true });
@@ -31,11 +45,12 @@ export async function saveUpload(file: File): Promise<string> {
   return UPLOAD_PREFIX + name;
 }
 
-export async function readUpload(name: string) {
+export async function statUpload(name: string) {
   if (!FILE_RE.test(name)) return null;
+  const file = path.join(UPLOAD_DIR, name);
   try {
-    const data = await readFile(path.join(UPLOAD_DIR, name));
-    return { data, type: MIME[name.split(".").pop()!] };
+    const st = await stat(file);
+    return { file, size: st.size, type: MIME[name.split(".").pop()!] };
   } catch {
     return null;
   }

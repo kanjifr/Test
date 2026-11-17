@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { openPack, type OpenResult } from "@/app/actions";
 import { CardBack, GameCard } from "@/components/GameCard";
 import { RARITIES } from "@/lib/game";
@@ -19,17 +19,71 @@ function formatLeft(ms: number) {
   return `${h > 0 ? `${h}h ` : ""}${String(m).padStart(2, "0")}m ${String(sec).padStart(2, "0")}s`;
 }
 
+export type RateInfo = { label: string; color: string; pct: string };
+
+/** Vidéo plein écran jouée à l'obtention d'une carte Mythique. */
+function Cinematic({ card, onClose }: { card: Pulled; onClose: () => void }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(false);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    // Le son n'est pas toujours autorisé par le navigateur : on relance sans son si besoin
+    v.play().catch(() => {
+      v.muted = true;
+      setMuted(true);
+      v.play().catch(onClose);
+    });
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="cinema" role="dialog" aria-modal="true" aria-label={`Carte Mythique : ${card.name}`}>
+      <p className="cinema-title">✦ Mythique ✦</p>
+      <video ref={ref} src={card.videoUrl ?? undefined} playsInline onEnded={onClose} onError={onClose} />
+      <div className="cinema-actions">
+        {muted && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              if (ref.current) ref.current.muted = false;
+              setMuted(false);
+            }}
+          >
+            🔊 Activer le son
+          </button>
+        )}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>
+          Passer ⏭
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function PackOpener({
   initialNextAt,
   serverNow,
   siteName,
   packSize,
+  initialPity,
+  pityHard,
+  pitySoft,
+  mythicAvailable,
+  rates,
   children,
 }: {
   initialNextAt: number;
   serverNow: number;
   siteName: string;
   packSize: number;
+  initialPity: number;
+  pityHard: number;
+  pitySoft: number;
+  mythicAvailable: boolean;
+  rates: RateInfo[];
   /** Contenu affiché sous le booster uniquement hors révélation (ex. derniers grands tirages) */
   children?: React.ReactNode;
 }) {
@@ -39,6 +93,10 @@ export function PackOpener({
   const [cards, setCards] = useState<Pulled[]>([]);
   const [idx, setIdx] = useState(0);
   const [leaving, setLeaving] = useState(false);
+  const [pity, setPity] = useState(initialPity);
+  const [mythicOn, setMythicOn] = useState(mythicAvailable);
+  const [cinema, setCinema] = useState<Pulled | null>(null);
+  const played = useRef(new Set<number>());
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -55,11 +113,23 @@ export function PackOpener({
   const ready = now >= nextAt;
   const revealed = phase === "done";
   // Meilleure rareté du booster : le paquet s'illumine pendant l'ouverture
-  const best = cards.some((c) => c.rarity === "LEGENDAIRE")
-    ? "legendaire"
-    : cards.some((c) => c.rarity === "EPIQUE")
-      ? "epique"
-      : null;
+  const best = cards.some((c) => c.rarity === "MYTHIQUE")
+    ? "mythique"
+    : cards.some((c) => c.rarity === "LEGENDAIRE")
+      ? "legendaire"
+      : cards.some((c) => c.rarity === "EPIQUE")
+        ? "epique"
+        : null;
+
+  // Une Mythique avec vidéo arrive en haut de la pile : cinématique avant d'afficher la carte
+  useLayoutEffect(() => {
+    if (phase !== "stack") return;
+    const c = cards[idx];
+    if (c?.rarity === "MYTHIQUE" && c.videoUrl && !played.current.has(idx)) {
+      played.current.add(idx);
+      setCinema(c);
+    }
+  }, [phase, idx, cards]);
 
   // Les succès s'affichent seulement après la révélation, pour ne rien gâcher
   useEffect(() => {
@@ -72,16 +142,16 @@ export function PackOpener({
     }
   }, [revealed, router]);
 
-  // Flash lumineux quand une Épique ou une Légendaire apparaît en haut de la pile
+  // Flash lumineux quand une Épique, Légendaire ou Mythique apparaît en haut de la pile
   useEffect(() => {
-    if (phase !== "stack") return;
+    if (phase !== "stack" || cinema) return;
     const r = cards[idx]?.rarity;
-    if (r === "LEGENDAIRE" || r === "EPIQUE") {
+    if (r === "LEGENDAIRE" || r === "EPIQUE" || r === "MYTHIQUE") {
       setFlash(RARITIES[r].color);
       const t = setTimeout(() => setFlash(null), 900);
       return () => clearTimeout(t);
     }
-  }, [phase, idx, cards]);
+  }, [phase, idx, cards, cinema]);
 
   function open() {
     setError(null);
@@ -95,11 +165,15 @@ export function PackOpener({
         return;
       }
       setNextAt(res.nextAt);
+      setPity(res.pity);
+      setMythicOn(res.mythicAvailable);
       setCards(res.cards);
       setIdx(0);
       setLeaving(false);
+      played.current = new Set();
       setPhase("tearing");
-      const top = res.cards.some((c) => c.rarity === "LEGENDAIRE") ? 2200 : res.cards.some((c) => c.rarity === "EPIQUE") ? 1800 : 1300;
+      const has = (r: Pulled["rarity"]) => res.cards.some((c) => c.rarity === r);
+      const top = has("MYTHIQUE") ? 2800 : has("LEGENDAIRE") ? 2200 : has("EPIQUE") ? 1800 : 1300;
       setTimeout(() => setPhase("stack"), top);
     });
   }
@@ -121,9 +195,13 @@ export function PackOpener({
     setIdx(0);
   }
 
+  const pityPct = Math.min(100, Math.round((pity / pityHard) * 100));
+  const left = Math.max(1, pityHard - pity);
+
   return (
     <div className="opener">
       {flash && <div className="flash" style={{ "--fc": flash } as React.CSSProperties} />}
+      {cinema && <Cinematic card={cinema} onClose={() => setCinema(null)} />}
 
       {(phase === "idle" || phase === "tearing") && (
         <div className="pack-stage">
@@ -153,6 +231,52 @@ export function PackOpener({
             )}
             {error && <p className="error">{error}</p>}
           </div>
+          {phase === "idle" && (
+            <div className="pity">
+              {mythicOn && (
+                <>
+                  <div className="pity-head">
+                    <span className="pity-label">✦ Jauge Mythique</span>
+                    <span>
+                      {pity}/{pityHard}
+                    </span>
+                  </div>
+                  <div
+                    className="pity-bar"
+                    style={{ "--soft": `${(pitySoft / pityHard) * 100}%` } as React.CSSProperties}
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={pityHard}
+                    aria-valuenow={pity}
+                  >
+                    <span style={{ width: `${pityPct}%` }} />
+                  </div>
+                  <p className="pity-text">
+                    {pity >= pitySoft
+                      ? "🔥 Chance de Mythique augmentée ! "
+                      : ""}
+                    Mythique garantie au plus tard dans <b>{left}</b> booster{left > 1 ? "s" : ""}.
+                  </p>
+                </>
+              )}
+              <details className="rates">
+                <summary>Taux de drop</summary>
+                <ul>
+                  {rates.map((r) => (
+                    <li key={r.label}>
+                      <span style={{ color: r.color }}>{r.label}</span>
+                      <span>{r.pct}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="muted">
+                  La dernière carte de chaque booster est au moins Rare.
+                  {mythicOn &&
+                    ` Mythique : chance qui augmente à partir du ${pitySoft + 1}e booster sans Mythique, garantie au ${pityHard}e. La jauge repart à zéro quand tu en obtiens une.`}
+                </p>
+              </details>
+            </div>
+          )}
         </div>
       )}
 
@@ -174,7 +298,7 @@ export function PackOpener({
             <button
               type="button"
               key={idx}
-              className={`stack-top glow-${cards[idx].rarity.toLowerCase()} ${leaving ? "leaving" : ""}`}
+              className={`stack-top glow-${cards[idx].rarity.toLowerCase()} ${leaving ? "leaving" : ""} ${cinema ? "hidden" : ""}`}
               onClick={next}
               aria-label={idx < cards.length - 1 ? "Découvrir la carte suivante" : "Terminer"}
             >

@@ -14,6 +14,7 @@ export type Stats = {
   epicOwned: number;
   legendaryOwned: number;
   legendaryTotal: number;
+  mythicOwned: number;
   tradesDone: number;
   featuredIn: number;
   bestElementDone: number; // nb max de cartes possédées dans un élément complet ou non
@@ -44,7 +45,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "full", name: "Maître du clan", description: "Compléter toute la collection.", kanji: "全", tier: "OR", progress: (s) => [s.totalActiveCards ? pct(s) : 0, 100] },
   { id: "epic", name: "Premier éclat", description: "Obtenir une carte Épique.", kanji: "極", tier: "BRONZE", progress: (s) => [s.epicOwned, 1] },
   { id: "legendary", name: "Légende vivante", description: "Obtenir une carte Légendaire.", kanji: "伝", tier: "ARGENT", progress: (s) => [s.legendaryOwned, 1] },
-  { id: "all_legendary", name: "Panthéon", description: "Posséder toutes les cartes Légendaires.", kanji: "神", tier: "OR", progress: (s) => [s.legendaryOwned, Math.max(1, s.legendaryTotal)] },
+  { id: "all_legendary", name: "Panthéon", description: "Posséder toutes les cartes Légendaires.", kanji: "殿", tier: "OR", progress: (s) => [s.legendaryOwned, Math.max(1, s.legendaryTotal)] },
+  { id: "mythic", name: "Au-delà de la légende", description: "Obtenir une carte Mythique.", kanji: "神", tier: "OR", progress: (s) => [s.mythicOwned, 1] },
   { id: "lucky_pack", name: "Béni des étoiles", description: "Obtenir 2 cartes Épiques ou mieux dans un même booster.", kanji: "福", tier: "OR", progress: (s) => [s.luckyPack ? 1 : 0, 1] },
   { id: "dupes_5", name: "Écho", description: "Posséder 5 exemplaires d'une même carte.", kanji: "響", tier: "BRONZE", progress: (s) => [s.maxCopies, 5] },
   { id: "element", name: "Maître élémentaire", description: "Posséder toutes les cartes d'un élément (3 cartes minimum).", kanji: "元", tier: "ARGENT", progress: (s) => [s.elementCompleted ? s.bestElementTarget : s.bestElementDone, Math.max(3, s.bestElementTarget)] },

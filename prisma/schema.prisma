@@ -13,6 +13,7 @@ enum Rarity {
   RARE
   EPIQUE
   LEGENDAIRE
+  MYTHIQUE
 }
 
 enum Element {
@@ -43,6 +44,8 @@ model User {
   consent       Boolean   @default(false)
   lastPackAt    DateTime?
   packsOpened   Int       @default(0)
+  // Boosters ouverts depuis la dernière carte Mythique (système de pity)
+  pityCount     Int       @default(0)
   // Badge choisi pour être affiché à côté du pseudo
   featuredBadge String?
   // Rôle attribué depuis le site (le propriétaire est défini par OWNER_DISCORD_IDS)
@@ -110,6 +113,8 @@ model Card {
   attack      Int      @default(50)
   defense     Int      @default(50)
   imageUrl    String?
+  // Vidéo jouée à l'obtention (cartes Mythiques uniquement)
+  videoUrl    String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 

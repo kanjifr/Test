@@ -38,12 +38,15 @@ export async function saveCard(fd: FormData) {
 
   const existing = id ? await prisma.card.findUnique({ where: { id } }) : null;
   let imageUrl = existing?.imageUrl ?? null;
+  let videoUrl = existing?.videoUrl ?? null;
 
   const file = fd.get("image");
   const urlInput = str(fd, "imageUrl", 500);
+  const video = fd.get("video");
+  const videoInput = str(fd, "videoUrl", 500);
   try {
     if (file instanceof File && file.size > 0) {
-      const saved = await saveUpload(file);
+      const saved = await saveUpload(file, "image");
       await deleteUpload(imageUrl);
       imageUrl = saved;
     } else if (fd.get("removeImage") === "on") {
@@ -53,6 +56,25 @@ export async function saveCard(fd: FormData) {
       if (!/^https:\/\//.test(urlInput)) throw new Error("L'URL de l'image doit commencer par https://");
       await deleteUpload(imageUrl);
       imageUrl = urlInput;
+    }
+
+    // La vidéo est réservée aux cartes Mythiques
+    if (rarity !== "MYTHIQUE") {
+      if (videoUrl) await deleteUpload(videoUrl);
+      videoUrl = null;
+    } else if (video instanceof File && video.size > 0) {
+      const saved = await saveUpload(video, "video");
+      await deleteUpload(videoUrl);
+      videoUrl = saved;
+    } else if (fd.get("removeVideo") === "on") {
+      await deleteUpload(videoUrl);
+      videoUrl = null;
+    } else if (videoInput && videoInput !== videoUrl) {
+      if (!/^https:\/\/.+\.(mp4|webm)(\?.*)?$/i.test(videoInput)) {
+        throw new Error("L'URL de la vidéo doit commencer par https:// et finir par .mp4 ou .webm");
+      }
+      await deleteUpload(videoUrl);
+      videoUrl = videoInput;
     }
   } catch (e) {
     redirect(`/admin?err=${encodeURIComponent((e as Error).message)}${id ? `&edit=${id}` : ""}`);
@@ -68,6 +90,7 @@ export async function saveCard(fd: FormData) {
     defense: stat(fd, "defense"),
     subjectId,
     imageUrl,
+    videoUrl,
   };
   if (existing) {
     const c = await prisma.card.update({ where: { id: existing.id }, data });
@@ -100,6 +123,7 @@ export async function deleteCard(fd: FormData) {
   if (!card) return;
   await prisma.card.delete({ where: { id } });
   await deleteUpload(card.imageUrl);
+  await deleteUpload(card.videoUrl);
   await logAdmin(me, "card.delete", `a supprimé la carte #${card.number} ${card.name} (possédée par ${card._count.owners} membre(s))`);
   revalidatePath("/", "layout");
 }
