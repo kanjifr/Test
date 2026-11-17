@@ -11,6 +11,10 @@ export const dynamic = "force-dynamic";
 const ERRORS: Record<string, string> = {
   AccessDenied: "Accès refusé : tu dois être membre du serveur Discord de la communauté.",
   CredentialsSignin: "Pseudo de test invalide.",
+  Configuration: "Erreur de configuration du site (variables AUTH_… ou application Discord).",
+  OAuthCallbackError: "Discord a refusé la connexion (vérifie l'ID et le secret de l'application).",
+  OAuthAccountNotLinked: "Ce compte est déjà lié à un autre profil.",
+  Verification: "Le lien de connexion a expiré, réessaie.",
 };
 
 export default async function Home({
@@ -36,7 +40,11 @@ export default async function Home({
           Ouvre un booster toutes les {PACK_COOLDOWN_MS / 3600_000} h, découvre les membres sous forme de
           cartes et complète ta collection. Qui obtiendra la première Légendaire ?
         </p>
-        {error && <p className="error">{ERRORS[error] ?? "La connexion a échoué, réessaie."}</p>}
+        {error && (
+          <p className="error">
+            {ERRORS[error] ?? "La connexion a échoué, réessaie."} <small>(code : {error.slice(0, 40)})</small>
+          </p>
+        )}
         <form
           action={async () => {
             "use server";
