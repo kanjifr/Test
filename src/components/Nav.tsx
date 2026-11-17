@@ -21,6 +21,7 @@ export async function Nav() {
             Échanges
             {incoming > 0 && <span className="nav-badge">{incoming}</span>}
           </Link>
+          <Link href="/duels">Duels</Link>
           <Link href="/classement">Classement</Link>
           <Link href="/profil">Profil</Link>
           {user.staffRole && <Link href="/admin">Admin</Link>}

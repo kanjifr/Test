@@ -551,3 +551,81 @@ label.inline select { width: auto; }
 .bonus-chip { margin: 0.6rem 0 0; font-size: 0.95rem; }
 .bonus-banner { background: rgba(228, 183, 90, 0.12); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.9rem; }
 @media (max-width: 560px) { .recycle-bar { position: static; } }
+
+/* ====== Duels : salle d'attente ====== */
+.lobby { display: flex; flex-direction: column; gap: 1.2rem; margin-bottom: 1.2rem; }
+.lobby-team { display: flex; flex-direction: column; gap: 0.9rem; }
+.lobby-head h2 { margin: 0 0 0.3rem; }
+.lobby-head p { margin: 0; }
+.slots { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+.slot { position: relative; width: 130px; min-height: 172px; border: 2px dashed var(--line); border-radius: 12px; background: rgba(0, 0, 0, 0.25); display: grid; place-items: center; padding: 8px; cursor: default; color: var(--muted); font: inherit; }
+.slot.filled { border-style: solid; border-color: var(--gold); cursor: pointer; }
+.slot-num { position: absolute; top: -10px; left: -10px; width: 26px; height: 26px; border-radius: 50%; background: var(--crimson); color: #fff; font-weight: 800; display: grid; place-items: center; z-index: 4; box-shadow: 0 0 0 2px var(--bg); }
+.lobby-cols { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.2rem; align-items: start; margin-bottom: 1.2rem; }
+.duel-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 0.8rem; max-height: 560px; overflow-y: auto; padding: 10px 6px; }
+.duel-pick { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; background: none; border: 2px solid transparent; border-radius: 12px; padding: 6px; cursor: pointer; color: var(--text); font: inherit; }
+.duel-pick:hover { border-color: var(--line); }
+.duel-pick.picked { border-color: var(--gold); background: rgba(228, 183, 90, 0.1); }
+.pick-pos { position: absolute; top: -4px; left: -4px; z-index: 4; width: 24px; height: 24px; border-radius: 50%; background: var(--crimson); color: #fff; font-weight: 800; font-size: 0.8rem; display: grid; place-items: center; }
+.pick-stats { font-size: 0.72rem; color: var(--muted); }
+.pick-stats b { color: var(--text); }
+.opponents, .duel-history, .duel-top, .elements-chart { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.opponents li { display: flex; align-items: center; gap: 0.7rem; padding: 0.5rem 0.6rem; border: 1px solid var(--line); border-radius: 10px; }
+.opponents li.highlight { border-color: var(--gold); background: rgba(228, 183, 90, 0.1); }
+.opponents img, .opponents .avatar-fallback { width: 34px; height: 34px; border-radius: 50%; }
+.opp-name { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.duel-history li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 0.7rem; align-items: center; font-size: 0.9rem; padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
+.result { font-weight: 800; font-size: 0.8rem; padding: 0.15rem 0.55rem; border-radius: 999px; }
+.result.win { background: rgba(79, 195, 138, 0.2); color: #6ee7a8; }
+.result.loss { background: rgba(200, 40, 60, 0.2); color: #ff9a9a; }
+.result.draw { background: rgba(255, 255, 255, 0.1); color: var(--muted); }
+.duel-top li { display: flex; gap: 0.7rem; align-items: center; }
+.duel-top li.me { color: var(--gold); }
+.duel-top .rank { width: 1.5rem; font-family: var(--font-display); font-weight: 800; color: var(--gold); }
+.duel-top li > :nth-child(2) { flex: 1; }
+.elements-chart { gap: 0.25rem; font-size: 0.88rem; font-weight: 700; margin-bottom: 0.6rem; }
+@media (max-width: 860px) { .lobby-cols { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .slot { width: 30%; min-height: 150px; } .slot .gcard { --w: 84px; } .duel-history li { grid-template-columns: auto 1fr auto; } .duel-history time { display: none; } }
+
+/* ====== Duels : arène ====== */
+.arena { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; padding: 1rem 0 2rem; }
+.arena-top { display: flex; align-items: center; justify-content: center; gap: 1.5rem; width: min(640px, 100%); }
+.arena-name { flex: 1; font-weight: 800; font-size: 1.05rem; text-align: center; }
+.arena-score { font-family: var(--font-display); font-weight: 800; font-size: 2.4rem; color: var(--gold); }
+.arena-round { margin: 0; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.85rem; }
+.arena-field { position: relative; display: flex; justify-content: center; gap: clamp(1rem, 8vw, 6rem); align-items: flex-end; width: 100%; }
+.versus { position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%); font-family: var(--font-display); font-weight: 800; font-size: clamp(1.5rem, 5vw, 2.6rem); color: var(--crimson); text-shadow: 0 0 20px rgba(200, 40, 60, 0.7); pointer-events: none; }
+.fighter { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; transition: transform 0.25s, filter 0.4s, opacity 0.4s; animation: fighterIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.fighter.side-0 { --dir: 1; }
+.fighter.side-1 { --dir: -1; }
+.fighter.attacking .fighter-card { animation: lunge 0.45s ease-out; }
+.fighter.hurt .fighter-card { animation: hurt 0.45s ease-out; }
+.fighter.ko { filter: grayscale(1) brightness(0.5); opacity: 0.7; transform: rotate(calc(var(--dir) * -6deg)) translateY(12px); }
+.fighter-card { position: relative; }
+@keyframes fighterIn { from { opacity: 0; transform: translateX(calc(var(--dir) * -80px)); } }
+@keyframes lunge { 40% { transform: translateX(calc(var(--dir) * 50px)) rotate(calc(var(--dir) * 4deg)); } }
+@keyframes hurt { 20%, 60% { transform: translateX(calc(var(--dir) * -10px)); filter: brightness(1.8) saturate(0.4); } 40%, 80% { transform: translateX(calc(var(--dir) * 8px)); } }
+.hp { position: relative; width: min(200px, 40vw); height: 18px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); border: 1px solid var(--line); overflow: hidden; }
+.hp-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #2f9e6b, #6ee7a8); transition: width 0.45s ease-out; }
+.hp-fill.mid { background: linear-gradient(90deg, #c98a1c, #ffd166); }
+.hp-fill.low { background: linear-gradient(90deg, #8e1626, #ff5d6c); }
+.hp span { position: relative; z-index: 1; display: block; text-align: center; font-size: 0.72rem; font-weight: 800; line-height: 18px; text-shadow: 0 1px 2px #000; font-variant-numeric: tabular-nums; }
+.dmg { position: absolute; left: 50%; top: 35%; z-index: 6; transform: translateX(-50%); white-space: nowrap; font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: #fff; text-shadow: 0 0 10px #000, 0 2px 0 #000; animation: dmgFloat 0.85s ease-out forwards; pointer-events: none; }
+.dmg.crit { color: #ffd166; font-size: 1.8rem; }
+.dmg.super { color: #ff7a59; }
+.dmg.weak { color: #9fb4c7; font-size: 1.2rem; }
+.dmg.dodge { color: #6ee7a8; }
+@keyframes dmgFloat { 0% { opacity: 0; transform: translate(-50%, 10px) scale(0.7); } 20% { opacity: 1; transform: translate(-50%, 0) scale(1.15); } 100% { opacity: 0; transform: translate(-50%, -50px) scale(1); } }
+.arena-caption { margin: 0; min-height: 1.5em; font-weight: 700; color: var(--gold); text-align: center; }
+@media (max-width: 560px) { .fighter .gcard { --w: 138px; } .arena-score { font-size: 1.8rem; } .dmg { font-size: 1.05rem; white-space: normal; width: 130px; text-align: center; } .dmg.crit { font-size: 1.25rem; } }
+
+.duel-final { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; padding: 1.5rem 0; text-align: center; animation: dealIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+.duel-final-title { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: clamp(2.4rem, 9vw, 4.5rem); letter-spacing: 0.06em; }
+.duel-final.win .duel-final-title { color: var(--gold); text-shadow: 0 0 40px rgba(228, 183, 90, 0.7); }
+.duel-final.loss .duel-final-title { color: #ff6b7a; }
+.duel-final.draw .duel-final-title, .duel-final.neutral .duel-final-title { color: var(--text); }
+.duel-score { margin: 0; font-size: 1.1rem; }
+.duel-score b { font-family: var(--font-display); font-size: 1.6rem; color: var(--gold); }
+.round-summary { list-style: none; padding: 0; margin: 0.5rem 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.round-summary li { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; font-size: 0.95rem; }
+.round-summary .won { color: var(--gold); font-weight: 800; }

@@ -50,6 +50,10 @@ model User {
   bonusPacks    Int       @default(0)
   // Nombre total de doublons recyclés
   recycledCount Int       @default(0)
+  // Duels : équipe de défense (3 identifiants de cartes, dans l'ordre) et palmarès
+  defenseTeam   String[]  @default([])
+  duelWins      Int       @default(0)
+  duelLosses    Int       @default(0)
   // Badge choisi pour être affiché à côté du pseudo
   featuredBadge String?
   // Rôle attribué depuis le site (le propriétaire est défini par OWNER_DISCORD_IDS)
@@ -66,6 +70,8 @@ model User {
   tradesReceived Trade[] @relation("TradeTo")
   achievements   UserAchievement[]
   adminLogs      AdminLog[]
+  duelsAttacked  Duel[]  @relation("DuelAttacker")
+  duelsDefended  Duel[]  @relation("DuelDefender")
 }
 
 model Account {
@@ -232,4 +238,29 @@ model AdminLog {
   actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+}
+
+enum DuelResult {
+  ATTACKER
+  DEFENDER
+  DRAW
+}
+
+model Duel {
+  id         String     @id @default(cuid())
+  attackerId String
+  // Vide pour un entraînement contre l'ordinateur
+  defenderId String?
+  result     DuelResult
+  // Déroulé complet du combat (cartes, coups, points de vie) pour la rediffusion
+  log        Json
+  // Booster bonus gagné grâce à ce duel
+  rewarded   Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  attacker User  @relation("DuelAttacker", fields: [attackerId], references: [id], onDelete: Cascade)
+  defender User? @relation("DuelDefender", fields: [defenderId], references: [id], onDelete: Cascade)
+
+  @@index([attackerId, createdAt])
+  @@index([defenderId, createdAt])
 }

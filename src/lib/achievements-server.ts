@@ -3,7 +3,7 @@ import { ACHIEVEMENTS, type Stats } from "@/lib/achievements";
 
 export async function computeStats(userId: string, extra: { luckyPack?: boolean } = {}): Promise<Stats> {
   const [user, owned, cards, tradesDone, featuredIn, lucky] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
       select: { count: true, card: { select: { rarity: true, element: true } } },
@@ -47,6 +47,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     legendaryTotal: cards.filter((c) => c.rarity === "LEGENDAIRE").length,
     mythicOwned: owned.filter((o) => o.card.rarity === "MYTHIQUE").length,
     recycled: user?.recycledCount ?? 0,
+    duelWins: user?.duelWins ?? 0,
     tradesDone,
     featuredIn,
     bestElementDone: bestDone,

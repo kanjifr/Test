@@ -11,6 +11,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - ♻ **Recyclage** : 10 doublons (réglable avec `RECYCLE_COST`) = 1 booster bonus à ouvrir sans attendre, on garde toujours un exemplaire de chaque carte
 - 📚 **Collection** avec progression, doublons et zoom sur les cartes
 - ⇄ **Échanges** entre membres : proposition, contre-proposition, acceptation ou refus. Toutes les cartes possédées sont échangeables (avec un avertissement quand on donne son dernier exemplaire), une proposition expire après 48 h et chacun peut avoir 5 propositions en attente au maximum.
+- ⚔ **Duels** : équipe de 3 cartes contre la défense d'un membre (ou entraînement), combat au tour par tour animé avec ATK, DEF, éléments, critiques et esquives. Première victoire du jour = 1 booster bonus. Classement des duellistes.
 - 🏅 **15 succès** (Bronze, Argent, Or) avec une notification quand on en débloque un, une progression visible sur le profil et un badge à afficher à côté de son pseudo
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
@@ -88,6 +89,14 @@ Avec **Coolify**, crée une ressource « Docker Compose » qui pointe vers ce d�
 4. Renseigne les autres variables et génère un domaine. N'oublie pas d'ajouter l'URL de callback dans Discord.
 
 Les migrations de la base sont appliquées automatiquement à chaque démarrage.
+
+## Duels
+
+- 3 manches : la carte 1 de chaque équipe s'affronte, puis la 2, puis la 3. Il faut gagner 2 manches.
+- Points de vie = 100 + 20 % de la DEF. Les dégâts dépendent de l'ATK, sont réduits par la DEF et varient au hasard (±30 %), avec 15 % de critiques (×1,8) et 12 % d'esquives.
+- Éléments : Eau → Flamme → Fleur → Pierre → Foudre → Eau, et Vent → Brume → Ombre → Vent (×1,3 en attaque contre l'élément suivant, ×0,8 contre le précédent).
+- L'équipe de défense de l'adversaire reste secrète. Sans équipe choisie, ce sont ses 3 cartes les plus fortes.
+- Réglages : `DUEL_DAILY_LIMIT`, `DUEL_SAME_OPPONENT_LIMIT`, `DUEL_DAILY_REWARD`. Moteur : `src/lib/duel.ts`.
 
 ## Sauvegardes
 
