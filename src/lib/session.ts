@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { can, staffRole, type Permission, type StaffRole } from "@/lib/admin";
 
 export async function requireUser() {
   const session = await auth();
@@ -7,8 +9,17 @@ export async function requireUser() {
   return session.user;
 }
 
-export async function requireAdmin() {
+/** Vérifie la permission avec le rôle lu en base (jamais celui mis en cache dans la session). */
+export async function requireStaff(perm: Permission) {
   const user = await requireUser();
-  if (!user.isAdmin) redirect("/");
-  return user;
+  const db = await prisma.user.findUnique({ where: { id: user.id }, select: { role: true, name: true } });
+  const role = staffRole(user.discordId, db?.role);
+  if (!can(role, perm)) redirect("/");
+  return { ...user, name: db?.name ?? user.name, role: role as StaffRole };
+}
+
+export async function logAdmin(actor: { id: string; name?: string | null }, action: string, details: string) {
+  await prisma.adminLog.create({
+    data: { actorId: actor.id, actorName: actor.name ?? "?", action, details },
+  });
 }

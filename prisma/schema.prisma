@@ -26,6 +26,12 @@ enum Element {
   OMBRE
 }
 
+enum Role {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -39,6 +45,8 @@ model User {
   packsOpened   Int       @default(0)
   // Badge choisi pour être affiché à côté du pseudo
   featuredBadge String?
+  // Rôle attribué depuis le site (le propriétaire est défini par OWNER_DISCORD_IDS)
+  role          Role      @default(MEMBER)
   createdAt     DateTime  @default(now())
 
   accounts   Account[]
@@ -50,6 +58,7 @@ model User {
   tradesSent     Trade[] @relation("TradeFrom")
   tradesReceived Trade[] @relation("TradeTo")
   achievements   UserAchievement[]
+  adminLogs      AdminLog[]
 }
 
 model Account {
@@ -200,4 +209,18 @@ model UserAchievement {
 
   @@id([userId, achievementId])
   @@index([userId, seen])
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  // Pseudo au moment de l'action (reste lisible si le compte est supprimé)
+  actorName String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }

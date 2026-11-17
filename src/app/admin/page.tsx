@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/session";
+import { requireStaff } from "@/lib/session";
+import { can, ROLE_LABELS, staffRole } from "@/lib/admin";
 import { toCardView } from "@/lib/cards";
 import { GameCard } from "@/components/GameCard";
 import { ELEMENTS, ELEMENT_KEYS, RARITIES, RARITY_ORDER } from "@/lib/game";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import { deleteCard, resetCooldown, saveCard, seedDemo, toggleCard } from "./actions";
+import { deleteCard, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,18 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ edit?: string; err?: string; ok?: string }>;
 }) {
-  await requireAdmin();
+  const me = await requireStaff("viewPanel");
   const { edit, err, ok } = await searchParams;
+  const allow = {
+    toggle: can(me.role, "toggleCards"),
+    del: can(me.role, "deleteCards"),
+    gift: can(me.role, "giftBoosters"),
+    seed: can(me.role, "seedDemo"),
+    log: can(me.role, "viewLog"),
+    roles: can(me.role, "manageRoles"),
+  };
 
-  const [cards, members, stats] = await Promise.all([
+  const [cards, members, stats, logs] = await Promise.all([
     prisma.card.findMany({
       orderBy: { number: "asc" },
       include: {
@@ -27,9 +36,10 @@ export default async function AdminPage({
     }),
     prisma.user.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, consent: true, packsOpened: true, lastPackAt: true },
+      select: { id: true, name: true, consent: true, packsOpened: true, lastPackAt: true, role: true, discordId: true },
     }),
     prisma.user.aggregate({ _sum: { packsOpened: true }, _count: true }),
+    allow.log ? prisma.adminLog.findMany({ orderBy: { createdAt: "desc" }, take: 50 }) : Promise.resolve([]),
   ]);
   const editing = edit ? cards.find((c) => c.id === edit) : undefined;
   const consenting = members.filter((m) => m.consent);
@@ -37,6 +47,10 @@ export default async function AdminPage({
   return (
     <section className="admin">
       <h1>Panel admin</h1>
+      <p className="muted">
+        Connecté en tant que <b className="role-chip">{ROLE_LABELS[me.role]}</b>
+        {me.role === "MODERATOR" && " : tu peux créer et modifier des cartes."}
+      </p>
       <div className="stats">
         <div>
           <b>{stats._count}</b> membres
@@ -143,7 +157,7 @@ export default async function AdminPage({
         </form>
 
         <div className="admin-cards">
-          {cards.length === 0 && (
+          {cards.length === 0 && allow.seed && (
             <form action={seedDemo} className="panel">
               <p>Aucune carte. Tu peux créer 12 cartes d&apos;exemple pour tester le site.</p>
               <button type="submit" className="btn">
@@ -163,10 +177,13 @@ export default async function AdminPage({
                   <Link href={`/admin?edit=${c.id}`} className="btn btn-sm">
                     Modifier
                   </Link>
-                  <form action={toggleCard}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <button className="btn btn-sm btn-ghost">{c.active ? "Désactiver" : "Activer"}</button>
-                  </form>
+                  {allow.toggle && (
+                    <form action={toggleCard}>
+                      <input type="hidden" name="id" value={c.id} />
+                      <button className="btn btn-sm btn-ghost">{c.active ? "Désactiver" : "Activer"}</button>
+                    </form>
+                  )}
+                  {allow.del && (
                   <form action={deleteCard}>
                     <input type="hidden" name="id" value={c.id} />
                     <ConfirmButton
@@ -176,6 +193,7 @@ export default async function AdminPage({
                       Supprimer
                     </ConfirmButton>
                   </form>
+                  )}
                 </div>
               </div>
             </div>
@@ -189,6 +207,7 @@ export default async function AdminPage({
           <thead>
             <tr>
               <th>Membre</th>
+              <th>Rôle</th>
               <th>Accord carte</th>
               <th>Boosters</th>
               <th>Dernier booster</th>
@@ -196,23 +215,71 @@ export default async function AdminPage({
             </tr>
           </thead>
           <tbody>
-            {members.map((m) => (
+            {members.map((m) => {
+              const r = staffRole(m.discordId, m.role);
+              return (
               <tr key={m.id}>
                 <td>{m.name}</td>
+                <td>
+                  {allow.roles && r !== "OWNER" && m.id !== me.id ? (
+                    <form action={setRole} className="role-form" key={m.role}>
+                      <input type="hidden" name="userId" value={m.id} />
+                      <select name="role" defaultValue={m.role} aria-label={`Rôle de ${m.name}`}>
+                        <option value="MEMBER">{ROLE_LABELS.MEMBER}</option>
+                        <option value="MODERATOR">{ROLE_LABELS.MODERATOR}</option>
+                        <option value="ADMIN">{ROLE_LABELS.ADMIN}</option>
+                      </select>
+                      <button className="btn btn-sm btn-ghost">OK</button>
+                    </form>
+                  ) : (
+                    <span className={r ? "role-chip" : "muted"}>{ROLE_LABELS[r ?? "MEMBER"]}</span>
+                  )}
+                </td>
                 <td>{m.consent ? "✔ Oui" : "—"}</td>
                 <td>{m.packsOpened}</td>
-                <td>{m.lastPackAt ? m.lastPackAt.toLocaleString("fr-FR") : "—"}</td>
+                <td>{m.lastPackAt ? m.lastPackAt.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" }) : "—"}</td>
                 <td>
-                  <form action={resetCooldown}>
-                    <input type="hidden" name="userId" value={m.id} />
-                    <button className="btn btn-sm btn-ghost">Offrir un booster</button>
-                  </form>
+                  {allow.gift && (
+                    <form action={resetCooldown}>
+                      <input type="hidden" name="userId" value={m.id} />
+                      <button className="btn btn-sm btn-ghost">Offrir un booster</button>
+                    </form>
+                  )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
+        {allow.roles && (
+          <p className="muted small">
+            <b>Admin</b> : tous les droits sauf la gestion des rôles. <b>Modérateur</b> : créer et modifier des cartes
+            uniquement. Les propriétaires se définissent dans la variable <code>OWNER_DISCORD_IDS</code>.
+          </p>
+        )}
       </div>
+
+      {allow.log && (
+        <div className="panel log-panel">
+          <h2>Journal des actions</h2>
+          {logs.length === 0 ? (
+            <p className="muted">Aucune action pour le moment.</p>
+          ) : (
+            <ul className="log">
+              {logs.map((l) => (
+                <li key={l.id}>
+                  <time className="muted">
+                    {l.createdAt.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" })}
+                  </time>
+                  <span>
+                    <b>{l.actorName}</b> {l.details}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </section>
   );
 }

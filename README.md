@@ -12,6 +12,18 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
 - 🛠️ **Panel admin** : créer ou modifier des cartes (avatar Discord ou image envoyée), les désactiver, offrir un booster
+- 👑 **Rôles** gérés depuis le panel par le propriétaire, avec un **journal des actions**
+
+## Rôles
+
+| Rôle | Comment l'obtenir | Droits |
+|---|---|---|
+| Propriétaire | `OWNER_DISCORD_IDS` dans la configuration | Tout, y compris nommer les admins et modérateurs |
+| Admin | Nommé par un propriétaire dans le panel | Tout sauf la gestion des rôles |
+| Modérateur | Nommé par un propriétaire dans le panel | Créer et modifier des cartes |
+| Membre | Par défaut | Jouer |
+
+Les droits se règlent dans `src/lib/admin.ts` (`PERMISSIONS`).
 
 ## 1. Créer l'application Discord
 
@@ -32,7 +44,7 @@ Copie `.env.example` en `.env` et remplis :
 | `AUTH_URL` | Adresse publique du site |
 | `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` | Identifiants de l'application Discord |
 | `DISCORD_GUILD_ID` | ID de ton serveur (vide = tout le monde peut se connecter) |
-| `ADMIN_DISCORD_IDS` | Ton ID Discord (plusieurs IDs séparés par des virgules) |
+| `OWNER_DISCORD_IDS` | Ton ID Discord : tu es propriétaire du site (plusieurs IDs séparés par des virgules) |
 | `NEXT_PUBLIC_SITE_NAME` | Nom affiché du site |
 | `PACK_SIZE` / `PACK_COOLDOWN_HOURS` | Cartes par booster / délai entre deux boosters |
 
@@ -48,7 +60,7 @@ npx prisma migrate deploy
 npm run dev
 ```
 
-Ouvre <http://localhost:3000>. Avec `DEV_LOGIN=true`, tu peux te connecter sans Discord avec un pseudo de test (c'est toujours désactivé en production). Mets `dev-tonpseudo` dans `ADMIN_DISCORD_IDS` pour être admin en test.
+Ouvre <http://localhost:3000>. Avec `DEV_LOGIN=true`, tu peux te connecter sans Discord avec un pseudo de test (c'est toujours désactivé en production). Mets `dev-tonpseudo` dans `OWNER_DISCORD_IDS` pour être propriétaire en test.
 
 Dans **Admin**, le bouton « Créer les cartes de démo » ajoute 12 cartes d'exemple. Tu pourras les supprimer quand tu auras créé celles de tes membres.
 

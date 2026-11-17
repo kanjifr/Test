@@ -379,3 +379,16 @@ h1 .badge-sm { --s: 0.9em; }
 .toast-close { position: absolute; top: 6px; right: 8px; background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; }
 @keyframes toastIn { from { opacity: 0; transform: translateX(60px) scale(0.9); } }
 @media (max-width: 560px) { .board-meta { display: none; } }
+
+/* ====== Rôles & journal ====== */
+.role-chip { display: inline-block; padding: 0.1rem 0.6rem; border-radius: 999px; background: rgba(228, 183, 90, 0.15); border: 1px solid var(--line); color: var(--gold); font-weight: 700; font-size: 0.85rem; }
+.role-form { display: flex; gap: 0.4rem; align-items: center; }
+.role-form select { width: auto; padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+.small { font-size: 0.85rem; margin-top: 1rem; }
+code { background: rgba(0, 0, 0, 0.4); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.9em; }
+.log-panel { margin-top: 1.5rem; }
+.log { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.log li { display: flex; gap: 1rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.log li:last-child { border-bottom: none; }
+.log time { flex-shrink: 0; width: 8.5rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .log li { flex-direction: column; gap: 0.1rem; } }

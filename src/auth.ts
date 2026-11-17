@@ -4,12 +4,12 @@ import Credentials from "next-auth/providers/credentials";
 import type { Provider } from "next-auth/providers";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import { isAdminDiscordId } from "@/lib/admin";
+import { staffRole, type StaffRole } from "@/lib/admin";
 import { checkAchievements } from "@/lib/achievements-server";
 
 declare module "next-auth" {
   interface Session {
-    user: { id: string; discordId: string | null; isAdmin: boolean } & DefaultSession["user"];
+    user: { id: string; discordId: string | null; staffRole: StaffRole | null } & DefaultSession["user"];
   }
   interface User {
     discordId?: string | null;
@@ -94,7 +94,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       session.user.id = token.uid as string;
       session.user.discordId = (token.discordId as string | null) ?? null;
-      session.user.isAdmin = isAdminDiscordId(session.user.discordId);
+      const db = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } });
+      session.user.staffRole = staffRole(session.user.discordId, db?.role);
       return session;
     },
   },

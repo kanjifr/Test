@@ -23,7 +23,7 @@ export async function Nav() {
           </Link>
           <Link href="/classement">Classement</Link>
           <Link href="/profil">Profil</Link>
-          {user.isAdmin && <Link href="/admin">Admin</Link>}
+          {user.staffRole && <Link href="/admin">Admin</Link>}
           <form
             action={async () => {
               "use server";
