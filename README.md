@@ -45,7 +45,7 @@ Copie `.env.example` en `.env` et remplis :
 | `AUTH_DISCORD_ID` / `AUTH_DISCORD_SECRET` | Identifiants de l'application Discord |
 | `DISCORD_GUILD_ID` | ID de ton serveur (vide = tout le monde peut se connecter) |
 | `OWNER_DISCORD_IDS` | Ton ID Discord : tu es propriétaire du site (plusieurs IDs séparés par des virgules) |
-| `NEXT_PUBLIC_SITE_NAME` | Nom affiché du site |
+| `SITE_NAME` | Nom affiché du site |
 | `PACK_SIZE` / `PACK_COOLDOWN_HOURS` | Cartes par booster / délai entre deux boosters |
 
 Les taux de drop se règlent dans `src/lib/game.ts` (`RARITIES`), et les succès dans `src/lib/achievements.ts`.

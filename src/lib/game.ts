@@ -1,6 +1,6 @@
 import type { Element, Rarity } from "@prisma/client";
 
-export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME || "Kizuna";
+export const SITE_NAME = process.env.SITE_NAME || "Kizuna";
 
 export const PACK_SIZE = clampInt(process.env.PACK_SIZE, 5, 1, 10);
 export const PACK_COOLDOWN_MS =
