@@ -35,6 +35,7 @@ export const PERMISSIONS = {
   toggleCards: FULL,
   deleteCards: FULL,
   giftBoosters: FULL,
+  resetCollections: FULL,
   seedDemo: FULL,
   viewLog: FULL,
   manageRoles: ["OWNER"],

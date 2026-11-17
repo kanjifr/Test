@@ -6,7 +6,7 @@ import { toCardView } from "@/lib/cards";
 import { GameCard } from "@/components/GameCard";
 import { ELEMENTS, ELEMENT_KEYS, RARITIES, RARITY_ORDER } from "@/lib/game";
 import { ConfirmButton } from "@/components/ConfirmButton";
-import { deleteCard, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
+import { deleteCard, resetCollection, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +21,7 @@ export default async function AdminPage({
     toggle: can(me.role, "toggleCards"),
     del: can(me.role, "deleteCards"),
     gift: can(me.role, "giftBoosters"),
+    reset: can(me.role, "resetCollections"),
     seed: can(me.role, "seedDemo"),
     log: can(me.role, "viewLog"),
     roles: can(me.role, "manageRoles"),
@@ -36,7 +37,16 @@ export default async function AdminPage({
     }),
     prisma.user.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, consent: true, packsOpened: true, lastPackAt: true, role: true, discordId: true },
+      select: {
+        id: true,
+        name: true,
+        consent: true,
+        packsOpened: true,
+        lastPackAt: true,
+        role: true,
+        discordId: true,
+        _count: { select: { cards: true } },
+      },
     }),
     prisma.user.aggregate({ _sum: { packsOpened: true }, _count: true }),
     allow.log ? prisma.adminLog.findMany({ orderBy: { createdAt: "desc" }, take: 50 }) : Promise.resolve([]),
@@ -210,6 +220,7 @@ export default async function AdminPage({
               <th>Rôle</th>
               <th>Accord carte</th>
               <th>Boosters</th>
+              <th>Cartes</th>
               <th>Dernier booster</th>
               <th />
             </tr>
@@ -237,14 +248,39 @@ export default async function AdminPage({
                 </td>
                 <td>{m.consent ? "✔ Oui" : "—"}</td>
                 <td>{m.packsOpened}</td>
+                <td>{m._count.cards}</td>
                 <td>{m.lastPackAt ? m.lastPackAt.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" }) : "—"}</td>
                 <td>
-                  {allow.gift && (
-                    <form action={resetCooldown}>
-                      <input type="hidden" name="userId" value={m.id} />
-                      <button className="btn btn-sm btn-ghost">Offrir un booster</button>
-                    </form>
-                  )}
+                  <div className="member-actions">
+                    {allow.gift && (
+                      <form action={resetCooldown}>
+                        <input type="hidden" name="userId" value={m.id} />
+                        <button className="btn btn-sm btn-ghost">Offrir un booster</button>
+                      </form>
+                    )}
+                    {allow.reset && (r !== "OWNER" || me.role === "OWNER") && (
+                      <details className="reset-menu">
+                        <summary className="btn btn-sm btn-danger">Réinitialiser…</summary>
+                        <form action={resetCollection} className="reset-form">
+                          <input type="hidden" name="userId" value={m.id} />
+                          <p>
+                            Supprime toutes les cartes de <b>{m.name}</b> ({m._count.cards} différente(s)) et annule ses
+                            échanges en attente.
+                          </p>
+                          <label className="switch">
+                            <input type="checkbox" name="achievements" />
+                            <span>Réinitialiser aussi ses succès et son compteur de boosters</span>
+                          </label>
+                          <ConfirmButton
+                            className="btn btn-sm btn-danger"
+                            message={`Réinitialiser la collection de ${m.name} ? C'est définitif.`}
+                          >
+                            Confirmer la réinitialisation
+                          </ConfirmButton>
+                        </form>
+                      </details>
+                    )}
+                  </div>
                 </td>
               </tr>
               );

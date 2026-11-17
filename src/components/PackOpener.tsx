@@ -54,6 +54,12 @@ export function PackOpener({
 
   const ready = now >= nextAt;
   const revealed = phase === "done";
+  // Meilleure rareté du booster : le paquet s'illumine pendant l'ouverture
+  const best = cards.some((c) => c.rarity === "LEGENDAIRE")
+    ? "legendaire"
+    : cards.some((c) => c.rarity === "EPIQUE")
+      ? "epique"
+      : null;
 
   // Les succès s'affichent seulement après la révélation, pour ne rien gâcher
   useEffect(() => {
@@ -93,7 +99,8 @@ export function PackOpener({
       setIdx(0);
       setLeaving(false);
       setPhase("tearing");
-      setTimeout(() => setPhase("stack"), 1300);
+      const top = res.cards.some((c) => c.rarity === "LEGENDAIRE") ? 2200 : res.cards.some((c) => c.rarity === "EPIQUE") ? 1800 : 1300;
+      setTimeout(() => setPhase("stack"), top);
     });
   }
 
@@ -122,8 +129,8 @@ export function PackOpener({
         <div className="pack-stage">
           <button
             type="button"
-            className={`pack ${phase === "tearing" ? "tearing" : ""} ${pending ? "shaking" : ""} ${
-              ready ? "ready" : "locked"
+            className={`pack ${phase === "tearing" ? `tearing ${best ? `aura aura-${best}` : ""}` : ""} ${pending ? "shaking" : ""} ${
+              phase !== "idle" ? "" : ready ? "ready" : "locked"
             }`}
             onClick={open}
             disabled={!ready || pending || phase !== "idle"}
@@ -194,7 +201,7 @@ export function PackOpener({
         <>
           <div className="deal">
             {cards.map((c, i) => (
-              <div key={i} className="deal-card" style={{ animationDelay: `${i * 90}ms` }}>
+              <div key={i} className={`deal-card glow-${c.rarity.toLowerCase()}`} style={{ animationDelay: `${i * 90}ms` }}>
                 <GameCard card={c} badge={c.isNew ? "NOUVEAU" : undefined} />
               </div>
             ))}

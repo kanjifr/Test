@@ -398,3 +398,58 @@ code { background: rgba(0, 0, 0, 0.4); padding: 0.1rem 0.35rem; border-radius: 4
 .log li:last-child { border-bottom: none; }
 .log time { flex-shrink: 0; width: 8.5rem; font-variant-numeric: tabular-nums; }
 @media (max-width: 560px) { .log li { flex-direction: column; gap: 0.1rem; } }
+
+/* ====== Lueur des boosters Épiques / Légendaires ====== */
+.pack.aura-epique { --aura: #b25cff; }
+.pack.aura-legendaire { --aura: #ffc23d; }
+.pack.aura { animation: auraBuild 0.9s ease-in forwards; }
+.pack.aura .pack-top { animation-delay: 0.6s; }
+.pack.aura .pack-body { animation-delay: 1.2s; }
+.pack.aura::after { top: 20px; height: 60px; background: radial-gradient(ellipse, var(--aura), transparent 70%); animation: burst 1s 0.6s ease-out both; }
+.pack.aura::before {
+  content: ""; position: absolute; inset: -45%; z-index: -1; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--aura) 70%, transparent) 0 8deg, transparent 8deg 22deg);
+  mask-image: radial-gradient(circle, black 20%, transparent 68%);
+  animation: rays 3s linear infinite, raysIn 0.8s ease-out both;
+}
+.pack.aura-legendaire::before { inset: -70%; }
+@keyframes auraBuild {
+  0% { filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.6)); }
+  100% { filter: drop-shadow(0 0 30px var(--aura)) drop-shadow(0 0 70px var(--aura)); transform: scale(1.05); }
+}
+@keyframes rays { to { transform: rotate(360deg); } }
+@keyframes raysIn { from { opacity: 0; transform: scale(0.4); } }
+
+/* Halo persistant derrière les cartes Épiques et Légendaires */
+.stack-top.glow-epique, .deal-card.glow-epique { --aura: #b25cff; }
+.stack-top.glow-legendaire, .deal-card.glow-legendaire { --aura: #ffc23d; }
+.deal-card { position: relative; }
+.stack-top.glow-epique::before, .stack-top.glow-legendaire::before,
+.deal-card.glow-epique::before, .deal-card.glow-legendaire::before {
+  content: ""; position: absolute; inset: -22%; z-index: -1; pointer-events: none; border-radius: 50%;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--aura) 55%, transparent) 0 30%, transparent 62%),
+    repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--aura) 45%, transparent) 0 6deg, transparent 6deg 20deg);
+  mask-image: radial-gradient(circle, black 30%, transparent 70%);
+  animation: rays 6s linear infinite, raysIn 0.6s ease-out both;
+}
+.stack-top.glow-legendaire::before, .deal-card.glow-legendaire::before { inset: -35%; animation-duration: 4s, 0.6s; }
+.stack-top.leaving::before { opacity: 0; }
+
+/* Filtres de la collection */
+.grid-controls { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem 1.5rem; margin-bottom: 1.5rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip { --cc: var(--gold); background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); color: var(--text); padding: 0.35rem 0.85rem; border-radius: 999px; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.chip:hover { border-color: var(--cc); }
+.chip.on { background: color-mix(in srgb, var(--cc) 25%, transparent); border-color: var(--cc); color: #fff; }
+label.inline { flex-direction: row; align-items: center; gap: 0.5rem; font-weight: 400; white-space: nowrap; }
+label.inline select { width: auto; }
+.rarity-group { margin-bottom: 2rem; }
+.rarity-group h2 { font-size: 1.3rem; margin: 0 0 1rem; }
+.member-actions { display: flex; gap: 0.4rem; align-items: flex-start; flex-wrap: wrap; }
+.reset-menu summary { list-style: none; }
+.reset-menu summary::-webkit-details-marker { display: none; }
+.reset-menu[open] summary { background: rgba(200, 40, 60, 0.15); }
+.reset-form { margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.8rem; max-width: 300px; border: 1px solid rgba(255, 100, 100, 0.35); border-radius: 10px; background: rgba(0, 0, 0, 0.35); }
+.reset-form p { margin: 0; font-size: 0.85rem; }
+.reset-form .switch { font-size: 0.85rem; font-weight: 400; }

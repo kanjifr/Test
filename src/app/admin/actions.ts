@@ -135,3 +135,34 @@ export async function setRole(fd: FormData) {
   await logAdmin(me, "role.set", `a changé le rôle de ${target.name} : ${ROLE_LABELS[target.role]} → ${ROLE_LABELS[role]}`);
   revalidatePath("/", "layout");
 }
+
+export async function resetCollection(fd: FormData) {
+  const me = await requireStaff("resetCollections");
+  const id = str(fd, "userId", 64);
+  const withAchievements = fd.get("achievements") === "on";
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) return;
+  // Seul un propriétaire peut réinitialiser un autre propriétaire
+  if (isOwnerDiscordId(target.discordId) && me.role !== "OWNER") return;
+
+  const [removed] = await prisma.$transaction([
+    prisma.userCard.deleteMany({ where: { userId: id } }),
+    // Les échanges en attente ne sont plus réalisables
+    prisma.trade.updateMany({
+      where: { status: "PENDING", OR: [{ fromId: id }, { toId: id }] },
+      data: { status: "CANCELLED", resolvedAt: new Date() },
+    }),
+    ...(withAchievements
+      ? [
+          prisma.userAchievement.deleteMany({ where: { userId: id } }),
+          prisma.user.update({ where: { id }, data: { featuredBadge: null, packsOpened: 0 } }),
+        ]
+      : []),
+  ]);
+  await logAdmin(
+    me,
+    "collection.reset",
+    `a réinitialisé la collection de ${target.name} (${removed.count} carte(s) différente(s))${withAchievements ? ", ainsi que ses succès" : ""}`,
+  );
+  revalidatePath("/", "layout");
+}
