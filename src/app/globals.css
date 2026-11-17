@@ -536,3 +536,5 @@ label.inline select { width: auto; }
 .backup-grid > div { display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: rgba(0, 0, 0, 0.2); }
 .backup-grid h3 { margin: 0; font-size: 1.05rem; }
 .restore-form { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
+.last-copy { font-size: 0.72rem; font-weight: 700; color: #ffb36b; text-align: center; }
+.trade-pick.picked:has(.last-copy) { border-color: #ff9d4d; }

@@ -27,12 +27,12 @@ export const tradeInclude = {
 
 export type TradeWithItems = Prisma.TradeGetPayload<{ include: typeof tradeInclude }>;
 
-/** Doublons échangeables d'un membre : exemplaires possédés moins un. */
+/** Cartes échangeables d'un membre : tous les exemplaires qu'il possède. */
 export async function tradableCards(userId: string) {
   const owned = await prisma.userCard.findMany({
-    where: { userId, count: { gte: 2 }, card: { active: true } },
+    where: { userId, count: { gte: 1 }, card: { active: true } },
     include: { card: { include: { subject: { select: { image: true, consent: true } } } } },
     orderBy: { card: { number: "asc" } },
   });
-  return owned.map((o) => ({ card: o.card, available: o.count - 1 }));
+  return owned.map((o) => ({ card: o.card, available: o.count }));
 }

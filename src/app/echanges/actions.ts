@@ -30,19 +30,19 @@ function clean(lines: unknown): Line[] {
   return [...map].map(([cardId, qty]) => ({ cardId, qty }));
 }
 
-/** Vérifie que `userId` garde au moins un exemplaire de chaque carte après l'échange. */
-async function checkDuplicates(userId: string, lines: Line[], who: "toi" | "lui") {
+/** Vérifie que `userId` possède assez d'exemplaires de chaque carte. */
+async function checkOwned(userId: string, lines: Line[], who: "toi" | "lui") {
   if (lines.length === 0) return;
   const owned = await prisma.userCard.findMany({
     where: { userId, cardId: { in: lines.map((l) => l.cardId) }, card: { active: true } },
   });
   const counts = new Map(owned.map((o) => [o.cardId, o.count]));
   for (const l of lines) {
-    if ((counts.get(l.cardId) ?? 0) - l.qty < 1) {
+    if ((counts.get(l.cardId) ?? 0) < l.qty) {
       throw new TradeError(
         who === "toi"
-          ? "Tu ne peux échanger que tes doublons (tu dois garder au moins un exemplaire)."
-          : "Ce membre n'a plus assez de doublons de l'une des cartes demandées.",
+          ? "Tu ne possèdes pas assez d'exemplaires de l'une des cartes proposées."
+          : "Ce membre ne possède plus assez d'exemplaires de l'une des cartes demandées.",
       );
     }
   }
@@ -68,8 +68,8 @@ export async function proposeTrade(input: ProposeInput): Promise<ActionResult> {
       throw new TradeError(`Tu as déjà ${MAX_PENDING_SENT} propositions en attente. Annule-en une ou attends une réponse.`);
     }
 
-    await checkDuplicates(me.id, offer, "toi");
-    await checkDuplicates(toId, request, "lui");
+    await checkOwned(me.id, offer, "toi");
+    await checkOwned(toId, request, "lui");
 
     await prisma.$transaction(async (tx) => {
       if (input.parentId) {
@@ -103,7 +103,7 @@ export async function proposeTrade(input: ProposeInput): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** Déplace `qty` exemplaires de `cardId` de `from` vers `to`, sans jamais descendre sous 1. */
+/** Déplace `qty` exemplaires de `cardId` de `from` vers `to` (la carte quitte sa collection s'il n'en reste plus). */
 async function move(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   fromId: string,
@@ -112,10 +112,11 @@ async function move(
   qty: number,
 ) {
   const taken = await tx.userCard.updateMany({
-    where: { userId: fromId, cardId, count: { gte: qty + 1 } },
+    where: { userId: fromId, cardId, count: { gte: qty } },
     data: { count: { decrement: qty } },
   });
   if (taken.count === 0) throw new TradeError("Une des cartes n'est plus disponible : l'échange a été annulé.");
+  await tx.userCard.deleteMany({ where: { userId: fromId, cardId, count: { lte: 0 } } });
   await tx.userCard.upsert({
     where: { userId_cardId: { userId: toId, cardId } },
     create: { userId: toId, cardId, count: qty },

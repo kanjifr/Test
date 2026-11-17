@@ -15,9 +15,12 @@ function Side({
   items,
   picks,
   setPicks,
+  mine = false,
 }: {
   title: string;
   empty: string;
+  /** Côté de l'utilisateur : avertit quand il donne son dernier exemplaire */
+  mine?: boolean;
   items: Tradable[];
   picks: Picks;
   setPicks: (p: Picks) => void;
@@ -57,6 +60,11 @@ function Side({
                     +
                   </button>
                 </div>
+                {mine && n > 0 && n >= available && (
+                  <span className="last-copy" title="Après l'échange, cette carte ne sera plus dans ta collection">
+                    ⚠ {available > 1 ? "Tous tes exemplaires" : "Ton seul exemplaire"}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -105,7 +113,8 @@ export function TradeBuilder({
       <div className="trade-cols">
         <Side
           title="Tu donnes"
-          empty="Tu n'as pas encore de doublons à échanger. Ouvre des boosters !"
+          mine
+          empty="Tu n'as pas encore de cartes à échanger. Ouvre des boosters !"
           items={mine}
           picks={offer}
           setPicks={setOffer}
@@ -115,7 +124,7 @@ export function TradeBuilder({
         </div>
         <Side
           title={`Tu reçois de ${toName}`}
-          empty={`${toName} n'a pas de doublons à échanger pour le moment.`}
+          empty={`${toName} n'a pas encore de cartes à échanger.`}
           items={theirs}
           picks={request}
           setPicks={setRequest}
@@ -128,7 +137,8 @@ export function TradeBuilder({
         </button>
       </div>
       <p className="muted center">
-        Seuls les doublons sont échangeables : chacun garde toujours au moins un exemplaire. La proposition expire au bout de 48 h.
+        Toutes les cartes sont échangeables, même ton seul exemplaire : une carte donnée quitte ta collection. La
+        proposition expire au bout de 48 h.
       </p>
     </div>
   );

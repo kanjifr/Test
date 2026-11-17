@@ -9,7 +9,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🎬 **Vidéo d'obtention** pour les cartes Mythiques (MP4/WEBM, 40 Mo max), jouée en plein écran puis en boucle dans la carte
 - 🔥 **8 éléments** : Eau, Flamme, Foudre, Vent, Pierre, Brume, Fleur, Ombre
 - 📚 **Collection** avec progression, doublons et zoom sur les cartes
-- ⇄ **Échanges** entre membres : proposition, contre-proposition, acceptation ou refus. Seuls les doublons sont échangeables, une proposition expire après 48 h et chacun peut avoir 5 propositions en attente au maximum.
+- ⇄ **Échanges** entre membres : proposition, contre-proposition, acceptation ou refus. Toutes les cartes possédées sont échangeables (avec un avertissement quand on donne son dernier exemplaire), une proposition expire après 48 h et chacun peut avoir 5 propositions en attente au maximum.
 - 🏅 **15 succès** (Bronze, Argent, Or) avec une notification quand on en débloque un, une progression visible sur le profil et un badge à afficher à côté de son pseudo
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
