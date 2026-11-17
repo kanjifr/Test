@@ -216,21 +216,28 @@ label small { font-weight: 400; }
 @keyframes pulse { 50% { opacity: 0.5; } }
 .timer { color: var(--text); font-variant-numeric: tabular-nums; font-size: 1.2rem; }
 
-/* Distribution + retournement */
-.deal { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem; perspective: 1200px; padding-top: 1rem; }
-.flipper { background: none; border: none; padding: 0; cursor: pointer; width: 200px; height: 280px; animation: dealIn 0.5s backwards cubic-bezier(0.2, 0.9, 0.3, 1.3); }
-.flipper.is-flipped { cursor: default; }
-.flipper-inner { position: relative; display: block; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.7s cubic-bezier(0.3, 0.9, 0.3, 1.1); }
-.flipper:not(.is-flipped):hover .flipper-inner { transform: translateY(-8px) rotate(-1deg); }
-.flipper.is-flipped .flipper-inner { transform: rotateY(180deg); }
-.face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: block; }
-.face-front { transform: rotateY(180deg); }
-.flipper.is-flipped.glow-epique .face-front .gcard { animation: glowPulse 1.5s ease-out; --gc: #b25cff; }
-.flipper.is-flipped.glow-legendaire .face-front .gcard { animation: glowPulse 1.8s ease-out; --gc: #ffc23d; }
-.flipper:not(.is-flipped).glow-legendaire .face-back .gcard { animation: tease 1.2s ease-in-out infinite; }
+/* Pile de cartes à découvrir */
+.stack-stage { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.stack-count { margin: 0; font-family: var(--font-display); font-weight: 800; color: var(--gold); letter-spacing: 0.08em; }
+.stack { --sw: min(300px, 70vw, 44vh); position: relative; width: var(--sw); height: calc(var(--sw) * 1.4); margin: 1.2rem 24px 0.5rem 0; animation: dealIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+.stack-layer { position: absolute; inset: 0; --w: var(--sw); transform: translate(calc(var(--d) * 6px), calc(var(--d) * -6px)) rotate(calc(var(--d) * 1.2deg)); filter: brightness(calc(1 - var(--d) * 0.12)); }
+.stack-top { position: absolute; inset: 0; z-index: 5; --w: var(--sw); background: none; border: none; padding: 0; cursor: pointer; animation: revealIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.stack-top:hover .gcard { transform: translateY(-4px) rotate(-0.6deg); }
+.stack-top .gcard, .stack-layer .gcard { --w: var(--sw); }
+.stack-top .gcard { transition: transform 0.2s; }
+.stack-top.leaving { animation: flyOut 0.38s ease-in forwards; pointer-events: none; }
+.stack-top.glow-epique .gcard { --gc: #b25cff; animation: glowPulse 1.5s ease-out; }
+.stack-top.glow-legendaire .gcard { --gc: #ffc23d; animation: glowPulse 1.8s ease-out; }
+.stack-hint { margin: 0; color: var(--gold); font-weight: 700; animation: pulse 2s ease-in-out infinite; text-align: center; }
+.stack-seen { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.stack-seen .gcard { --w: 64px; animation: dealIn 0.35s backwards; }
+.stack-seen .gcard-badge, .stack-seen .gcard-vertical, .stack-seen .gcard-stats { display: none; }
+@keyframes revealIn { from { transform: rotateY(90deg) scale(0.92); opacity: 0.4; } }
+@keyframes flyOut { to { transform: translate(-130%, -30px) rotate(-22deg); opacity: 0; } }
 @keyframes dealIn { from { opacity: 0; transform: translateY(-120px) rotate(-12deg) scale(0.6); } }
 @keyframes glowPulse { 0% { box-shadow: 0 0 0 0 var(--gc); } 40% { box-shadow: 0 0 70px 25px var(--gc); } }
-@keyframes tease { 50% { box-shadow: 0 0 28px 4px rgba(255, 194, 61, 0.55); } }
+.deal { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem; padding-top: 1rem; }
+.deal-card { animation: dealIn 0.5s backwards cubic-bezier(0.2, 0.9, 0.3, 1.3); }
 .flash { position: fixed; inset: 0; pointer-events: none; z-index: 50; background: radial-gradient(circle, var(--fc), transparent 70%); animation: flash 0.9s ease-out forwards; }
 @keyframes flash { from { opacity: 0.85; } to { opacity: 0; } }
 .deal-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem; }
@@ -299,8 +306,7 @@ label small { font-weight: 400; }
   .nav { position: static; }
   .nav-links { gap: 0.8rem; font-size: 0.9rem; }
   .nav-user .logout { display: none; }
-  .flipper { width: 150px; height: 210px; }
-  .flipper .gcard { --w: 150px; }
+  .deal-card .gcard { --w: 150px; }
   .deal { gap: 0.8rem; }
   .hero-fan { height: 240px; }
   .hero-fan .gcard { --w: 150px; margin: 0 -30px; }

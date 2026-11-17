@@ -9,7 +9,7 @@ import { RARITIES } from "@/lib/game";
 import { holdAchievementToasts } from "@/components/AchievementToasts";
 
 type Pulled = Extract<OpenResult, { ok: true }>["cards"][number];
-type Phase = "idle" | "tearing" | "dealt";
+type Phase = "idle" | "tearing" | "stack" | "done";
 
 function formatLeft(ms: number) {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -24,17 +24,21 @@ export function PackOpener({
   serverNow,
   siteName,
   packSize,
+  children,
 }: {
   initialNextAt: number;
   serverNow: number;
   siteName: string;
   packSize: number;
+  /** Contenu affiché sous le booster uniquement hors révélation (ex. derniers grands tirages) */
+  children?: React.ReactNode;
 }) {
   const [nextAt, setNextAt] = useState(initialNextAt);
   const [now, setNow] = useState(serverNow);
   const [phase, setPhase] = useState<Phase>("idle");
   const [cards, setCards] = useState<Pulled[]>([]);
-  const [flipped, setFlipped] = useState<boolean[]>([]);
+  const [idx, setIdx] = useState(0);
+  const [leaving, setLeaving] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -49,18 +53,29 @@ export function PackOpener({
   }, []);
 
   const ready = now >= nextAt;
-  const allFlipped = flipped.length > 0 && flipped.every(Boolean);
+  const revealed = phase === "done";
 
   // Les succès s'affichent seulement après la révélation, pour ne rien gâcher
   useEffect(() => {
-    if (allFlipped) {
+    if (revealed) {
       const t = setTimeout(() => {
         holdAchievementToasts(false);
         router.refresh();
       }, 900);
       return () => clearTimeout(t);
     }
-  }, [allFlipped, router]);
+  }, [revealed, router]);
+
+  // Flash lumineux quand une Épique ou une Légendaire apparaît en haut de la pile
+  useEffect(() => {
+    if (phase !== "stack") return;
+    const r = cards[idx]?.rarity;
+    if (r === "LEGENDAIRE" || r === "EPIQUE") {
+      setFlash(RARITIES[r].color);
+      const t = setTimeout(() => setFlash(null), 900);
+      return () => clearTimeout(t);
+    }
+  }, [phase, idx, cards]);
 
   function open() {
     setError(null);
@@ -75,37 +90,35 @@ export function PackOpener({
       }
       setNextAt(res.nextAt);
       setCards(res.cards);
-      setFlipped(res.cards.map(() => false));
+      setIdx(0);
+      setLeaving(false);
       setPhase("tearing");
-      setTimeout(() => setPhase("dealt"), 1300);
+      setTimeout(() => setPhase("stack"), 1300);
     });
   }
 
-  function flip(i: number) {
-    if (flipped[i]) return;
-    setFlipped((f) => f.map((v, j) => (j === i ? true : v)));
-    const r = cards[i].rarity;
-    if (r === "LEGENDAIRE" || r === "EPIQUE") {
-      setFlash(RARITIES[r].color);
-      setTimeout(() => setFlash(null), 900);
-    }
-  }
-
-  function flipAll() {
-    cards.forEach((_, i) => setTimeout(() => flip(i), i * 250));
+  // Clic sur la carte du dessus : elle s'envole et dévoile celle de derrière
+  function next() {
+    if (leaving) return;
+    setLeaving(true);
+    setTimeout(() => {
+      setLeaving(false);
+      if (idx >= cards.length - 1) setPhase("done");
+      else setIdx((i) => i + 1);
+    }, 380);
   }
 
   function reset() {
     setPhase("idle");
     setCards([]);
-    setFlipped([]);
+    setIdx(0);
   }
 
   return (
     <div className="opener">
       {flash && <div className="flash" style={{ "--fc": flash } as React.CSSProperties} />}
 
-      {phase !== "dealt" && (
+      {(phase === "idle" || phase === "tearing") && (
         <div className="pack-stage">
           <button
             type="button"
@@ -136,47 +149,68 @@ export function PackOpener({
         </div>
       )}
 
-      {phase === "dealt" && (
+      {phase === "stack" && cards[idx] && (
+        <div className="stack-stage">
+          <p className="stack-count">
+            Carte {idx + 1} / {cards.length}
+          </p>
+          <div className="stack">
+            {/* Dos des cartes restantes, légèrement décalés pour donner l'effet de pile */}
+            {cards.slice(idx + 1).map((_, j, rest) => {
+              const depth = Math.min(rest.length - j, 4);
+              return (
+                <span key={j} className="stack-layer" style={{ "--d": depth } as React.CSSProperties}>
+                  <CardBack size="lg" />
+                </span>
+              );
+            })}
+            <button
+              type="button"
+              key={idx}
+              className={`stack-top glow-${cards[idx].rarity.toLowerCase()} ${leaving ? "leaving" : ""}`}
+              onClick={next}
+              aria-label={idx < cards.length - 1 ? "Découvrir la carte suivante" : "Terminer"}
+            >
+              <GameCard card={cards[idx]} size="lg" badge={cards[idx].isNew ? "NOUVEAU" : undefined} />
+            </button>
+          </div>
+          <p className="stack-hint">
+            {idx < cards.length - 1 ? "Clique sur la carte pour découvrir la suivante" : "Clique pour voir tout ton tirage"}
+          </p>
+          {idx > 0 && (
+            <div className="stack-seen" aria-label="Cartes déjà vues">
+              {cards.slice(0, idx).map((c, j) => (
+                <GameCard key={j} card={c} size="xs" />
+              ))}
+            </div>
+          )}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPhase("done")}>
+            Tout afficher
+          </button>
+        </div>
+      )}
+
+      {phase === "done" && (
         <>
           <div className="deal">
             {cards.map((c, i) => (
-              <button
-                type="button"
-                key={i}
-                className={`flipper ${flipped[i] ? "is-flipped" : ""} glow-${c.rarity.toLowerCase()}`}
-                style={{ animationDelay: `${i * 120}ms` }}
-                onClick={() => flip(i)}
-                aria-label={flipped[i] ? c.name : "Retourner la carte"}
-              >
-                <span className="flipper-inner">
-                  <span className="face face-back">
-                    <CardBack />
-                  </span>
-                  <span className="face face-front">
-                    <GameCard card={c} badge={c.isNew ? "NOUVEAU" : undefined} />
-                  </span>
-                </span>
-              </button>
+              <div key={i} className="deal-card" style={{ animationDelay: `${i * 90}ms` }}>
+                <GameCard card={c} badge={c.isNew ? "NOUVEAU" : undefined} />
+              </div>
             ))}
           </div>
           <div className="deal-actions">
-            {!allFlipped ? (
-              <button type="button" className="btn" onClick={flipAll}>
-                Tout retourner
-              </button>
-            ) : (
-              <>
-                <Link href="/collection" className="btn">
-                  Voir ma collection
-                </Link>
-                <button type="button" className="btn btn-ghost" onClick={reset}>
-                  {ready ? "Ouvrir un autre booster" : `Prochain booster : ${formatLeft(nextAt - now)}`}
-                </button>
-              </>
-            )}
+            <Link href="/collection" className="btn">
+              Voir ma collection
+            </Link>
+            <button type="button" className="btn btn-ghost" onClick={reset}>
+              {ready ? "Ouvrir un autre booster" : `Prochain booster : ${formatLeft(nextAt - now)}`}
+            </button>
           </div>
         </>
       )}
+
+      {phase === "idle" && children}
     </div>
   );
 }

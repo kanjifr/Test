@@ -90,23 +90,24 @@ export default async function Home({
 
   return (
     <>
-      <PackOpener initialNextAt={nextAt} serverNow={Date.now()} siteName={SITE_NAME} packSize={PACK_SIZE} />
-      {recent.length > 0 && (
-        <section className="feed">
-          <h2>Derniers grands tirages</h2>
-          <div className="feed-list">
-            {recent.map((p) => (
-              <div key={p.id} className="feed-item">
-                <GameCard card={toCardView(p.card)} size="sm" />
-                <p>
-                  <b>{p.user.name}</b> a obtenu{" "}
-                  <span style={{ color: RARITIES[p.card.rarity].color }}>{p.card.name}</span>
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <PackOpener initialNextAt={nextAt} serverNow={Date.now()} siteName={SITE_NAME} packSize={PACK_SIZE}>
+        {recent.length > 0 && (
+          <section className="feed">
+            <h2>Derniers grands tirages</h2>
+            <div className="feed-list">
+              {recent.map((p) => (
+                <div key={p.id} className="feed-item">
+                  <GameCard card={toCardView(p.card)} size="sm" />
+                  <p>
+                    <b>{p.user.name}</b> a obtenu{" "}
+                    <span style={{ color: RARITIES[p.card.rarity].color }}>{p.card.name}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </PackOpener>
     </>
   );
 }
