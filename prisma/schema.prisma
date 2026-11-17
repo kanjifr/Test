@@ -46,6 +46,10 @@ model User {
   packsOpened   Int       @default(0)
   // Boosters ouverts depuis la dernière carte Mythique (système de pity)
   pityCount     Int       @default(0)
+  // Boosters bonus à ouvrir sans attendre (recyclage, cadeaux des admins)
+  bonusPacks    Int       @default(0)
+  // Nombre total de doublons recyclés
+  recycledCount Int       @default(0)
   // Badge choisi pour être affiché à côté du pseudo
   featuredBadge String?
   // Rôle attribué depuis le site (le propriétaire est défini par OWNER_DISCORD_IDS)

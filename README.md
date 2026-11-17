@@ -8,6 +8,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - ✦ **Pity Mythique** : 1,5 % par booster, chance en hausse à partir du 46e booster sans Mythique, garantie au 60e. Jauge visible sur la page Booster. En moyenne, une Mythique arrive en 35 boosters.
 - 🎬 **Vidéo d'obtention** pour les cartes Mythiques (MP4/WEBM, 40 Mo max), jouée en plein écran puis en boucle dans la carte
 - 🔥 **8 éléments** : Eau, Flamme, Foudre, Vent, Pierre, Brume, Fleur, Ombre
+- ♻ **Recyclage** : 10 doublons (réglable avec `RECYCLE_COST`) = 1 booster bonus à ouvrir sans attendre, on garde toujours un exemplaire de chaque carte
 - 📚 **Collection** avec progression, doublons et zoom sur les cartes
 - ⇄ **Échanges** entre membres : proposition, contre-proposition, acceptation ou refus. Toutes les cartes possédées sont échangeables (avec un avertissement quand on donne son dernier exemplaire), une proposition expire après 48 h et chacun peut avoir 5 propositions en attente au maximum.
 - 🏅 **15 succès** (Bronze, Argent, Or) avec une notification quand on en débloque un, une progression visible sur le profil et un badge à afficher à côté de son pseudo

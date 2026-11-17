@@ -538,3 +538,16 @@ label.inline select { width: auto; }
 .restore-form { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; }
 .last-copy { font-size: 0.72rem; font-weight: 700; color: #ffb36b; text-align: center; }
 .trade-pick.picked:has(.last-copy) { border-color: #ff9d4d; }
+
+/* ====== Recyclage & boosters bonus ====== */
+.lead.left { text-align: left; max-width: 70ch; }
+.recycle-bar { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; justify-content: space-between; position: sticky; top: 72px; z-index: 10; margin-bottom: 1rem; }
+.recycle-count { margin: 0 0 0.4rem; font-size: 1.05rem; }
+.recycle-count b { font-family: var(--font-display); font-size: 1.6rem; color: var(--gold); }
+.recycle-progress { width: min(260px, 70vw); height: 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); overflow: hidden; margin-bottom: 0.4rem; }
+.recycle-progress span { display: block; height: 100%; background: linear-gradient(90deg, #2f9e6b, #6ee7a8); transition: width 0.2s; }
+.recycle-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+.bonus-banner, .bonus-chip { color: #ffd78a; font-weight: 700; }
+.bonus-chip { margin: 0.6rem 0 0; font-size: 0.95rem; }
+.bonus-banner { background: rgba(228, 183, 90, 0.12); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.9rem; }
+@media (max-width: 560px) { .recycle-bar { position: static; } }

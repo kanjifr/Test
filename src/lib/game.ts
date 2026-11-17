@@ -29,6 +29,9 @@ export const RARITIES: Record<
 /** Raretés tirées carte par carte (toutes sauf Mythique). */
 export const SLOT_RARITIES = RARITY_ORDER.filter((r) => RARITIES[r].weight > 0);
 
+/** Nombre de doublons à recycler pour gagner un booster bonus. */
+export const RECYCLE_COST = clampInt(process.env.RECYCLE_COST, 10, 1, 1000);
+
 // --- Système de pity pour les cartes Mythiques ---
 // Chance par booster, augmentée à partir de PITY_SOFT, garantie au PITY_HARD-ième booster.
 export const MYTHIC_BASE_CHANCE = Math.min(1, Math.max(0, Number(process.env.MYTHIC_CHANCE ?? 0.015) || 0));

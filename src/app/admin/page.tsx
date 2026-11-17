@@ -50,6 +50,7 @@ export default async function AdminPage({
         name: true,
         consent: true,
         packsOpened: true,
+        bonusPacks: true,
         lastPackAt: true,
         role: true,
         discordId: true,
@@ -285,7 +286,10 @@ export default async function AdminPage({
                   )}
                 </td>
                 <td>{m.consent ? "✔ Oui" : "—"}</td>
-                <td>{m.packsOpened}</td>
+                <td>
+                  {m.packsOpened}
+                  {m.bonusPacks > 0 && <span className="muted"> (+{m.bonusPacks} 🎁)</span>}
+                </td>
                 <td>{m._count.cards}</td>
                 <td>{m.lastPackAt ? m.lastPackAt.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" }) : "—"}</td>
                 <td>
@@ -293,7 +297,7 @@ export default async function AdminPage({
                     {allow.gift && (
                       <form action={resetCooldown}>
                         <input type="hidden" name="userId" value={m.id} />
-                        <button className="btn btn-sm btn-ghost">Offrir un booster</button>
+                        <button className="btn btn-sm btn-ghost">🎁 Offrir un booster</button>
                       </form>
                     )}
                     {allow.reset && (r !== "OWNER" || me.role === "OWNER") && (

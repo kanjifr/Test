@@ -140,8 +140,8 @@ export async function seedDemo() {
 export async function resetCooldown(fd: FormData) {
   const me = await requireStaff("giftBoosters");
   const id = str(fd, "userId", 64);
-  const u = await prisma.user.update({ where: { id }, data: { lastPackAt: null } });
-  await logAdmin(me, "booster.gift", `a offert un booster à ${u.name}`);
+  const u = await prisma.user.update({ where: { id }, data: { bonusPacks: { increment: 1 } } });
+  await logAdmin(me, "booster.gift", `a offert un booster bonus à ${u.name} (${u.bonusPacks} en réserve)`);
   revalidatePath("/admin");
 }
 

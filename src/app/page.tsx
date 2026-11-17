@@ -84,7 +84,7 @@ export default async function Home({
 
   await checkAchievements(session.user.id);
   const [user, mythics, recent] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true, bonusPacks: true } }),
     prisma.card.count({ where: { active: true, rarity: "MYTHIQUE" } }),
     prisma.pull.findMany({
       where: { card: { rarity: { in: ["EPIQUE", "LEGENDAIRE", "MYTHIQUE"] } } },
@@ -119,6 +119,7 @@ export default async function Home({
         siteName={SITE_NAME}
         packSize={PACK_SIZE}
         initialPity={Math.min(user?.pityCount ?? 0, PITY_HARD - 1)}
+        initialBonus={user?.bonusPacks ?? 0}
         pityHard={PITY_HARD}
         pitySoft={PITY_SOFT}
         mythicAvailable={mythics > 0}

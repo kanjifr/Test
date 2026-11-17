@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "bonusPacks" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "recycledCount" INTEGER NOT NULL DEFAULT 0;

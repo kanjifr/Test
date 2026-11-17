@@ -69,6 +69,7 @@ export function PackOpener({
   siteName,
   packSize,
   initialPity,
+  initialBonus,
   pityHard,
   pitySoft,
   mythicAvailable,
@@ -80,6 +81,7 @@ export function PackOpener({
   siteName: string;
   packSize: number;
   initialPity: number;
+  initialBonus: number;
   pityHard: number;
   pitySoft: number;
   mythicAvailable: boolean;
@@ -94,6 +96,7 @@ export function PackOpener({
   const [idx, setIdx] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [pity, setPity] = useState(initialPity);
+  const [bonus, setBonus] = useState(initialBonus);
   const [mythicOn, setMythicOn] = useState(mythicAvailable);
   const [cinema, setCinema] = useState<Pulled | null>(null);
   const played = useRef(new Set<number>());
@@ -110,7 +113,9 @@ export function PackOpener({
     return () => clearInterval(t);
   }, []);
 
-  const ready = now >= nextAt;
+  const timerReady = now >= nextAt;
+  // Un booster bonus s'ouvre même quand le minuteur n'est pas fini
+  const ready = timerReady || bonus > 0;
   const revealed = phase === "done";
   // Meilleure rareté du booster : le paquet s'illumine pendant l'ouverture
   const best = cards.some((c) => c.rarity === "MYTHIQUE")
@@ -166,6 +171,7 @@ export function PackOpener({
       }
       setNextAt(res.nextAt);
       setPity(res.pity);
+      setBonus(res.bonus);
       setMythicOn(res.mythicAvailable);
       setCards(res.cards);
       setIdx(0);
@@ -223,11 +229,28 @@ export function PackOpener({
           </button>
           <div className="pack-caption">
             {ready ? (
-              <span className="cta">{pending ? "Ouverture…" : "Clique sur le booster pour l'ouvrir"}</span>
+              <span className="cta">
+                {pending
+                  ? "Ouverture…"
+                  : timerReady
+                    ? "Clique sur le booster pour l'ouvrir"
+                    : "Clique pour ouvrir un booster bonus 🎁"}
+              </span>
             ) : (
               <span>
                 Prochain booster dans <b className="timer">{formatLeft(nextAt - now)}</b>
               </span>
+            )}
+            {bonus > 0 && (
+              <p className="bonus-chip">
+                🎁 {bonus} booster{bonus > 1 ? "s" : ""} bonus en réserve
+                {!timerReady && <span className="muted"> · prochain gratuit dans {formatLeft(nextAt - now)}</span>}
+              </p>
+            )}
+            {!ready && (
+              <p className="small-text">
+                Pas envie d&apos;attendre ? <Link href="/recyclage">♻ Recycle tes doublons</Link> pour gagner des boosters.
+              </p>
             )}
             {error && <p className="error">{error}</p>}
           </div>
@@ -335,7 +358,11 @@ export function PackOpener({
               Voir ma collection
             </Link>
             <button type="button" className="btn btn-ghost" onClick={reset}>
-              {ready ? "Ouvrir un autre booster" : `Prochain booster : ${formatLeft(nextAt - now)}`}
+              {ready
+                ? bonus > 0 && !timerReady
+                  ? `Ouvrir un booster bonus (${bonus})`
+                  : "Ouvrir un autre booster"
+                : `Prochain booster : ${formatLeft(nextAt - now)}`}
             </button>
           </div>
         </>

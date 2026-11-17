@@ -15,6 +15,7 @@ export type Stats = {
   legendaryOwned: number;
   legendaryTotal: number;
   mythicOwned: number;
+  recycled: number;
   tradesDone: number;
   featuredIn: number;
   bestElementDone: number; // nb max de cartes possédées dans un élément complet ou non
@@ -50,6 +51,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "lucky_pack", name: "Béni des étoiles", description: "Obtenir 2 cartes Épiques ou mieux dans un même booster.", kanji: "福", tier: "OR", progress: (s) => [s.luckyPack ? 1 : 0, 1] },
   { id: "dupes_5", name: "Écho", description: "Posséder 5 exemplaires d'une même carte.", kanji: "響", tier: "BRONZE", progress: (s) => [s.maxCopies, 5] },
   { id: "element", name: "Maître élémentaire", description: "Posséder toutes les cartes d'un élément (3 cartes minimum).", kanji: "元", tier: "ARGENT", progress: (s) => [s.elementCompleted ? s.bestElementTarget : s.bestElementDone, Math.max(3, s.bestElementTarget)] },
+  { id: "recycle", name: "Rien ne se perd", description: "Recycler tes premiers doublons.", kanji: "環", tier: "BRONZE", progress: (s) => [s.recycled, 1] },
   { id: "trade_1", name: "Premier pacte", description: "Réaliser ton premier échange.", kanji: "縁", tier: "BRONZE", progress: (s) => [s.tradesDone, 1] },
   { id: "trade_10", name: "Marchand du quartier", description: "Réaliser 10 échanges.", kanji: "商", tier: "ARGENT", progress: (s) => [s.tradesDone, 10] },
   { id: "featured", name: "Visage du clan", description: "Apparaître sur une carte.", kanji: "顔", tier: "BRONZE", progress: (s) => [s.featuredIn, 1] },

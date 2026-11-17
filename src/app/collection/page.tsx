@@ -47,6 +47,11 @@ export default async function CollectionPage({
             </>
           )}
         </h1>
+        {isMe && (
+          <Link href="/recyclage" className="btn btn-ghost btn-sm">
+            ♻ Recycler mes doublons
+          </Link>
+        )}
         {!isMe && (
           <div className="row">
             <Link href={`/echanges/nouveau?avec=${owner.id}`} className="btn">

@@ -16,6 +16,8 @@ export type OpenResult =
       ok: true;
       cards: (CardView & { isNew: boolean; count: number })[];
       nextAt: number;
+      /** Boosters bonus restants */
+      bonus: number;
       /** Boosters ouverts depuis la dernière Mythique, après ce booster */
       pity: number;
       mythicAvailable: boolean;
@@ -43,14 +45,26 @@ export async function openPack(): Promise<OpenResult> {
     },
     data: { lastPackAt: now, packsOpened: { increment: 1 } },
   });
+  // Booster pas encore prêt : on utilise un booster bonus s'il en reste (le minuteur continue)
+  let usedBonus = false;
   if (reserved.count === 0) {
+    const bonus = await prisma.user.updateMany({
+      where: { id: user.id, bonusPacks: { gt: 0 } },
+      data: { bonusPacks: { decrement: 1 }, packsOpened: { increment: 1 } },
+    });
+    usedBonus = bonus.count > 0;
+  }
+  if (reserved.count === 0 && !usedBonus) {
     const u = await prisma.user.findUnique({ where: { id: user.id }, select: { lastPackAt: true } });
     const nextAt = (u?.lastPackAt?.getTime() ?? 0) + PACK_COOLDOWN_MS;
     return { ok: false, error: "Ton prochain booster n'est pas encore prêt.", nextAt };
   }
 
   // Pas de booster en parallèle (réservation ci-dessus) : le compteur de pity lu ici est fiable
-  const me = await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { pityCount: true } });
+  const me = await prisma.user.findUniqueOrThrow({
+    where: { id: user.id },
+    select: { pityCount: true, bonusPacks: true, lastPackAt: true },
+  });
   const booster = drawBooster(cards, PACK_SIZE, Math.min(me.pityCount, PITY_HARD - 1), rand);
   const drawn = booster.cards;
   const mythicAvailable = cards.some((c) => c.rarity === "MYTHIQUE");
@@ -80,7 +94,8 @@ export async function openPack(): Promise<OpenResult> {
   return {
     ok: true,
     cards: result,
-    nextAt: now.getTime() + PACK_COOLDOWN_MS,
+    nextAt: (me.lastPackAt?.getTime() ?? now.getTime()) + PACK_COOLDOWN_MS,
+    bonus: me.bonusPacks,
     pity: booster.pityCount,
     mythicAvailable,
   };
