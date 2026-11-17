@@ -14,6 +14,8 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
 - 🛠️ **Panel admin** : créer ou modifier des cartes (avatar Discord ou image envoyée), les désactiver, offrir un booster
+- 📥 **Import en masse** de cartes depuis un tableau CSV (Excel, Google Sheets), avec vérification ligne par ligne avant import
+- 💾 **Sauvegardes** : téléchargement, envoi automatique quotidien dans un salon Discord privé, restauration
 - 👑 **Rôles** gérés depuis le panel par le propriétaire, avec un **journal des actions**
 
 ## Rôles
@@ -85,6 +87,13 @@ Avec **Coolify**, crée une ressource « Docker Compose » qui pointe vers ce d�
 4. Renseigne les autres variables et génère un domaine. N'oublie pas d'ajouter l'URL de callback dans Discord.
 
 Les migrations de la base sont appliquées automatiquement à chaque démarrage.
+
+## Sauvegardes
+
+- **Admin → Sauvegardes → Télécharger** : fichier `.json.gz` avec membres, cartes, collections, échanges, succès et journal (sans l'historique des tirages ni les jetons Discord).
+- **Automatique** : crée un webhook dans un salon Discord privé et colle son adresse dans `BACKUP_DISCORD_WEBHOOK_URL`. Une sauvegarde est envoyée chaque jour.
+- **Restaurer** : remplace toutes les données par celles du fichier (réservé au propriétaire). Une copie de l'état actuel est gardée dans `uploads/backups/`.
+- Les **images et vidéos** sont dans le volume : active aussi les sauvegardes de volumes dans Railway.
 
 ## Structure
 

@@ -7,6 +7,10 @@ import { GameCard } from "@/components/GameCard";
 import { ELEMENTS, ELEMENT_KEYS, RARITIES, RARITY_ORDER } from "@/lib/game";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { MAX_VIDEO_MB } from "@/lib/uploads";
+import { BulkImport } from "@/components/BulkImport";
+import { TEMPLATE_CSV } from "@/lib/import";
+import { lastBackupSent, webhookConfigured } from "@/lib/backup";
+import { restoreFromBackup, sendBackupNow } from "./backup-actions";
 import { deleteCard, resetCollection, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -23,11 +27,14 @@ export default async function AdminPage({
     del: can(me.role, "deleteCards"),
     gift: can(me.role, "giftBoosters"),
     reset: can(me.role, "resetCollections"),
+    import: can(me.role, "importCards"),
+    backups: can(me.role, "manageBackups"),
     seed: can(me.role, "seedDemo"),
     log: can(me.role, "viewLog"),
     roles: can(me.role, "manageRoles"),
   };
 
+  const lastBackup = allow.backups ? await lastBackupSent() : null;
   const [cards, members, stats, logs] = await Promise.all([
     prisma.card.findMany({
       orderBy: { number: "asc" },
@@ -75,7 +82,7 @@ export default async function AdminPage({
       </div>
 
       {err && <p className="error">{err}</p>}
-      {ok && <p className="success">Carte enregistrée ✔</p>}
+      {ok && <p className="success">{ok === "1" ? "Carte enregistrée ✔" : ok}</p>}
 
       <div className="admin-cols">
         <form action={saveCard} className="panel card-form" key={editing?.id ?? "new"}>
@@ -240,6 +247,8 @@ export default async function AdminPage({
         </div>
       </div>
 
+      {allow.import && <BulkImport template={TEMPLATE_CSV} />}
+
       <div className="panel">
         <h2>Membres</h2>
         <table className="members">
@@ -323,6 +332,60 @@ export default async function AdminPage({
           </p>
         )}
       </div>
+
+      {allow.backups && (
+        <div className="panel backups" id="sauvegardes">
+          <h2>Sauvegardes</h2>
+          <p className="muted">
+            Une sauvegarde contient les membres, les cartes, les collections, les échanges, les succès et le journal. Les
+            images et vidéos restent dans le volume Railway.
+          </p>
+          <div className="backup-grid">
+            <div>
+              <h3>Télécharger</h3>
+              <p className="muted small-text">Un fichier .json.gz à garder sur ton ordinateur ou ton cloud.</p>
+              <a className="btn" href="/api/admin/backup">
+                💾 Télécharger une sauvegarde
+              </a>
+            </div>
+            <div>
+              <h3>Automatique sur Discord</h3>
+              {webhookConfigured() ? (
+                <>
+                  <p className="muted small-text">
+                    Une sauvegarde par jour est envoyée dans ton salon privé.{" "}
+                    {lastBackup
+                      ? `Dernier envoi : ${lastBackup.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" })}.`
+                      : "Aucun envoi pour le moment."}
+                  </p>
+                  <form action={sendBackupNow}>
+                    <button className="btn btn-ghost">Envoyer maintenant</button>
+                  </form>
+                </>
+              ) : (
+                <p className="muted small-text">
+                  Pas encore activée : ajoute la variable <code>BACKUP_DISCORD_WEBHOOK_URL</code> dans Railway (adresse
+                  d&apos;un webhook d&apos;un salon Discord privé).
+                </p>
+              )}
+            </div>
+            <div>
+              <h3>Restaurer</h3>
+              <form action={restoreFromBackup} className="restore-form">
+                <p className="small-text bad-text">
+                  ⚠️ Remplace toutes les données actuelles par celles du fichier. Une copie de l&apos;état actuel est gardée
+                  sur le serveur par sécurité.
+                </p>
+                <input type="file" name="backup" accept=".gz,.json,application/gzip,application/json" required />
+                <input name="confirm" placeholder="Écris RESTAURER" autoComplete="off" required />
+                <ConfirmButton className="btn btn-danger" message="Remplacer toutes les données du site par cette sauvegarde ?">
+                  Restaurer
+                </ConfirmButton>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       {allow.log && (
         <div className="panel log-panel">
