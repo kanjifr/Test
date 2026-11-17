@@ -20,7 +20,6 @@ COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/prisma ./prisma
 RUN mkdir -p /app/uploads
-VOLUME ["/app/uploads"]
 EXPOSE 3000
 # Applique les migrations de la base puis démarre le site
 CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
