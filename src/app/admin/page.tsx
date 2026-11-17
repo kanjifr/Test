@@ -11,6 +11,9 @@ import { BulkImport } from "@/components/BulkImport";
 import { TEMPLATE_CSV } from "@/lib/import";
 import { lastBackupSent, webhookConfigured } from "@/lib/backup";
 import { restoreFromBackup, sendBackupNow } from "./backup-actions";
+import { saveAnnounceSettings, sendTestAnnouncement } from "./announce-actions";
+import { announceConfigured } from "@/lib/announce";
+import { getAnnounceSettings } from "@/lib/settings";
 import { deleteCard, resetCollection, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +32,14 @@ export default async function AdminPage({
     reset: can(me.role, "resetCollections"),
     import: can(me.role, "importCards"),
     backups: can(me.role, "manageBackups"),
+    announce: can(me.role, "manageAnnouncements"),
     seed: can(me.role, "seedDemo"),
     log: can(me.role, "viewLog"),
     roles: can(me.role, "manageRoles"),
   };
 
   const lastBackup = allow.backups ? await lastBackupSent() : null;
+  const announceSettings = allow.announce ? await getAnnounceSettings() : null;
   const [cards, members, stats, logs] = await Promise.all([
     prisma.card.findMany({
       orderBy: { number: "asc" },
@@ -336,6 +341,50 @@ export default async function AdminPage({
           </p>
         )}
       </div>
+
+      {allow.announce && announceSettings && (
+        <div className="panel backups" id="annonces">
+          <h2>📣 Annonces Discord</h2>
+          {announceConfigured() ? (
+            <p className="muted">
+              Les annonces sont publiées dans le salon du webhook, environ 20 secondes après l&apos;événement pour ne rien
+              spoiler. Les membres sont mentionnés sans être notifiés.
+            </p>
+          ) : (
+            <p className="muted">
+              Pas encore activées : crée un webhook dans le salon d&apos;annonces (Paramètres du salon → Intégrations →
+              Webhooks) et ajoute son adresse dans la variable <code>ANNOUNCE_DISCORD_WEBHOOK_URL</code> sur Railway.
+            </p>
+          )}
+          <form action={saveAnnounceSettings} className="announce-form" key={JSON.stringify(announceSettings)}>
+            <label className="inline">
+              Annoncer les tirages à partir de
+              <select name="pulls" defaultValue={announceSettings.pulls}>
+                <option value="EPIQUE">Épique</option>
+                <option value="LEGENDAIRE">Légendaire</option>
+                <option value="MYTHIQUE">Mythique seulement</option>
+                <option value="OFF">Jamais</option>
+              </select>
+            </label>
+            <label className="switch">
+              <input type="checkbox" name="duels" defaultChecked={announceSettings.duels} />
+              <span>Annoncer les victoires en duel</span>
+            </label>
+            <label className="switch">
+              <input type="checkbox" name="trades" defaultChecked={announceSettings.trades} />
+              <span>Annoncer les échanges réussis</span>
+            </label>
+            <div className="row">
+              <button className="btn">Enregistrer</button>
+            </div>
+          </form>
+          {announceConfigured() && (
+            <form action={sendTestAnnouncement}>
+              <button className="btn btn-ghost btn-sm">Envoyer un message de test</button>
+            </form>
+          )}
+        </div>
+      )}
 
       {allow.backups && (
         <div className="panel backups" id="sauvegardes">

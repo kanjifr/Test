@@ -4,6 +4,7 @@ import path from "node:path";
 import { prisma } from "@/lib/prisma";
 import { UPLOAD_DIR } from "@/lib/uploads";
 import { SITE_NAME } from "@/lib/game";
+import { WEBHOOK_RE } from "@/lib/discord";
 
 const FORMAT = "kizuna-backup";
 const VERSION = 1;
@@ -97,7 +98,6 @@ export async function restoreBackup(b: Backup) {
   );
 }
 
-const WEBHOOK_RE = /^https:\/\/(?:canary\.|ptb\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/;
 export const webhookConfigured = () => WEBHOOK_RE.test(process.env.BACKUP_DISCORD_WEBHOOK_URL ?? "");
 
 /** Envoie la sauvegarde en pièce jointe dans un salon Discord privé (webhook). */

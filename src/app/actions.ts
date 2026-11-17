@@ -8,6 +8,7 @@ import { drawBooster, PACK_COOLDOWN_MS, PACK_SIZE, PITY_HARD, type CardView } fr
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
+import { announcePull } from "@/lib/announce";
 
 const rand = () => randomInt(0, 1_000_000) / 1_000_000;
 
@@ -89,6 +90,7 @@ export async function openPack(): Promise<OpenResult> {
 
   const lucky = drawn.filter((c) => c.rarity === "EPIQUE" || c.rarity === "LEGENDAIRE" || c.rarity === "MYTHIQUE").length >= 2;
   await checkAchievements(user.id, { luckyPack: lucky });
+  await announcePull({ discordId: user.discordId, name: user.name }, result).catch(() => {});
 
   revalidatePath("/collection");
   return {

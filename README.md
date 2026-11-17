@@ -17,6 +17,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
 - 🛠️ **Panel admin** : créer ou modifier des cartes (avatar Discord ou image envoyée), les désactiver, offrir un booster
 - 📥 **Import en masse** de cartes depuis un tableau CSV (Excel, Google Sheets), avec vérification ligne par ligne avant import. Modèle Excel prêt à remplir : `modeles/modele-cartes.xlsx`
+- 📣 **Annonces Discord** : grands tirages, victoires en duel et échanges publiés dans un salon (webhook `ANNOUNCE_DISCORD_WEBHOOK_URL`), avec un délai pour ne rien spoiler. Réglages dans Admin → Annonces Discord.
 - 💾 **Sauvegardes** : téléchargement, envoi automatique quotidien dans un salon Discord privé, restauration
 - 👑 **Rôles** gérés depuis le panel par le propriétaire, avec un **journal des actions**
 

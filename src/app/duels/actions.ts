@@ -17,6 +17,7 @@ import {
   trainingTeam,
 } from "@/lib/duel-server";
 import { checkAchievements } from "@/lib/achievements-server";
+import { announceDuel } from "@/lib/announce";
 
 export type DuelStart = { ok: true; id: string } | { ok: false; error: string };
 
@@ -86,6 +87,13 @@ export async function startDuel(input: { opponent: string; team: string[] }): Pr
       return d;
     });
     await Promise.all([checkAchievements(me.id), defenderId ? checkAchievements(defenderId) : null]);
+    if (defenderId && result !== "DRAW") {
+      const people = await prisma.user.findMany({ where: { id: { in: [me.id, defenderId] } }, select: { id: true, name: true, discordId: true } });
+      const attacker = people.find((p) => p.id === me.id)!;
+      const defender = people.find((p) => p.id === defenderId)!;
+      const [winner, loser] = result === "ATTACKER" ? [attacker, defender] : [defender, attacker];
+      await announceDuel(winner, loser, log.score, duel.id).catch(() => {});
+    }
     revalidatePath("/duels");
     return { ok: true, id: duel.id };
   } catch (e) {

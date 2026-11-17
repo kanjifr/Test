@@ -10,6 +10,7 @@ import {
   TRADE_EXPIRY_MS,
 } from "@/lib/trades";
 import { checkAchievements } from "@/lib/achievements-server";
+import { announceTrade } from "@/lib/announce";
 
 type Line = { cardId: string; qty: number };
 export type ProposeInput = { toId: string; offer: Line[]; request: Line[]; parentId?: string };
@@ -147,7 +148,22 @@ export async function acceptTrade(fd: FormData): Promise<void> {
       }
       fromId = trade.fromId;
     });
-    if (fromId) await Promise.all([checkAchievements(me.id), checkAchievements(fromId)]);
+    if (fromId) {
+      await Promise.all([checkAchievements(me.id), checkAchievements(fromId)]);
+      const t = await prisma.trade.findUnique({
+        where: { id },
+        include: {
+          from: { select: { name: true, discordId: true } },
+          to: { select: { name: true, discordId: true } },
+          items: { include: { card: { select: { name: true } } } },
+        },
+      });
+      if (t) {
+        const list = (side: "OFFER" | "REQUEST") =>
+          t.items.filter((i) => i.side === side).map((i) => `${i.quantity > 1 ? `${i.quantity}× ` : ""}**${i.card.name}**`);
+        await announceTrade(t.from, t.to, list("OFFER"), list("REQUEST")).catch(() => {});
+      }
+    }
   } catch (e) {
     if (!(e instanceof TradeError)) throw e;
     // L'échange n'est plus réalisable : on le marque comme échoué

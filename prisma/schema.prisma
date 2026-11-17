@@ -264,3 +264,10 @@ model Duel {
   @@index([attackerId, createdAt])
   @@index([defenderId, createdAt])
 }
+
+/** Réglages modifiables depuis le panel admin (clé → valeur). */
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
