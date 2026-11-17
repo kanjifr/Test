@@ -14,7 +14,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
 - 🛠️ **Panel admin** : créer ou modifier des cartes (avatar Discord ou image envoyée), les désactiver, offrir un booster
-- 📥 **Import en masse** de cartes depuis un tableau CSV (Excel, Google Sheets), avec vérification ligne par ligne avant import
+- 📥 **Import en masse** de cartes depuis un tableau CSV (Excel, Google Sheets), avec vérification ligne par ligne avant import. Modèle Excel prêt à remplir : `modeles/modele-cartes.xlsx`
 - 💾 **Sauvegardes** : téléchargement, envoi automatique quotidien dans un salon Discord privé, restauration
 - 👑 **Rôles** gérés depuis le panel par le propriétaire, avec un **journal des actions**
 
