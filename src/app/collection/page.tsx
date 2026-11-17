@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/session";
 import { toCardView } from "@/lib/cards";
 import { CardGrid, type GridItem } from "@/components/CardGrid";
 import { RARITIES, RARITY_ORDER } from "@/lib/game";
+import { badgeView } from "@/lib/achievements";
+import { NameWithBadge } from "@/components/Badge";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,7 @@ export default async function CollectionPage({
   const ownerId = u || me.id;
 
   const [owner, cards, owned] = await Promise.all([
-    prisma.user.findUnique({ where: { id: ownerId }, select: { id: true, name: true } }),
+    prisma.user.findUnique({ where: { id: ownerId }, select: { id: true, name: true, featuredBadge: true } }),
     prisma.card.findMany({
       where: { active: true },
       orderBy: { number: "asc" },
@@ -36,7 +38,15 @@ export default async function CollectionPage({
   return (
     <section>
       <div className="page-head">
-        <h1>{isMe ? "Ma collection" : `Collection de ${owner.name}`}</h1>
+        <h1>
+          {isMe ? (
+            "Ma collection"
+          ) : (
+            <>
+              Collection de <NameWithBadge name={owner.name} badge={badgeView(owner.featuredBadge)} />
+            </>
+          )}
+        </h1>
         {!isMe && (
           <div className="row">
             <Link href={`/echanges/nouveau?avec=${owner.id}`} className="btn">

@@ -9,6 +9,7 @@ import {
   MAX_PENDING_SENT,
   TRADE_EXPIRY_MS,
 } from "@/lib/trades";
+import { checkAchievements } from "@/lib/achievements-server";
 
 type Line = { cardId: string; qty: number };
 export type ProposeInput = { toId: string; offer: Line[]; request: Line[]; parentId?: string };
@@ -126,6 +127,7 @@ export async function acceptTrade(fd: FormData): Promise<void> {
   const me = await requireUser();
   const id = String(fd.get("id") ?? "");
   await expireTrades();
+  let fromId = null as string | null;
   try {
     await prisma.$transaction(async (tx) => {
       const claimed = await tx.trade.updateMany({
@@ -142,7 +144,9 @@ export async function acceptTrade(fd: FormData): Promise<void> {
         if (it.side === "OFFER") await move(tx, trade.fromId, trade.toId, it.cardId, it.quantity);
         else await move(tx, trade.toId, trade.fromId, it.cardId, it.quantity);
       }
+      fromId = trade.fromId;
     });
+    if (fromId) await Promise.all([checkAchievements(me.id), checkAchievements(fromId)]);
   } catch (e) {
     if (!(e instanceof TradeError)) throw e;
     // L'échange n'est plus réalisable : on le marque comme échoué

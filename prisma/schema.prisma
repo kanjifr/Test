@@ -37,6 +37,8 @@ model User {
   consent       Boolean   @default(false)
   lastPackAt    DateTime?
   packsOpened   Int       @default(0)
+  // Badge choisi pour être affiché à côté du pseudo
+  featuredBadge String?
   createdAt     DateTime  @default(now())
 
   accounts   Account[]
@@ -47,6 +49,7 @@ model User {
 
   tradesSent     Trade[] @relation("TradeFrom")
   tradesReceived Trade[] @relation("TradeTo")
+  achievements   UserAchievement[]
 }
 
 model Account {
@@ -183,4 +186,18 @@ model TradeItem {
   card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@unique([tradeId, side, cardId])
+}
+
+model UserAchievement {
+  userId        String
+  // Identifiant du succès, défini dans src/lib/achievements.ts
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  // false tant que la notification n'a pas été affichée
+  seen          Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@index([userId, seen])
 }

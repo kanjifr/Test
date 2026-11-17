@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Shippori_Mincho_B1, Zen_Kaku_Gothic_New } from "next/font/google";
 import { Nav } from "@/components/Nav";
+import { AchievementNotifier } from "@/components/AchievementNotifier";
 import { SITE_NAME } from "@/lib/game";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="sky" aria-hidden />
         <Nav />
         <main className="main">{children}</main>
+        <AchievementNotifier />
       </body>
     </html>
   );

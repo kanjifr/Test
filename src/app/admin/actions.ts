@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/session";
 import { ELEMENT_KEYS, RARITY_ORDER } from "@/lib/game";
 import { deleteUpload, saveUpload } from "@/lib/uploads";
 import { DEMO_CARDS } from "@/lib/demo";
+import { checkAchievements } from "@/lib/achievements-server";
 
 function str(fd: FormData, k: string, max: number) {
   return String(fd.get(k) ?? "").trim().slice(0, max);
@@ -69,6 +70,7 @@ export async function saveCard(fd: FormData) {
   };
   if (existing) await prisma.card.update({ where: { id: existing.id }, data });
   else await prisma.card.create({ data });
+  if (subjectId) await checkAchievements(subjectId);
 
   revalidatePath("/", "layout");
   redirect("/admin?ok=1");

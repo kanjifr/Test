@@ -5,6 +5,7 @@ import type { Provider } from "next-auth/providers";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { isAdminDiscordId } from "@/lib/admin";
+import { checkAchievements } from "@/lib/achievements-server";
 
 declare module "next-auth" {
   interface Session {
@@ -98,8 +99,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
-    // Met à jour pseudo + avatar à chaque connexion Discord
-    async signIn({ account, profile }) {
+    // Met à jour pseudo + avatar à chaque connexion Discord, et rattrape les succès
+    async signIn({ user, account, profile }) {
+      if (user?.id) await checkAchievements(user.id).catch(() => {});
       if (account?.provider !== "discord" || !profile) return;
       const p = profile as unknown as DiscordProfile;
       await prisma.user.updateMany({

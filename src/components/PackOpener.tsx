@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { openPack, type OpenResult } from "@/app/actions";
 import { CardBack, GameCard } from "@/components/GameCard";
 import { RARITIES } from "@/lib/game";
+import { holdAchievementToasts } from "@/components/AchievementToasts";
 
 type Pulled = Extract<OpenResult, { ok: true }>["cards"][number];
 type Phase = "idle" | "tearing" | "dealt";
@@ -36,6 +38,9 @@ export function PackOpener({
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+
+  useEffect(() => () => holdAchievementToasts(false), []);
 
   useEffect(() => {
     setNow(Date.now());
@@ -46,11 +51,24 @@ export function PackOpener({
   const ready = now >= nextAt;
   const allFlipped = flipped.length > 0 && flipped.every(Boolean);
 
+  // Les succès s'affichent seulement après la révélation, pour ne rien gâcher
+  useEffect(() => {
+    if (allFlipped) {
+      const t = setTimeout(() => {
+        holdAchievementToasts(false);
+        router.refresh();
+      }, 900);
+      return () => clearTimeout(t);
+    }
+  }, [allFlipped, router]);
+
   function open() {
     setError(null);
+    holdAchievementToasts(true);
     startTransition(async () => {
       const res = await openPack();
       if (!res.ok) {
+        holdAchievementToasts(false);
         setError(res.error);
         if (res.nextAt) setNextAt(res.nextAt);
         return;

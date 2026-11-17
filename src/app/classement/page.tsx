@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
+import { badgeView } from "@/lib/achievements";
+import { NameWithBadge } from "@/components/Badge";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,8 @@ export default async function Leaderboard() {
         name: true,
         image: true,
         packsOpened: true,
-        _count: { select: { cards: { where: { card: { active: true } } } } },
+        featuredBadge: true,
+        _count: { select: { cards: { where: { card: { active: true } } }, achievements: true } },
       },
     }),
   ]);
@@ -37,9 +40,11 @@ export default async function Leaderboard() {
               <span className="avatar-fallback">{u.name?.[0] ?? "?"}</span>
             )}
             <Link href={`/collection?u=${u.id}`} className="board-name">
-              {u.name}
+              <NameWithBadge name={u.name} badge={badgeView(u.featuredBadge)} />
             </Link>
-            <span className="muted">{u.packsOpened} boosters</span>
+            <span className="muted board-meta">
+              {u.packsOpened} boosters · {u._count.achievements} succès
+            </span>
             <b>
               {u.unique}/{total}
             </b>

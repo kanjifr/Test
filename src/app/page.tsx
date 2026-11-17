@@ -4,6 +4,7 @@ import { PackOpener } from "@/components/PackOpener";
 import { CardBack, GameCard } from "@/components/GameCard";
 import { PACK_COOLDOWN_MS, PACK_SIZE, RARITIES, SITE_NAME } from "@/lib/game";
 import { toCardView } from "@/lib/cards";
+import { checkAchievements } from "@/lib/achievements-server";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,7 @@ export default async function Home({
     );
   }
 
+  await checkAchievements(session.user.id);
   const [user, recent] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true } }),
     prisma.pull.findMany({

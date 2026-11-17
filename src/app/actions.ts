@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { drawPack, PACK_COOLDOWN_MS, PACK_SIZE, type CardView } from "@/lib/game";
 import { toCardView } from "@/lib/cards";
+import { checkAchievements } from "@/lib/achievements-server";
+import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
 
 const rand = () => randomInt(0, 1_000_000) / 1_000_000;
 
@@ -56,6 +58,9 @@ export async function openPack(): Promise<OpenResult> {
     return out;
   });
 
+  const lucky = drawn.filter((c) => c.rarity === "EPIQUE" || c.rarity === "LEGENDAIRE").length >= 2;
+  await checkAchievements(user.id, { luckyPack: lucky });
+
   revalidatePath("/collection");
   return { ok: true, cards: result, nextAt: now.getTime() + PACK_COOLDOWN_MS };
 }
@@ -64,5 +69,29 @@ export async function setConsent(formData: FormData) {
   const user = await requireUser();
   const consent = formData.get("consent") === "on";
   await prisma.user.update({ where: { id: user.id }, data: { consent } });
-  revalidatePath("/profil");
+  await checkAchievements(user.id);
+  revalidatePath("/", "layout");
+}
+
+export async function markAchievementsSeen(ids: string[]) {
+  const user = await requireUser();
+  if (!Array.isArray(ids) || ids.length === 0) return;
+  await prisma.userAchievement.updateMany({
+    where: { userId: user.id, achievementId: { in: ids.map(String).slice(0, 50) } },
+    data: { seen: true },
+  });
+}
+
+export async function setFeaturedBadge(formData: FormData) {
+  const user = await requireUser();
+  const id = String(formData.get("badge") ?? "");
+  if (id && !ACHIEVEMENT_BY_ID.has(id)) return;
+  if (id) {
+    const owned = await prisma.userAchievement.findUnique({
+      where: { userId_achievementId: { userId: user.id, achievementId: id } },
+    });
+    if (!owned) return;
+  }
+  await prisma.user.update({ where: { id: user.id }, data: { featuredBadge: id || null } });
+  revalidatePath("/", "layout");
 }

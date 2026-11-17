@@ -8,6 +8,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🔥 **8 éléments** : Eau, Flamme, Foudre, Vent, Pierre, Brume, Fleur, Ombre
 - 📚 **Collection** avec progression, doublons et zoom sur les cartes
 - ⇄ **Échanges** entre membres : proposition, contre-proposition, acceptation ou refus. Seuls les doublons sont échangeables, une proposition expire après 48 h et chacun peut avoir 5 propositions en attente au maximum.
+- 🏅 **15 succès** (Bronze, Argent, Or) avec une notification quand on en débloque un, une progression visible sur le profil et un badge à afficher à côté de son pseudo
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres
 - 🙋 **Accord des membres** : chacun choisit dans son profil s'il accepte d'apparaître sur une carte
 - 🛠️ **Panel admin** : créer ou modifier des cartes (avatar Discord ou image envoyée), les désactiver, offrir un booster
@@ -35,7 +36,7 @@ Copie `.env.example` en `.env` et remplis :
 | `NEXT_PUBLIC_SITE_NAME` | Nom affiché du site |
 | `PACK_SIZE` / `PACK_COOLDOWN_HOURS` | Cartes par booster / délai entre deux boosters |
 
-Les taux de drop se règlent dans `src/lib/game.ts` (`RARITIES`).
+Les taux de drop se règlent dans `src/lib/game.ts` (`RARITIES`), et les succès dans `src/lib/achievements.ts`.
 
 ## 3. Lancer en local
 
