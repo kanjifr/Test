@@ -630,3 +630,4 @@ label.inline select { width: auto; }
 .round-summary li { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; font-size: 0.95rem; }
 .round-summary .won { color: var(--gold); font-weight: 800; }
 .announce-form { display: flex; flex-direction: column; gap: 0.8rem; margin: 0.8rem 0; align-items: flex-start; }
+.brand-logo { width: 40px; height: 40px; display: block; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5)); }

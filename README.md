@@ -106,6 +106,20 @@ Les migrations de la base sont appliquées automatiquement à chaque démarrage.
 - **Restaurer** : remplace toutes les données par celles du fichier (réservé au propriétaire). Une copie de l'état actuel est gardée dans `uploads/backups/`.
 - Les **images et vidéos** sont dans le volume : active aussi les sauvegardes de volumes dans Railway.
 
+## Logo
+
+Les fichiers du logo sont dans `public/logo/` (et donc en ligne sur `/logo/...`) :
+
+| Fichier | Usage |
+|---|---|
+| `kizuna-embleme.svg` / `-512.png` / `-1024.png` | Emblème seul, fond transparent |
+| `kizuna-logo-clair.svg` / `.png` | Logo complet pour fond sombre |
+| `kizuna-logo-sombre.svg` / `.png` | Logo complet pour fond clair |
+| `kizuna-icone-simple.svg` | Version simplifiée pour les petites tailles |
+| `kizuna-avatar-discord.png` | Image de l'application Discord et des webhooks |
+
+L'icône de l'onglet (`src/app/icon.svg`), l'icône mobile (`apple-icon.png`) et l'aperçu des liens partagés (`opengraph-image.png`) sont générés à partir du même dessin. Police : Shippori Mincho B1 (licence libre SIL OFL).
+
 ## Structure
 
 ```

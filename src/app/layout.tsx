@@ -17,6 +17,8 @@ const body = Zen_Kaku_Gothic_New({
 });
 
 export const metadata: Metadata = {
+  // Adresse publique : nécessaire pour l'aperçu des liens partagés sur Discord
+  metadataBase: process.env.AUTH_URL ? new URL(process.env.AUTH_URL) : undefined,
   title: `${SITE_NAME} · Cartes de la communauté`,
   description: "Ouvre des boosters et collectionne les cartes des membres de la communauté.",
 };

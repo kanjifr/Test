@@ -18,6 +18,7 @@ ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 UPLOAD_DIR=/app/uploads
 RUN npm install -g prisma@6.19.3
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
 COPY --from=build /app/prisma ./prisma
 RUN mkdir -p /app/uploads
 EXPOSE 3000

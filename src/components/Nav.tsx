@@ -10,7 +10,8 @@ export async function Nav() {
   return (
     <header className="nav">
       <Link href="/" className="brand">
-        <span className="brand-kanji">絆</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="brand-logo" src="/logo/kizuna-embleme.svg" alt="" width={40} height={40} />
         <span>{SITE_NAME}</span>
       </Link>
       {user && (
