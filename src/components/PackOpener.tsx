@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { openPack, type OpenResult } from "@/app/actions";
 import { CardBack, GameCard } from "@/components/GameCard";
-import { RARITIES } from "@/lib/game";
+import { RARITIES, RARITY_ORDER } from "@/lib/game";
 import { holdAchievementToasts } from "@/components/AchievementToasts";
 
 type Pulled = Extract<OpenResult, { ok: true }>["cards"][number];
@@ -100,6 +100,7 @@ export function PackOpener({
   const [mythicOn, setMythicOn] = useState(mythicAvailable);
   const [cinema, setCinema] = useState<Pulled | null>(null);
   const played = useRef(new Set<number>());
+  const openerRef = useRef<HTMLDivElement>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -135,6 +136,13 @@ export function PackOpener({
       setCinema(c);
     }
   }, [phase, idx, cards]);
+
+  // La révélation est plus courte que la page du booster : on remonte à son début si besoin
+  useEffect(() => {
+    if (phase !== "stack" && phase !== "done") return;
+    const el = openerRef.current;
+    if (el && el.getBoundingClientRect().top < 0) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [phase]);
 
   // Les succès s'affichent seulement après la révélation, pour ne rien gâcher
   useEffect(() => {
@@ -205,7 +213,7 @@ export function PackOpener({
   const left = Math.max(1, pityHard - pity);
 
   return (
-    <div className="opener">
+    <div className="opener" ref={openerRef}>
       {flash && <div className="flash" style={{ "--fc": flash } as React.CSSProperties} />}
       {cinema && <Cinematic card={cinema} onClose={() => setCinema(null)} />}
 
@@ -304,10 +312,19 @@ export function PackOpener({
       )}
 
       {phase === "stack" && cards[idx] && (
-        <div className="stack-stage">
+        <div className={`stack-stage burst-${cards[idx].rarity.toLowerCase()} ${cinema ? "is-cinema" : ""}`}>
           <p className="stack-count">
             Carte {idx + 1} / {cards.length}
           </p>
+          {/* Étoiles de rareté, et grand titre lumineux à partir d'Épique */}
+          <div className="rarity-callout" key={`call-${idx}`}>
+            {RARITY_ORDER.indexOf(cards[idx].rarity) >= 2 && (
+              <p className="rarity-title">{RARITIES[cards[idx].rarity].label} !</p>
+            )}
+            <p className="rarity-stars" role="img" aria-label={`${RARITY_ORDER.indexOf(cards[idx].rarity) + 1} étoile(s)`}>
+              {"★".repeat(RARITY_ORDER.indexOf(cards[idx].rarity) + 1)}
+            </p>
+          </div>
           <div className="stack">
             {/* Dos des cartes restantes, légèrement décalés pour donner l'effet de pile */}
             {cards.slice(idx + 1).map((_, j, rest) => {
@@ -346,6 +363,7 @@ export function PackOpener({
 
       {phase === "done" && (
         <>
+          <h2 className="deal-title">Ton tirage</h2>
           <div className="deal">
             {cards.map((c, i) => (
               <div key={i} className={`deal-card glow-${c.rarity.toLowerCase()}`} style={{ animationDelay: `${i * 90}ms` }}>
