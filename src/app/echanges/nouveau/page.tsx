@@ -33,10 +33,14 @@ export default async function NewTrade({
   const [mine, theirs] = await Promise.all([tradableCards(me.id), tradableCards(other.id)]);
   const pick = (side: "OFFER" | "REQUEST", allowed: Set<string>) =>
     Object.fromEntries(
-      (parent?.items ?? []).filter((i) => i.side === side && allowed.has(i.cardId)).map((i) => [i.cardId, i.quantity]),
+      (parent?.items ?? [])
+        .map((i) => ({ ...i, key: `${i.cardId}${i.shiny ? ":s" : ""}` }))
+        .filter((i) => i.side === side && allowed.has(i.key))
+        .map((i) => [i.key, i.quantity]),
     );
-  const mineIds = new Set(mine.map((m) => m.card.id));
-  const theirIds = new Set(theirs.map((t) => t.card.id));
+  const keyOf = (t: { card: { id: string }; shiny: boolean }) => `${t.card.id}${t.shiny ? ":s" : ""}`;
+  const mineIds = new Set(mine.map(keyOf));
+  const theirIds = new Set(theirs.map(keyOf));
 
   return (
     <section>
@@ -47,8 +51,8 @@ export default async function NewTrade({
       <TradeBuilder
         toId={other.id}
         toName={other.name ?? "ce membre"}
-        mine={mine.map((m) => ({ card: toCardView(m.card), available: m.available }))}
-        theirs={theirs.map((t) => ({ card: toCardView(t.card), available: t.available }))}
+        mine={mine.map((m) => ({ card: { ...toCardView(m.card), shiny: m.shiny }, available: m.available, total: m.total, shiny: m.shiny }))}
+        theirs={theirs.map((t) => ({ card: { ...toCardView(t.card), shiny: t.shiny }, available: t.available, total: t.total, shiny: t.shiny }))}
         parentId={parent?.id}
         // Ce que l'autre me demandait = ce que je donne ; ce qu'il m'offrait = ce que je reçois
         initialOffer={pick("REQUEST", mineIds)}

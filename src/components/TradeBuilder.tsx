@@ -6,7 +6,9 @@ import { proposeTrade } from "@/app/echanges/actions";
 import { GameCard } from "@/components/GameCard";
 import type { CardView } from "@/lib/game";
 
-export type Tradable = { card: CardView; available: number };
+export type Tradable = { card: CardView; available: number; total: number; shiny: boolean };
+/** Clé d'un exemplaire proposé : la carte, et « :s » pour la version brillante */
+const keyOf = (t: { card: { id: string }; shiny: boolean }) => `${t.card.id}${t.shiny ? ":s" : ""}`;
 type Picks = Record<string, number>;
 
 function Side({
@@ -42,27 +44,29 @@ function Side({
         <p className="muted">{empty}</p>
       ) : (
         <div className="trade-pick-grid">
-          {items.map(({ card, available }) => {
-            const n = picks[card.id] ?? 0;
+          {items.map((item) => {
+            const { card, available, total, shiny } = item;
+            const k = keyOf(item);
+            const n = picks[k] ?? 0;
             return (
-              <div key={card.id} className={`trade-pick ${n > 0 ? "picked" : ""}`}>
-                <button type="button" className="trade-pick-card" onClick={() => change(card.id, n > 0 ? -n : 1, available)}>
+              <div key={k} className={`trade-pick ${n > 0 ? "picked" : ""}`}>
+                <button type="button" className="trade-pick-card" onClick={() => change(k, n > 0 ? -n : 1, available)}>
                   <GameCard card={card} size="xs" />
                 </button>
                 <div className="stepper">
-                  <button type="button" onClick={() => change(card.id, -1, available)} disabled={n === 0} aria-label="Retirer">
+                  <button type="button" onClick={() => change(k, -1, available)} disabled={n === 0} aria-label="Retirer">
                     −
                   </button>
                   <span>
                     {n}/{available}
                   </span>
-                  <button type="button" onClick={() => change(card.id, 1, available)} disabled={n >= available} aria-label="Ajouter">
+                  <button type="button" onClick={() => change(k, 1, available)} disabled={n >= available} aria-label="Ajouter">
                     +
                   </button>
                 </div>
-                {mine && n > 0 && n >= available && (
-                  <span className="last-copy" title="Après l'échange, cette carte ne sera plus dans ta collection">
-                    ⚠ {available > 1 ? "Tous tes exemplaires" : "Ton seul exemplaire"}
+                {mine && n > 0 && n >= available && (shiny || available === total) && (
+                  <span className="last-copy" title="Après l'échange, tu n'auras plus cette carte (ou cette version brillante)">
+                    ⚠ {shiny ? (available > 1 ? "Toutes tes brillantes" : "Ta seule brillante") : available > 1 ? "Tous tes exemplaires" : "Ton seul exemplaire"}
                   </span>
                 )}
               </div>
@@ -96,7 +100,8 @@ export function TradeBuilder({
   const [request, setRequest] = useState<Picks>(initialRequest);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const toLines = (p: Picks) => Object.entries(p).map(([cardId, qty]) => ({ cardId, qty }));
+  const toLines = (p: Picks) =>
+    Object.entries(p).map(([key, qty]) => ({ cardId: key.replace(/:s$/, ""), qty, shiny: key.endsWith(":s") }));
   const canSend = Object.keys(offer).length > 0 && Object.keys(request).length > 0;
 
   function submit() {

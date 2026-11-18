@@ -161,8 +161,9 @@ export function PackOpener({
     if (phase !== "stack" || cinema) return;
     const r = cards[idx]?.rarity;
     if (r) playReveal(r);
-    if (r === "LEGENDAIRE" || r === "EPIQUE" || r === "MYTHIQUE") {
-      setFlash(RARITIES[r].color);
+    if (cards[idx]?.shiny) setTimeout(() => play("shiny"), 250);
+    if (r === "LEGENDAIRE" || r === "EPIQUE" || r === "MYTHIQUE" || cards[idx]?.shiny) {
+      setFlash(r && r !== "COMMUNE" && r !== "RARE" ? RARITIES[r].color : "#ffffff");
       const t = setTimeout(() => setFlash(null), 900);
       return () => clearTimeout(t);
     }
@@ -315,12 +316,13 @@ export function PackOpener({
       )}
 
       {phase === "stack" && cards[idx] && (
-        <div className={`stack-stage burst-${cards[idx].rarity.toLowerCase()} ${cinema ? "is-cinema" : ""}`}>
+        <div className={`stack-stage burst-${cards[idx].rarity.toLowerCase()} ${cards[idx].shiny ? "burst-shiny" : ""} ${cinema ? "is-cinema" : ""}`}>
           <p className="stack-count">
             Carte {idx + 1} / {cards.length}
           </p>
           {/* Étoiles de rareté, et grand titre lumineux à partir d'Épique */}
           <div className="rarity-callout" key={`call-${idx}`}>
+            {cards[idx].shiny && <p className="shiny-title">✦ Brillante ! ✦</p>}
             {RARITY_ORDER.indexOf(cards[idx].rarity) >= 2 && (
               <p className="rarity-title">{RARITIES[cards[idx].rarity].label} !</p>
             )}

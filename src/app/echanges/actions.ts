@@ -11,8 +11,9 @@ import {
 } from "@/lib/trades";
 import { checkAchievements } from "@/lib/achievements-server";
 import { announceTrade } from "@/lib/announce";
+import { giveCopies, takeCopies } from "@/lib/copies";
 
-type Line = { cardId: string; qty: number };
+type Line = { cardId: string; qty: number; shiny?: boolean };
 export type ProposeInput = { toId: string; offer: Line[]; request: Line[]; parentId?: string };
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -24,11 +25,13 @@ function clean(lines: unknown): Line[] {
   for (const l of lines) {
     const cardId = String((l as Line)?.cardId ?? "");
     const qty = Math.floor(Number((l as Line)?.qty));
+    const shiny = (l as Line)?.shiny === true;
     if (!cardId || !Number.isFinite(qty) || qty < 1 || qty > 20) throw new TradeError("Proposition invalide.");
-    map.set(cardId, (map.get(cardId) ?? 0) + qty);
+    const key = `${cardId}${shiny ? ":s" : ""}`;
+    map.set(key, (map.get(key) ?? 0) + qty);
   }
   if (map.size > MAX_ITEMS_PER_SIDE) throw new TradeError(`${MAX_ITEMS_PER_SIDE} cartes différentes maximum par côté.`);
-  return [...map].map(([cardId, qty]) => ({ cardId, qty }));
+  return [...map].map(([key, qty]) => ({ cardId: key.replace(/:s$/, ""), qty, shiny: key.endsWith(":s") }));
 }
 
 /** Vérifie que `userId` possède assez d'exemplaires de chaque carte. */
@@ -37,9 +40,11 @@ async function checkOwned(userId: string, lines: Line[], who: "toi" | "lui") {
   const owned = await prisma.userCard.findMany({
     where: { userId, cardId: { in: lines.map((l) => l.cardId) }, card: { active: true } },
   });
-  const counts = new Map(owned.map((o) => [o.cardId, o.count]));
+  const rows = new Map(owned.map((o) => [o.cardId, o]));
   for (const l of lines) {
-    if ((counts.get(l.cardId) ?? 0) < l.qty) {
+    const row = rows.get(l.cardId);
+    const have = !row ? 0 : l.shiny ? row.shiny : row.count - row.shiny;
+    if (have < l.qty) {
       throw new TradeError(
         who === "toi"
           ? "Tu ne possèdes pas assez d'exemplaires de l'une des cartes proposées."
@@ -89,8 +94,8 @@ export async function proposeTrade(input: ProposeInput): Promise<ActionResult> {
           expiresAt: new Date(Date.now() + TRADE_EXPIRY_MS),
           items: {
             create: [
-              ...offer.map((l) => ({ cardId: l.cardId, quantity: l.qty, side: "OFFER" as const })),
-              ...request.map((l) => ({ cardId: l.cardId, quantity: l.qty, side: "REQUEST" as const })),
+              ...offer.map((l) => ({ cardId: l.cardId, quantity: l.qty, shiny: !!l.shiny, side: "OFFER" as const })),
+              ...request.map((l) => ({ cardId: l.cardId, quantity: l.qty, shiny: !!l.shiny, side: "REQUEST" as const })),
             ],
           },
         },
@@ -104,25 +109,19 @@ export async function proposeTrade(input: ProposeInput): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** Déplace `qty` exemplaires de `cardId` de `from` vers `to` (la carte quitte sa collection s'il n'en reste plus). */
+/** Déplace `qty` exemplaires (normaux ou brillants) de `from` vers `to`. */
 async function move(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
   fromId: string,
   toId: string,
   cardId: string,
   qty: number,
+  shiny: boolean,
 ) {
-  const taken = await tx.userCard.updateMany({
-    where: { userId: fromId, cardId, count: { gte: qty } },
-    data: { count: { decrement: qty } },
-  });
-  if (taken.count === 0) throw new TradeError("Une des cartes n'est plus disponible : l'échange a été annulé.");
-  await tx.userCard.deleteMany({ where: { userId: fromId, cardId, count: { lte: 0 } } });
-  await tx.userCard.upsert({
-    where: { userId_cardId: { userId: toId, cardId } },
-    create: { userId: toId, cardId, count: qty },
-    update: { count: { increment: qty } },
-  });
+  if (!(await takeCopies(tx, fromId, cardId, qty, shiny))) {
+    throw new TradeError("Une des cartes n'est plus disponible : l'échange a été annulé.");
+  }
+  await giveCopies(tx, toId, cardId, qty, shiny);
 }
 
 export async function acceptTrade(fd: FormData): Promise<void> {
@@ -143,8 +142,8 @@ export async function acceptTrade(fd: FormData): Promise<void> {
       });
       for (const it of trade.items) {
         if (!it.card.active) throw new TradeError("Une des cartes a été retirée du jeu.");
-        if (it.side === "OFFER") await move(tx, trade.fromId, trade.toId, it.cardId, it.quantity);
-        else await move(tx, trade.toId, trade.fromId, it.cardId, it.quantity);
+        if (it.side === "OFFER") await move(tx, trade.fromId, trade.toId, it.cardId, it.quantity, it.shiny);
+        else await move(tx, trade.toId, trade.fromId, it.cardId, it.quantity, it.shiny);
       }
       fromId = trade.fromId;
     });
@@ -160,7 +159,7 @@ export async function acceptTrade(fd: FormData): Promise<void> {
       });
       if (t) {
         const list = (side: "OFFER" | "REQUEST") =>
-          t.items.filter((i) => i.side === side).map((i) => `${i.quantity > 1 ? `${i.quantity}× ` : ""}**${i.card.name}**`);
+          t.items.filter((i) => i.side === side).map((i) => `${i.quantity > 1 ? `${i.quantity}× ` : ""}**${i.card.name}**${i.shiny ? " ✦" : ""}`);
         await announceTrade(t.from, t.to, list("OFFER"), list("REQUEST")).catch(() => {});
       }
     }

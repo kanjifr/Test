@@ -34,5 +34,9 @@ export async function tradableCards(userId: string) {
     include: { card: { include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } } },
     orderBy: { card: { number: "asc" } },
   });
-  return owned.map((o) => ({ card: o.card, available: o.count }));
+  // Les exemplaires normaux et brillants sont proposés séparément
+  return owned.flatMap((o) => [
+    ...(o.count - o.shiny > 0 ? [{ card: o.card, available: o.count - o.shiny, total: o.count, shiny: false }] : []),
+    ...(o.shiny > 0 ? [{ card: o.card, available: o.shiny, total: o.count, shiny: true }] : []),
+  ]);
 }

@@ -78,6 +78,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
         <div className="panel stat"><b>{user.cards.length}<small>/{totalCards}</small></b><span>cartes ({pct} %)</span></div>
         <div className="panel stat"><b>{count("MYTHIQUE")}</b><span>Mythique{count("MYTHIQUE") > 1 ? "s" : ""}</span></div>
         <div className="panel stat"><b>{count("LEGENDAIRE")}</b><span>Légendaire{count("LEGENDAIRE") > 1 ? "s" : ""}</span></div>
+        <div className="panel stat shiny-stat"><b>{user.cards.filter((o) => o.shiny > 0).length}</b><span>✦ brillante{user.cards.filter((o) => o.shiny > 0).length > 1 ? "s" : ""}</span></div>
         <div className="panel stat"><b>{user.packsOpened}</b><span>boosters ouverts</span></div>
         <div className="panel stat"><b>{user.duelWins}<small> V · {user.duelLosses} D</small></b><span>en duel</span></div>
         <div className="panel stat"><b>{tradesDone}</b><span>échange{tradesDone > 1 ? "s" : ""}</span></div>
@@ -91,7 +92,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           <div className="showcase">
             {showcase.map((o) => (
               <Link key={o.cardId} href={`/carte/${o.cardId}`} className="showcase-item">
-                <GameCard card={toCardView(o.card)} size="md" count={o.count} />
+                <GameCard card={{ ...toCardView(o.card), shiny: o.shiny > 0 }} size="md" count={o.count} />
               </Link>
             ))}
           </div>

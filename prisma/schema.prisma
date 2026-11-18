@@ -149,7 +149,10 @@ model Card {
 model UserCard {
   userId  String
   cardId  String
+  // Nombre total d'exemplaires, versions brillantes comprises
   count   Int      @default(1)
+  // Dont versions brillantes (shiny)
+  shiny   Int      @default(0)
   firstAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -163,6 +166,7 @@ model Pull {
   userId    String
   cardId    String
   isNew     Boolean
+  shiny     Boolean  @default(false)
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -215,11 +219,13 @@ model TradeItem {
   cardId   String
   side     TradeSide
   quantity Int       @default(1)
+  // Exemplaires brillants (sinon exemplaires normaux)
+  shiny    Boolean   @default(false)
 
   trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
   card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
-  @@unique([tradeId, side, cardId])
+  @@unique([tradeId, side, cardId, shiny])
 }
 
 model UserAchievement {

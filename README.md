@@ -5,6 +5,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🔐 **Connexion Discord**, avec accès limité aux membres de ton serveur si tu le souhaites
 - 🎴 **Boosters** de 5 cartes toutes les 4 h, avec une animation d'ouverture et de retournement des cartes
 - ✨ **5 raretés** : Commune 64 %, Rare 25 %, Épique 9 %, Légendaire 2 % par carte (la dernière carte est toujours Rare ou mieux), et **Mythique** via le système de pity
+- 🌈 **Cartes brillantes** : chaque carte tirée a 1 chance sur 50 (`SHINY_CHANCE`) d'être brillante (cadre arc-en-ciel, paillettes) ; jamais recyclées, échangeables à part
 - ✦ **Pity Mythique** : 1,5 % par booster, chance en hausse à partir du 46e booster sans Mythique, garantie au 60e. Jauge visible sur la page Booster. En moyenne, une Mythique arrive en 35 boosters.
 - 🎬 **Vidéo d'obtention** pour les cartes Mythiques (MP4/WEBM, 40 Mo max), jouée en plein écran puis en boucle dans la carte
 - 🔥 **8 éléments** : Eau, Flamme, Foudre, Vent, Pierre, Brume, Fleur, Ombre

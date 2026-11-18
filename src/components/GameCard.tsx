@@ -18,7 +18,7 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
     .toUpperCase();
   return (
     <div
-      className={`gcard gcard-${size} rarity-${card.rarity.toLowerCase()} ${card.birthday ? "is-birthday" : ""}`}
+      className={`gcard gcard-${size} rarity-${card.rarity.toLowerCase()} ${card.birthday ? "is-birthday" : ""} ${card.shiny ? "is-shiny" : ""}`}
       style={{ "--rc": r.color, "--ec": el.color } as React.CSSProperties}
     >
       <div className="gcard-inner">
@@ -64,11 +64,17 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
             </span>
           </div>
         </div>
-        {(card.rarity === "EPIQUE" || card.rarity === "LEGENDAIRE" || card.rarity === "MYTHIQUE") && (
+        {(card.rarity === "EPIQUE" || card.rarity === "LEGENDAIRE" || card.rarity === "MYTHIQUE" || card.shiny) && (
           <div className="gcard-holo" />
         )}
+        {card.shiny && <div className="gcard-sparkles" aria-hidden />}
       </div>
       {badge && <span className="gcard-badge">{badge}</span>}
+      {card.shiny && (
+        <span className="shiny-badge" aria-label="Version brillante" title="Version brillante">
+          ✦
+        </span>
+      )}
       {card.birthday && !badge && (
         <span className="gcard-badge birthday-badge" title="C'est son anniversaire aujourd'hui !">
           🎂 ANNIV

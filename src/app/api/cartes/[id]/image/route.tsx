@@ -45,7 +45,9 @@ function imageSource(url: string | null) {
   return null;
 }
 
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+const RAINBOW = "linear-gradient(135deg, #ff4f4f, #ffb02e 18%, #ffe14d 32%, #5be37d 48%, #36c9ff 64%, #8a5cff 80%, #ff5fd2)";
+
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) return new Response("Non connecté", { status: 401 });
   const { id } = await ctx.params;
@@ -55,6 +57,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   });
   if (!card) return new Response("Carte introuvable", { status: 404 });
   const c = toCardView(card);
+  const wantShiny = new URL(req.url).searchParams.get("brillante") === "1";
+  const shiny =
+    wantShiny &&
+    ((await prisma.userCard.findUnique({ where: { userId_cardId: { userId: session.user.id, cardId: card.id } }, select: { shiny: true } }))
+      ?.shiny ?? 0) > 0;
   const r = RARITIES[c.rarity];
   const el = ELEMENTS[c.element];
   const art = imageSource(c.imageUrl);
@@ -62,7 +69,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const number = `#${String(c.number).padStart(3, "0")}`;
 
   // Seuls les caractères affichés sont téléchargés (alphabet complet en majuscules et minuscules pour les étiquettes)
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÉÈÊÀÂÎÏÔÛÙÇéèêàâîïôûùç0123456789 ·«»!#'-";
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÉÈÊÀÂÎÏÔÛÙÇéèêàâîïôûùç0123456789 ·«»!#'-✦";
   const chars = `${c.name}${c.title}${initials}${el.label}${el.kanji}${SITE_NAME}${alphabet}絆`;
   const [display, body] = await Promise.all([googleFont("Mochiy Pop One", 400, chars), googleFont("M PLUS Rounded 1c", 800, chars)]);
   const fonts = [
@@ -80,7 +87,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
           background: "linear-gradient(180deg, #140f3a 0%, #2d1b69 40%, #7a2c86 70%, #e0617d 92%, #ffb38a 100%)", fontFamily: B, color: "#fff",
         }}
       >
-        <div style={{ display: "flex", padding: 14, borderRadius: 44, background: FRAMES[c.rarity], boxShadow: GLOWS[c.rarity] }}>
+        {shiny ? (
+          <div style={{ display: "flex", marginBottom: 18, padding: "8px 26px", borderRadius: 999, background: RAINBOW, fontSize: 28, color: "#fff", textShadow: "0 2px 4px rgba(0,0,0,.5)", boxShadow: "0 0 30px rgba(255,255,255,.6)" }}>
+            BRILLANTE
+          </div>
+        ) : null}
+        <div style={{ display: "flex", padding: 14, borderRadius: 44, background: shiny ? RAINBOW : FRAMES[c.rarity], boxShadow: shiny ? "0 0 60px rgba(255,255,255,.7), 0 0 120px rgba(150,200,255,.5)" : GLOWS[c.rarity] }}>
           <div
             style={{
               width: 480, height: 672, borderRadius: 34, display: "flex", flexDirection: "column", overflow: "hidden",

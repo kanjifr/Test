@@ -29,6 +29,9 @@ export const RARITIES: Record<
 /** Raretés tirées carte par carte (toutes sauf Mythique). */
 export const SLOT_RARITIES = RARITY_ORDER.filter((r) => RARITIES[r].weight > 0);
 
+/** Chance qu'une carte tirée soit une version brillante (shiny), quelle que soit sa rareté. */
+export const SHINY_CHANCE = Math.min(1, Math.max(0, Number(process.env.SHINY_CHANCE ?? 0.02) || 0));
+
 /** Nombre de doublons à recycler pour gagner un booster bonus. */
 export const RECYCLE_COST = clampInt(process.env.RECYCLE_COST, 10, 1, 1000);
 
@@ -74,6 +77,8 @@ export type CardView = {
   videoUrl: string | null;
   /** Le membre représenté fête son anniversaire aujourd'hui */
   birthday?: boolean;
+  /** Version brillante (shiny) */
+  shiny?: boolean;
 };
 
 /** Tirage pondéré d'une rareté. `minRarity` permet de garantir une carte rare+. */

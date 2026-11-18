@@ -35,7 +35,7 @@ export default async function CardPage({
     where: { id },
     include: {
       subject: { select: { id: true, name: true, image: true, consent: true, birthMonth: true, birthDay: true } },
-      owners: { select: { userId: true, count: true } },
+      owners: { select: { userId: true, count: true, shiny: true } },
       anecdotes: {
         where: { OR: [{ status: "APPROVED" }, { status: "PENDING", authorId: me.id }] },
         orderBy: { createdAt: "asc" },
@@ -46,13 +46,16 @@ export default async function CardPage({
   if (!card || (!card.active && !staff)) notFound();
   const view = toCardView(card);
   const copies = card.owners.reduce((s, o) => s + o.count, 0);
-  const mine = card.owners.find((o) => o.userId === me.id)?.count ?? 0;
+  const mineRow = card.owners.find((o) => o.userId === me.id);
+  const mine = mineRow?.count ?? 0;
+  const myShiny = mineRow?.shiny ?? 0;
+  const shinyAround = card.owners.reduce((s, o) => s + o.shiny, 0);
 
   return (
     <section className="card-page">
       <div className="card-page-top">
         <div className="card-page-visual">
-          <GameCard card={view} size="lg" />
+          <GameCard card={{ ...view, shiny: myShiny > 0 }} size="lg" />
         </div>
         <div className="panel card-page-info">
           <p className="muted small-text">Carte #{String(card.number).padStart(3, "0")}</p>
@@ -66,7 +69,10 @@ export default async function CardPage({
           <ul className="card-facts">
             <li><b>{card.attack}</b> ATK · <b>{card.defense}</b> DEF</li>
             <li><b>{copies}</b> exemplaire{copies > 1 ? "s" : ""} en circulation, chez <b>{card.owners.length}</b> membre{card.owners.length > 1 ? "s" : ""}</li>
-            <li>{mine ? <>Tu en as <b>{mine}</b></> : "Tu ne l'as pas encore"}</li>
+            <li>
+              {mine ? <>Tu en as <b>{mine}</b>{myShiny > 0 && <> dont <b>{myShiny}</b> brillante{myShiny > 1 ? "s" : ""} ✦</>}</> : "Tu ne l'as pas encore"}
+            </li>
+            {shinyAround > 0 && <li>✦ <b>{shinyAround}</b> version{shinyAround > 1 ? "s" : ""} brillante{shinyAround > 1 ? "s" : ""} dans la communauté</li>}
             {card.subject?.consent && (
               <li>
                 Carte de <Link href={`/membre/${card.subject.id}`}>{card.subject.name}</Link>
@@ -74,7 +80,7 @@ export default async function CardPage({
             )}
           </ul>
           <div className="row">
-            <a className="btn" href={`/api/cartes/${card.id}/image`} download={`kizuna-${card.name}.png`}>
+            <a className="btn" href={`/api/cartes/${card.id}/image${myShiny > 0 ? "?brillante=1" : ""}`} download={`kizuna-${card.name}.png`}>
               🖼️ Télécharger l&apos;image
             </a>
             <Link className="btn btn-ghost" href="/collection">

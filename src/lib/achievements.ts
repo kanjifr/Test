@@ -19,6 +19,7 @@ export type Stats = {
   duelWins: number;
   votes: number;
   anecdotes: number;
+  shinyOwned: number;
   tradesDone: number;
   featuredIn: number;
   bestElementDone: number; // nb max de cartes possédées dans un élément complet ou non
@@ -52,6 +53,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "all_legendary", name: "Panthéon", description: "Posséder toutes les cartes Légendaires.", kanji: "殿", tier: "OR", progress: (s) => [s.legendaryOwned, Math.max(1, s.legendaryTotal)] },
   { id: "mythic", name: "Au-delà de la légende", description: "Obtenir une carte Mythique.", kanji: "神", tier: "OR", progress: (s) => [s.mythicOwned, 1] },
   { id: "lucky_pack", name: "Béni des étoiles", description: "Obtenir 2 cartes Épiques ou mieux dans un même booster.", kanji: "福", tier: "OR", progress: (s) => [s.luckyPack ? 1 : 0, 1] },
+  { id: "shiny_1", name: "Éclat d'arc-en-ciel", description: "Obtenir une carte brillante.", kanji: "虹", tier: "ARGENT", progress: (s) => [s.shinyOwned, 1] },
+  { id: "shiny_10", name: "Collection scintillante", description: "Posséder 10 cartes différentes en version brillante.", kanji: "輝", tier: "OR", progress: (s) => [s.shinyOwned, 10] },
   { id: "dupes_5", name: "Écho", description: "Posséder 5 exemplaires d'une même carte.", kanji: "響", tier: "BRONZE", progress: (s) => [s.maxCopies, 5] },
   { id: "element", name: "Maître élémentaire", description: "Posséder toutes les cartes d'un élément (3 cartes minimum).", kanji: "元", tier: "ARGENT", progress: (s) => [s.elementCompleted ? s.bestElementTarget : s.bestElementDone, Math.max(3, s.bestElementTarget)] },
   { id: "recycle", name: "Rien ne se perd", description: "Recycler tes premiers doublons.", kanji: "環", tier: "BRONZE", progress: (s) => [s.recycled, 1] },

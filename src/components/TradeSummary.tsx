@@ -8,7 +8,7 @@ function Items({ trade, side }: { trade: TradeWithItems; side: "OFFER" | "REQUES
       {trade.items
         .filter((i) => i.side === side)
         .map((i) => (
-          <GameCard key={i.id} card={toCardView(i.card)} size="xs" count={i.quantity > 1 ? i.quantity : undefined} />
+          <GameCard key={i.id} card={{ ...toCardView(i.card), shiny: i.shiny }} size="xs" count={i.quantity > 1 ? i.quantity : undefined} />
         ))}
     </div>
   );

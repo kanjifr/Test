@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { RECYCLE_COST } from "@/lib/game";
 import { checkAchievements } from "@/lib/achievements-server";
+import { takeCopies } from "@/lib/copies";
 
 export type RecycleResult = { ok: true; boosters: number; bonus: number } | { ok: false; error: string };
 
@@ -28,12 +29,10 @@ export async function recycleDuplicates(lines: { cardId: string; qty: number }[]
   try {
     const user = await prisma.$transaction(async (tx) => {
       for (const [cardId, qty] of map) {
-        // Retrait atomique : impossible de descendre sous un exemplaire
-        const done = await tx.userCard.updateMany({
-          where: { userId: me.id, cardId, count: { gte: qty + 1 } },
-          data: { count: { decrement: qty } },
-        });
-        if (done.count === 0) throw new RecycleError("Tu n'as plus assez de doublons de l'une des cartes. Recharge la page.");
+        // Retrait atomique d'exemplaires normaux : les brillants ne sont jamais recyclés,
+        // et il reste toujours au moins un exemplaire
+        const done = await takeCopies(tx, me.id, cardId, qty, false, true);
+        if (!done) throw new RecycleError("Tu n'as plus assez de doublons de l'une des cartes. Recharge la page.");
       }
       return tx.user.update({
         where: { id: me.id },

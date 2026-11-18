@@ -4,7 +4,8 @@ import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { drawBooster, PACK_COOLDOWN_MS, PACK_SIZE, PITY_HARD, type CardView } from "@/lib/game";
+import { drawBooster, PACK_COOLDOWN_MS, PACK_SIZE, PITY_HARD, SHINY_CHANCE, type CardView } from "@/lib/game";
+import { giveCopies } from "@/lib/copies";
 import { BIRTHDAY_BOOST, isBirthdayToday, validBirthday } from "@/lib/birthday";
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
@@ -80,14 +81,12 @@ export async function openPack(): Promise<OpenResult> {
     }
     const out: (CardView & { isNew: boolean; count: number })[] = [];
     for (const card of drawn) {
-      const owned = await tx.userCard.upsert({
-        where: { userId_cardId: { userId: user.id, cardId: card.id } },
-        create: { userId: user.id, cardId: card.id },
-        update: { count: { increment: 1 } },
-      });
+      // Chaque carte a une petite chance d'être une version brillante
+      const shiny = rand() < SHINY_CHANCE;
+      const owned = await giveCopies(tx, user.id, card.id, 1, shiny);
       const isNew = owned.count === 1;
-      await tx.pull.create({ data: { userId: user.id, cardId: card.id, isNew } });
-      out.push({ ...toCardView(card), isNew, count: owned.count });
+      await tx.pull.create({ data: { userId: user.id, cardId: card.id, isNew, shiny } });
+      out.push({ ...toCardView(card), isNew, count: owned.count, shiny });
     }
     return out;
   });

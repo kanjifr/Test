@@ -6,7 +6,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
-      select: { count: true, card: { select: { rarity: true, element: true } } },
+      select: { count: true, shiny: true, card: { select: { rarity: true, element: true } } },
     }),
     prisma.card.findMany({ where: { active: true }, select: { rarity: true, element: true } }),
     prisma.trade.count({ where: { status: "ACCEPTED", OR: [{ fromId: userId }, { toId: userId }] } }),
@@ -52,6 +52,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     duelWins: user?.duelWins ?? 0,
     votes,
     anecdotes,
+    shinyOwned: owned.filter((o) => o.shiny > 0).length,
     tradesDone,
     featuredIn,
     bestElementDone: bestDone,

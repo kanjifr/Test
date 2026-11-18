@@ -11,6 +11,7 @@ import {
   RARITIES,
   SITE_NAME,
   SLOT_RARITIES,
+  SHINY_CHANCE,
 } from "@/lib/game";
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
@@ -120,6 +121,7 @@ export default async function Home({
     ...(mythics > 0
       ? [{ label: RARITIES.MYTHIQUE.label, color: RARITIES.MYTHIQUE.color, pct: `${fmt(MYTHIC_BASE_CHANCE * 100)} par booster` }]
       : []),
+    ...(SHINY_CHANCE > 0 ? [{ label: "✦ Brillante", color: "#ffffff", pct: `${fmt(SHINY_CHANCE * 100)} par carte` }] : []),
   ];
 
   return (

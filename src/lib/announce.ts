@@ -40,12 +40,18 @@ export function pullMessage(user: Person, cards: CardView[]): AnnouncePayload | 
   const best = [...cards].sort((a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity));
   const top = best[0];
   const intro =
-    top.rarity === "MYTHIQUE" ? "🔥🔥 **MYTHIQUE !**" : top.rarity === "LEGENDAIRE" ? "✨ **Légendaire !**" : "💜 **Épique !**";
-  const names = best.map((c) => `**${c.name}**`).join(", ");
+    top.rarity === "MYTHIQUE"
+      ? "🔥🔥 **MYTHIQUE !**"
+      : top.rarity === "LEGENDAIRE"
+        ? "✨ **Légendaire !**"
+        : top.rarity === "EPIQUE"
+          ? "💜 **Épique !**"
+          : "🌈 **Brillante !**";
+  const names = best.map((c) => `**${c.name}**${c.shiny ? " ✦ brillante" : ""}`).join(", ");
   return {
     content: `${intro} ${mention(user)} vient d'obtenir ${names} !`,
     embeds: best.slice(0, 10).map((c) => ({
-      title: `#${String(c.number).padStart(3, "0")} · ${c.name}`,
+      title: `#${String(c.number).padStart(3, "0")} · ${c.name}${c.shiny ? " ✦ BRILLANTE" : ""}`,
       description: [c.title && `*${c.title}*`, c.description].filter(Boolean).join("\n") || undefined,
       color: hex(RARITIES[c.rarity].color),
       fields: [
@@ -79,7 +85,8 @@ export async function announcePull(user: Person, cards: CardView[]) {
   const { pulls } = await getAnnounceSettings();
   if (pulls === "OFF") return;
   const min = RARITY_ORDER.indexOf(pulls);
-  later(pullMessage(user, cards.filter((c) => RARITY_ORDER.indexOf(c.rarity) >= min)));
+  // Les brillantes sont toujours annoncées, même Communes
+  later(pullMessage(user, cards.filter((c) => c.shiny || RARITY_ORDER.indexOf(c.rarity) >= min)));
 }
 
 export async function announceDuel(winner: Person, loser: Person, score: [number, number], duelId: string) {

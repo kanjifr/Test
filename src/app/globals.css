@@ -881,3 +881,36 @@ label.inline select { width: auto; }
 .member-badge { display: flex; align-items: center; gap: 0.7rem; }
 .member-badge span { display: flex; flex-direction: column; }
 .showcase-form .row > label { flex: 1 1 200px; }
+
+/* ====== Cartes brillantes (shiny) ====== */
+.gcard.is-shiny {
+  --frame: conic-gradient(from var(--spin, 0deg), #ff4f4f, #ffb02e, #ffe14d, #5be37d, #36c9ff, #8a5cff, #ff5fd2, #ff4f4f);
+  --glow: 0 0 26px rgba(255, 255, 255, 0.55), 0 0 50px rgba(160, 200, 255, 0.45);
+  animation: mythSpin 3s linear infinite;
+}
+.gcard.is-shiny .gcard-holo { opacity: 0.75; animation-duration: 2s; background: linear-gradient(115deg, transparent 15%, rgba(255, 90, 90, 0.5) 28%, rgba(255, 230, 90, 0.5) 38%, rgba(90, 255, 160, 0.5) 48%, rgba(90, 200, 255, 0.5) 58%, rgba(200, 120, 255, 0.5) 68%, transparent 82%); background-size: 260% 260%; }
+/* Paillettes qui scintillent */
+.gcard-sparkles {
+  position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background:
+    radial-gradient(circle at 18% 22%, #fff 0 1.6px, transparent 2.6px), radial-gradient(circle at 76% 14%, #fff 0 1.2px, transparent 2.2px),
+    radial-gradient(circle at 64% 46%, #fff 0 1.8px, transparent 2.8px), radial-gradient(circle at 30% 62%, #fff 0 1.2px, transparent 2.2px),
+    radial-gradient(circle at 84% 70%, #fff 0 1.6px, transparent 2.6px), radial-gradient(circle at 46% 84%, #fff 0 1.2px, transparent 2.2px),
+    radial-gradient(circle at 12% 88%, #fff 0 1.4px, transparent 2.4px), radial-gradient(circle at 54% 26%, #fff 0 1px, transparent 2px);
+  animation: sparkle 1.8s ease-in-out infinite;
+}
+.gcard-sparkles::after { content: ""; position: absolute; inset: 0; background: inherit; transform: translate(9%, 7%) scale(0.9); animation: sparkle 1.8s 0.9s ease-in-out infinite; }
+@keyframes sparkle { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+.shiny-badge {
+  position: absolute; top: -0.55em; right: -0.55em; z-index: 4; width: 1.9em; height: 1.9em; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.8em; font-weight: 800; color: #fff;
+  background: conic-gradient(#ff4f4f, #ffb02e, #ffe14d, #5be37d, #36c9ff, #8a5cff, #ff5fd2, #ff4f4f);
+  box-shadow: 0 0 0 2px #fff, 0 0 12px rgba(255, 255, 255, 0.9); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+.gcard-xs .shiny-badge { font-size: 0.95em; }
+/* Révélation d'une brillante */
+.burst-shiny { --burst: rgba(255, 255, 255, 0.95); }
+.burst-shiny::before { background: radial-gradient(circle, rgba(255, 255, 255, 0.95) 0, transparent 34%), repeating-conic-gradient(from 0deg, rgba(255, 90, 90, 0.35) 0deg 4deg, rgba(255, 230, 90, 0.35) 4deg 8deg, rgba(90, 220, 255, 0.35) 8deg 12deg, rgba(200, 120, 255, 0.35) 12deg 16deg, transparent 16deg 22deg) !important; }
+.shiny-title { margin: 0; font-family: var(--font-display); font-size: clamp(1.4rem, 5vw, 2.4rem); letter-spacing: 0.08em; background: linear-gradient(90deg, #ff6b6b, #ffd166, #6ee7a8, #5ec8ff, #b28cff, #ff7ad9); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.7)); }
+.shiny-count { background: linear-gradient(90deg, #ff6b6b, #ffd166, #6ee7a8, #5ec8ff, #b28cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.shiny-stat b { background: linear-gradient(90deg, #ff6b6b, #ffd166, #6ee7a8, #5ec8ff, #b28cff); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }

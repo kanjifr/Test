@@ -4,7 +4,7 @@
  * Effets sonores synthétisés par le navigateur (aucun fichier à charger).
  * Le son est coupé ou remis par le bouton du menu ; le choix est mémorisé sur cet appareil.
  */
-export type Sfx = "tear" | "flip" | "rare" | "epic" | "legendary" | "mythic" | "hit" | "crit" | "dodge" | "win" | "lose";
+export type Sfx = "tear" | "flip" | "rare" | "epic" | "legendary" | "mythic" | "shiny" | "hit" | "crit" | "dodge" | "win" | "lose";
 
 const KEY = "kizuna.sound";
 const EVENT = "kizuna-sound";
@@ -105,6 +105,11 @@ export function play(s: Sfx) {
       tone(a, 65, 0, 1.4, "sine", 0.35, 45);
       arpeggio(a, [523, 659, 784, 1047, 1319, 1568, 2093], 0.08, "sawtooth", 0.05, 0.8);
       arpeggio(a, [1047, 1319, 1568, 2093], 0.12, "sine", 0.09, 1.2);
+      break;
+    case "shiny":
+      // Cascade de clochettes aiguës
+      arpeggio(a, [1568, 1976, 2349, 2637, 3136, 2637, 3136, 3520], 0.06, "sine", 0.07, 0.45);
+      arpeggio(a, [2093, 2637, 3136], 0.15, "triangle", 0.05, 0.8);
       break;
     case "hit":
       noise(a, 0, 0.18, 1200, 300, 0.35);

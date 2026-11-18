@@ -5,10 +5,10 @@ import type { Rarity } from "@prisma/client";
 import { CardBack, GameCard } from "@/components/GameCard";
 import { ELEMENTS, RARITIES, RARITY_ORDER, type CardView } from "@/lib/game";
 
-export type GridItem = { card: CardView; count: number };
+export type GridItem = { card: CardView; count: number; shiny?: number };
 
 type Sort = "number" | "rarity-desc" | "rarity-asc" | "count";
-type Prefs = { sort: Sort; rarity: Rarity | "ALL"; ownedOnly: boolean };
+type Prefs = { sort: Sort; rarity: Rarity | "ALL"; ownedOnly: boolean; shinyOnly?: boolean };
 
 const SORTS: { value: Sort; label: string }[] = [
   { value: "number", label: "Numéro" },
@@ -61,7 +61,10 @@ export function CardGrid({ items }: { items: GridItem[] }) {
 
   const shown = useMemo(() => {
     const list = items.filter(
-      (it) => (prefs.rarity === "ALL" || it.card.rarity === prefs.rarity) && (!prefs.ownedOnly || it.count > 0),
+      (it) =>
+        (prefs.rarity === "ALL" || it.card.rarity === prefs.rarity) &&
+        (!prefs.ownedOnly || it.count > 0) &&
+        (!prefs.shinyOnly || (it.shiny ?? 0) > 0),
     );
     const byNumber = (a: GridItem, b: GridItem) => a.card.number - b.card.number;
     const cmp: Record<Sort, (a: GridItem, b: GridItem) => number> = {
@@ -119,6 +122,10 @@ export function CardGrid({ items }: { items: GridItem[] }) {
             <input type="checkbox" checked={prefs.ownedOnly} onChange={(e) => update({ ownedOnly: e.target.checked })} />
             <span>Seulement les cartes obtenues</span>
           </label>
+          <label className="switch">
+            <input type="checkbox" checked={!!prefs.shinyOnly} onChange={(e) => update({ shinyOnly: e.target.checked })} />
+            <span>✦ Brillantes</span>
+          </label>
         </div>
       </div>
 
@@ -164,12 +171,15 @@ export function CardGrid({ items }: { items: GridItem[] }) {
                 </span>
               </p>
               {open.card.description && <p className="desc">{open.card.description}</p>}
-              <p className="muted">Exemplaires possédés : {open.count}</p>
+              <p className="muted">
+                Exemplaires possédés : {open.count}
+                {(open.shiny ?? 0) > 0 && ` (dont ${open.shiny} brillante${(open.shiny ?? 0) > 1 ? "s" : ""} ✦)`}
+              </p>
               <p className="row">
                 <a className="btn" href={`/carte/${open.card.id}`}>
                   📖 Fiche & livre d&apos;or
                 </a>
-                <a className="btn btn-ghost" href={`/api/cartes/${open.card.id}/image`} download={`kizuna-${open.card.name}.png`}>
+                <a className="btn btn-ghost" href={`/api/cartes/${open.card.id}/image${(open.shiny ?? 0) > 0 ? "?brillante=1" : ""}`} download={`kizuna-${open.card.name}.png`}>
                   🖼️ Image
                 </a>
               </p>

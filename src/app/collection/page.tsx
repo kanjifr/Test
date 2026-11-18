@@ -29,8 +29,13 @@ export default async function CollectionPage({
   ]);
   if (!owner) return <p className="error">Membre introuvable.</p>;
 
-  const counts = new Map(owned.map((o) => [o.cardId, o.count]));
-  const items: GridItem[] = cards.map((c) => ({ card: toCardView(c), count: counts.get(c.id) ?? 0 }));
+  const rows = new Map(owned.map((o) => [o.cardId, o]));
+  // Une carte possédée en version brillante s'affiche brillante
+  const items: GridItem[] = cards.map((c) => {
+    const o = rows.get(c.id);
+    return { card: { ...toCardView(c), shiny: (o?.shiny ?? 0) > 0 }, count: o?.count ?? 0, shiny: o?.shiny ?? 0 };
+  });
+  const shinyTotal = owned.filter((o) => o.shiny > 0).length;
   const have = items.filter((i) => i.count > 0).length;
   const pct = cards.length ? Math.round((have / cards.length) * 100) : 0;
   const isMe = owner.id === me.id;
@@ -77,6 +82,7 @@ export default async function CollectionPage({
             </span>
           );
         })}
+        <span className="shiny-count">✦ Brillantes {shinyTotal}</span>
       </div>
       {cards.length === 0 ? <p className="muted">Aucune carte pour le moment.</p> : <CardGrid items={items} />}
     </section>

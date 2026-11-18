@@ -31,7 +31,9 @@ const cardInclude = { card: { include: { subject: { select: { image: true, conse
 /** Cartes possédées (actives) d'un membre, de la plus forte à la plus faible. */
 export async function ownedFighters(userId: string) {
   const owned = await prisma.userCard.findMany({ where: { userId, card: { active: true } }, include: cardInclude });
-  return owned.map((o) => toFighter(o.card)).sort((a, b) => power(b) - power(a) || a.number - b.number);
+  return owned
+    .map((o): CardView => ({ ...toFighter(o.card), shiny: o.shiny > 0 }))
+    .sort((a, b) => power(b) - power(a) || a.number - b.number);
 }
 
 /** Équipe de défense : celle choisie par le membre, complétée par ses cartes les plus fortes. */
