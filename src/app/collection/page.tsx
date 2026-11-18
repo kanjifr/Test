@@ -23,7 +23,7 @@ export default async function CollectionPage({
     prisma.card.findMany({
       where: { active: true },
       orderBy: { number: "asc" },
-      include: { subject: { select: { image: true, consent: true } } },
+      include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } },
     }),
     prisma.userCard.findMany({ where: { userId: ownerId } }),
   ]);

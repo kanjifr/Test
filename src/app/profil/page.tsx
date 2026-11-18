@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { setConsent, setFeaturedBadge } from "@/app/actions";
+import { setBirthday, setConsent, setFeaturedBadge } from "@/app/actions";
+import { MONTHS } from "@/lib/birthday";
 import { ACHIEVEMENTS, TIERS, badgeView } from "@/lib/achievements";
 import { checkAchievements } from "@/lib/achievements-server";
 import { Badge, NameWithBadge } from "@/components/Badge";
@@ -56,6 +57,51 @@ export default async function Profile() {
         </button>
         {user._count.featuredIn > 0 && (
           <p className="muted">Tu apparais déjà sur {user._count.featuredIn} carte(s).</p>
+        )}
+      </form>
+
+      <form action={setBirthday} className="consent birthday-form" key={`${user.birthMonth}-${user.birthDay}`}>
+        <h3>🎂 Mon anniversaire</h3>
+        <p className="muted">
+          Le jour de ton anniversaire, ta carte brille et sort 5 fois plus souvent dans les boosters, et Kizuna te le souhaite
+          sur Discord. Seuls le jour et le mois sont demandés, jamais l&apos;année.
+        </p>
+        <div className="row">
+          <label>
+            Jour
+            <select name="day" defaultValue={user.birthDay ?? ""}>
+              <option value="">—</option>
+              {Array.from({ length: 31 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Mois
+            <select name="month" defaultValue={user.birthMonth ?? ""}>
+              <option value="">—</option>
+              {MONTHS.map((m, i) => (
+                <option key={m} value={i + 1}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="btn">
+            Enregistrer
+          </button>
+          {user.birthMonth && (
+            <button type="submit" name="clear" value="1" className="btn btn-ghost">
+              Retirer
+            </button>
+          )}
+        </div>
+        {!user.consent && (
+          <p className="muted small-text">
+            Pour que ta carte brille, il faut aussi accepter d&apos;apparaître sur une carte (juste au-dessus).
+          </p>
         )}
       </form>
 

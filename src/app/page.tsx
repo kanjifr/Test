@@ -14,6 +14,7 @@ import {
 } from "@/lib/game";
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
+import { BIRTHDAY_BOOST, parisToday } from "@/lib/birthday";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +85,8 @@ export default async function Home({
   }
 
   await checkAchievements(session.user.id);
-  const [user, mythics, recent] = await Promise.all([
+  const today = parisToday();
+  const [user, mythics, recent, birthdays] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true, bonusPacks: true } }),
     prisma.card.count({ where: { active: true, rarity: "MYTHIQUE" } }),
     prisma.pull.findMany({
@@ -93,7 +95,15 @@ export default async function Home({
       take: 6,
       include: {
         user: { select: { name: true } },
-        card: { include: { subject: { select: { image: true, consent: true } } } },
+        card: { include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } },
+      },
+    }),
+    prisma.user.findMany({
+      where: { consent: true, birthMonth: today.month, birthDay: today.day, featuredIn: { some: { active: true } } },
+      select: {
+        id: true,
+        name: true,
+        featuredIn: { where: { active: true }, include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } },
       },
     }),
   ]);
@@ -114,6 +124,22 @@ export default async function Home({
 
   return (
     <>
+      {birthdays.length > 0 && (
+        <section className="panel birthday-banner" aria-label="Anniversaires du jour">
+          <div style={{ flex: "1 1 260px" }}>
+            <h2>🎂 Joyeux anniversaire {birthdays.map((b) => b.name).join(" et ")} !</h2>
+            <p>
+              Aujourd&apos;hui, {birthdays.length > 1 ? "leurs cartes sortent" : "sa carte sort"} {BIRTHDAY_BOOST} fois plus souvent
+              dans les boosters, jusqu&apos;à minuit.
+            </p>
+          </div>
+          <div className="row">
+            {birthdays.flatMap((b) => b.featuredIn).slice(0, 4).map((c) => (
+              <GameCard key={c.id} card={toCardView(c)} size="xs" />
+            ))}
+          </div>
+        </section>
+      )}
       <PackOpener
         initialNextAt={nextAt}
         serverNow={Date.now()}

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { drawBooster, PACK_COOLDOWN_MS, PACK_SIZE, PITY_HARD, type CardView } from "@/lib/game";
+import { BIRTHDAY_BOOST, isBirthdayToday, validBirthday } from "@/lib/birthday";
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
@@ -30,7 +31,7 @@ export async function openPack(): Promise<OpenResult> {
 
   const cards = await prisma.card.findMany({
     where: { active: true },
-    include: { subject: { select: { image: true, consent: true } } },
+    include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } },
   });
   // Il faut au moins une carte non Mythique pour remplir un booster
   if (!cards.some((c) => c.rarity !== "MYTHIQUE")) {
@@ -66,7 +67,10 @@ export async function openPack(): Promise<OpenResult> {
     where: { id: user.id },
     select: { pityCount: true, bonusPacks: true, lastPackAt: true },
   });
-  const booster = drawBooster(cards, PACK_SIZE, Math.min(me.pityCount, PITY_HARD - 1), rand);
+  // Les cartes des membres qui fêtent leur anniversaire sortent plus souvent aujourd'hui
+  const weightOf = (c: (typeof cards)[number]) =>
+    c.subject?.consent && isBirthdayToday(c.subject.birthMonth, c.subject.birthDay) ? BIRTHDAY_BOOST : 1;
+  const booster = drawBooster(cards, PACK_SIZE, Math.min(me.pityCount, PITY_HARD - 1), rand, weightOf);
   const drawn = booster.cards;
   const mythicAvailable = cards.some((c) => c.rarity === "MYTHIQUE");
 
@@ -131,5 +135,18 @@ export async function setFeaturedBadge(formData: FormData) {
     if (!owned) return;
   }
   await prisma.user.update({ where: { id: user.id }, data: { featuredBadge: id || null } });
+  revalidatePath("/", "layout");
+}
+
+export async function setBirthday(formData: FormData) {
+  const user = await requireUser();
+  const month = Number(formData.get("month"));
+  const day = Number(formData.get("day"));
+  const clear = formData.get("clear") === "1" || !month || !day;
+  if (!clear && !validBirthday(month, day)) return;
+  await prisma.user.update({
+    where: { id: user.id },
+    data: clear ? { birthMonth: null, birthDay: null } : { birthMonth: month, birthDay: day },
+  });
   revalidatePath("/", "layout");
 }

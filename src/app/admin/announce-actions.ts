@@ -18,9 +18,11 @@ export async function saveAnnounceSettings(fd: FormData) {
     pulls: PULLS.includes(pulls) ? pulls : "LEGENDAIRE",
     duels: fd.get("duels") === "on",
     trades: fd.get("trades") === "on",
+    polls: fd.get("polls") === "on",
+    birthdays: fd.get("birthdays") === "on",
   };
   await setAnnounceSettings(settings);
-  await logAdmin(me, "announce.settings", `a modifié les annonces Discord (tirages : ${settings.pulls.toLowerCase()}, duels : ${settings.duels ? "oui" : "non"}, échanges : ${settings.trades ? "oui" : "non"})`);
+  await logAdmin(me, "announce.settings", `a modifié les annonces Discord (tirages : ${settings.pulls.toLowerCase()}, duels : ${settings.duels ? "oui" : "non"}, échanges : ${settings.trades ? "oui" : "non"}, votes : ${settings.polls ? "oui" : "non"}, anniversaires : ${settings.birthdays ? "oui" : "non"})`);
   revalidatePath("/admin");
   back("ok", "Réglages des annonces enregistrés ✔");
 }

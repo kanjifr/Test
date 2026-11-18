@@ -14,7 +14,7 @@ const VERSION = 1;
  * et sans les jetons de connexion Discord). Les images et vidéos restent dans le volume.
  */
 export async function buildBackup() {
-  const [users, accounts, cards, userCards, trades, tradeItems, achievements, logs] = await Promise.all([
+  const [users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes] = await Promise.all([
     prisma.user.findMany(),
     prisma.account.findMany({ select: { userId: true, type: true, provider: true, providerAccountId: true, createdAt: true, updatedAt: true } }),
     prisma.card.findMany(),
@@ -23,8 +23,11 @@ export async function buildBackup() {
     prisma.tradeItem.findMany(),
     prisma.userAchievement.findMany(),
     prisma.adminLog.findMany(),
+    prisma.poll.findMany(),
+    prisma.pollOption.findMany(),
+    prisma.pollVote.findMany(),
   ]);
-  const data = { users, accounts, cards, userCards, trades, tradeItems, achievements, logs };
+  const data = { users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes };
   const counts = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.length]));
   return { format: FORMAT, version: VERSION, site: SITE_NAME, createdAt: new Date().toISOString(), counts, data };
 }
@@ -66,6 +69,9 @@ export async function restoreBackup(b: Backup) {
   const d = b.data;
   await prisma.$transaction(
     async (tx) => {
+      await tx.pollVote.deleteMany();
+      await tx.pollOption.deleteMany();
+      await tx.poll.deleteMany();
       await tx.tradeItem.deleteMany();
       await tx.trade.deleteMany();
       await tx.userAchievement.deleteMany();
@@ -89,6 +95,12 @@ export async function restoreBackup(b: Backup) {
       await tx.userCard.createMany({ data: d.userCards });
       await tx.userAchievement.createMany({ data: d.achievements });
       await tx.adminLog.createMany({ data: d.logs });
+      // Votes (absents des sauvegardes faites avant leur ajout)
+      if (d.polls?.length) {
+        await tx.poll.createMany({ data: d.polls });
+        await tx.pollOption.createMany({ data: d.pollOptions ?? [] });
+        await tx.pollVote.createMany({ data: d.pollVotes ?? [] });
+      }
       // Les prochaines cartes créées continuent la numérotation
       await tx.$executeRawUnsafe(
         `SELECT setval(pg_get_serial_sequence('"Card"', 'number'), GREATEST(COALESCE((SELECT MAX("number") FROM "Card"), 0), 1), (SELECT COUNT(*) > 0 FROM "Card"))`,
@@ -134,20 +146,4 @@ export async function lastBackupSent() {
     orderBy: { createdAt: "desc" },
   });
   return last?.createdAt ?? null;
-}
-
-/** Vérifie toutes les heures si la sauvegarde du jour a été envoyée. */
-export function startBackupScheduler() {
-  const g = globalThis as unknown as { __backupTimer?: NodeJS.Timeout };
-  if (g.__backupTimer || !webhookConfigured()) return;
-  const tick = async () => {
-    try {
-      const last = await lastBackupSent();
-      if (!last || Date.now() - last.getTime() > 23 * 3600_000) await sendBackupToDiscord("auto");
-    } catch (e) {
-      console.error("[sauvegarde]", (e as Error).message);
-    }
-  };
-  setTimeout(tick, 2 * 60_000);
-  g.__backupTimer = setInterval(tick, 3600_000);
 }

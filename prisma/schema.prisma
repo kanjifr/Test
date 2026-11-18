@@ -54,6 +54,9 @@ model User {
   defenseTeam   String[]  @default([])
   duelWins      Int       @default(0)
   duelLosses    Int       @default(0)
+  // Anniversaire (jour et mois seulement, jamais l'année), renseigné par le membre
+  birthMonth    Int?
+  birthDay      Int?
   // Badge choisi pour être affiché à côté du pseudo
   featuredBadge String?
   // Rôle attribué depuis le site (le propriétaire est défini par OWNER_DISCORD_IDS)
@@ -70,6 +73,8 @@ model User {
   tradesReceived Trade[] @relation("TradeTo")
   achievements   UserAchievement[]
   adminLogs      AdminLog[]
+  pollVotes      PollVote[]
+  pollOptions    PollOption[]
   duelsAttacked  Duel[]  @relation("DuelAttacker")
   duelsDefended  Duel[]  @relation("DuelDefender")
 }
@@ -270,4 +275,46 @@ model Setting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+enum PollKind {
+  // Les options sont des membres (qui aura la prochaine carte ?)
+  MEMBERS
+  // Les options sont des textes libres (titre, phrase…)
+  TEXT
+}
+
+model Poll {
+  id              String       @id @default(cuid())
+  question        String
+  kind            PollKind
+  // Rareté de la carte en jeu (facultatif, simple information)
+  rarity          Rarity?
+  closesAt        DateTime
+  resultAnnounced Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  options         PollOption[]
+  votes           PollVote[]
+}
+
+model PollOption {
+  id        String     @id @default(cuid())
+  pollId    String
+  label     String
+  subjectId String?
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  subject   User?      @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  votes     PollVote[]
+}
+
+model PollVote {
+  pollId    String
+  userId    String
+  optionId  String
+  createdAt DateTime   @default(now())
+  poll      Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  option    PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@id([pollId, userId])
 }

@@ -11,6 +11,8 @@ import { BulkImport } from "@/components/BulkImport";
 import { TEMPLATE_CSV } from "@/lib/import";
 import { lastBackupSent, webhookConfigured } from "@/lib/backup";
 import { restoreFromBackup, sendBackupNow } from "./backup-actions";
+import { closePoll, createPoll, deletePoll } from "./poll-actions";
+import { isOpen, pollInclude, results } from "@/lib/polls";
 import { saveAnnounceSettings, sendTestAnnouncement } from "./announce-actions";
 import { announceConfigured } from "@/lib/announce";
 import { getAnnounceSettings } from "@/lib/settings";
@@ -21,16 +23,23 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; err?: string; ok?: string }>;
+  searchParams: Promise<{ edit?: string; err?: string; ok?: string; nom?: string; membre?: string; rarete?: string }>;
 }) {
   const me = await requireStaff("viewPanel");
-  const { edit, err, ok } = await searchParams;
+  const { edit, err, ok, nom, membre, rarete } = await searchParams;
+  // Pré-remplissage depuis le résultat d'un vote (« Créer la carte »)
+  const prefill = {
+    name: nom?.slice(0, 40),
+    subjectId: membre,
+    rarity: RARITY_ORDER.includes(rarete as never) ? (rarete as (typeof RARITY_ORDER)[number]) : undefined,
+  };
   const allow = {
     toggle: can(me.role, "toggleCards"),
     del: can(me.role, "deleteCards"),
     gift: can(me.role, "giftBoosters"),
     reset: can(me.role, "resetCollections"),
     import: can(me.role, "importCards"),
+    polls: can(me.role, "managePolls"),
     backups: can(me.role, "manageBackups"),
     announce: can(me.role, "manageAnnouncements"),
     seed: can(me.role, "seedDemo"),
@@ -39,12 +48,13 @@ export default async function AdminPage({
   };
 
   const lastBackup = allow.backups ? await lastBackupSent() : null;
+  const polls = allow.polls ? await prisma.poll.findMany({ include: pollInclude, orderBy: { createdAt: "desc" }, take: 12 }) : [];
   const announceSettings = allow.announce ? await getAnnounceSettings() : null;
   const [cards, members, stats, logs] = await Promise.all([
     prisma.card.findMany({
       orderBy: { number: "asc" },
       include: {
-        subject: { select: { image: true, consent: true, name: true } },
+        subject: { select: { image: true, consent: true, name: true, birthMonth: true, birthDay: true } },
         _count: { select: { owners: true } },
       },
     }),
@@ -91,12 +101,12 @@ export default async function AdminPage({
       {ok && <p className="success">{ok === "1" ? "Carte enregistrée ✔" : ok}</p>}
 
       <div className="admin-cols">
-        <form action={saveCard} className="panel card-form" key={editing?.id ?? "new"}>
+        <form action={saveCard} className="panel card-form" id="carte" key={editing?.id ?? `new-${prefill.name ?? ""}`}>
           <h2>{editing ? `Modifier #${editing.number} ${editing.name}` : "Nouvelle carte"}</h2>
           {editing && <input type="hidden" name="id" value={editing.id} />}
           <label>
             Nom *
-            <input name="name" required maxLength={40} defaultValue={editing?.name} />
+            <input name="name" required maxLength={40} defaultValue={editing?.name ?? prefill.name} />
           </label>
           <label>
             Titre / surnom
@@ -109,7 +119,7 @@ export default async function AdminPage({
           <div className="row">
             <label>
               Rareté
-              <select name="rarity" defaultValue={editing?.rarity ?? "COMMUNE"}>
+              <select name="rarity" defaultValue={editing?.rarity ?? prefill.rarity ?? "COMMUNE"}>
                 {RARITY_ORDER.map((r) => (
                   <option key={r} value={r}>
                     {RARITIES[r].label} ({r === "MYTHIQUE" ? "pity" : `${RARITIES[r].weight}%`})
@@ -140,7 +150,7 @@ export default async function AdminPage({
           </div>
           <label>
             Membre représenté (avatar Discord utilisé si pas d&apos;image)
-            <select name="subjectId" defaultValue={editing?.subjectId ?? ""}>
+            <select name="subjectId" defaultValue={editing?.subjectId ?? prefill.subjectId ?? ""}>
               <option value="">— Aucun —</option>
               {consenting.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -252,6 +262,106 @@ export default async function AdminPage({
           ))}
         </div>
       </div>
+
+      {allow.polls && (
+        <div className="panel admin-polls" id="votes">
+          <h2>🗳️ Votes de la communauté</h2>
+          <form action={createPoll} className="poll-form">
+            <label>
+              Question
+              <input name="question" required maxLength={140} placeholder="Qui aura la prochaine carte Mythique ?" />
+            </label>
+            <div className="row">
+              <label>
+                Choix proposés
+                <select name="kind" defaultValue="MEMBERS">
+                  <option value="MEMBERS">Des membres</option>
+                  <option value="TEXT">Des textes (titres, phrases…)</option>
+                </select>
+              </label>
+              <label>
+                Rareté en jeu (facultatif)
+                <select name="rarity" defaultValue="">
+                  <option value="">—</option>
+                  {RARITY_ORDER.map((r) => (
+                    <option key={r} value={r}>
+                      {RARITIES[r].label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Durée (jours)
+                <input name="days" type="number" min={1} max={14} defaultValue={3} />
+              </label>
+            </div>
+            <fieldset className="poll-members">
+              <legend>Membres proposés (si « Des membres ») · seuls ceux qui ont accepté d&apos;apparaître sur une carte</legend>
+              {consenting.length === 0 ? (
+                <p className="muted small-text">Aucun membre n&apos;a encore accepté d&apos;apparaître sur une carte.</p>
+              ) : (
+                consenting.map((m) => (
+                  <label key={m.id} className="switch">
+                    <input type="checkbox" name="members" value={m.id} defaultChecked />
+                    <span>{m.name}</span>
+                  </label>
+                ))
+              )}
+            </fieldset>
+            <label>
+              Textes proposés (si « Des textes ») · un par ligne
+              <textarea name="texts" rows={4} placeholder={"Le gardien du vocal\nLa reine des memes\nCelui qui ne dort jamais"} />
+            </label>
+            <div className="row">
+              <button type="submit" className="btn">Lancer le vote</button>
+            </div>
+          </form>
+
+          {polls.length > 0 && (
+            <ul className="admin-poll-list">
+              {polls.map((p) => {
+                const r = results(p);
+                const open = isOpen(p);
+                const winner = r.winners.length === 1 ? r.winners[0] : null;
+                return (
+                  <li key={p.id}>
+                    <div>
+                      <b>{p.question}</b>
+                      <span className="muted small-text">
+                        {" "}
+                        · {open ? "en cours" : "terminé"} · {r.total} vote(s)
+                        {!open && (winner ? ` · gagnant : ${winner.label}` : r.winners.length > 1 ? " · égalité" : "")}
+                      </span>
+                    </div>
+                    <div className="row">
+                      {!open && winner && p.kind === "MEMBERS" && (
+                        <a
+                          className="btn btn-sm"
+                          href={`/admin?nom=${encodeURIComponent(winner.label)}&membre=${winner.subjectId ?? ""}&rarete=${p.rarity ?? ""}#carte`}
+                        >
+                          Créer la carte
+                        </a>
+                      )}
+                      {open && (
+                        <form action={closePoll}>
+                          <input type="hidden" name="id" value={p.id} />
+                          <button className="btn btn-sm btn-ghost">Terminer maintenant</button>
+                        </form>
+                      )}
+                      <form action={deletePoll}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <ConfirmButton className="btn btn-sm btn-danger" message={`Supprimer le vote « ${p.question} » ?`}>
+                          Supprimer
+                        </ConfirmButton>
+                      </form>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
 
       {allow.import && <BulkImport template={TEMPLATE_CSV} />}
 
@@ -373,6 +483,14 @@ export default async function AdminPage({
             <label className="switch">
               <input type="checkbox" name="trades" defaultChecked={announceSettings.trades} />
               <span>Annoncer les échanges réussis</span>
+            </label>
+            <label className="switch">
+              <input type="checkbox" name="polls" defaultChecked={announceSettings.polls} />
+              <span>Annoncer les nouveaux votes et leurs résultats</span>
+            </label>
+            <label className="switch">
+              <input type="checkbox" name="birthdays" defaultChecked={announceSettings.birthdays} />
+              <span>Souhaiter les anniversaires (vers 9 h)</span>
             </label>
             <div className="row">
               <button className="btn">Enregistrer</button>

@@ -91,3 +91,30 @@ export async function announceTrade(a: Person, b: Person, aGives: string[], bGiv
   if (!announceConfigured() || !(await getAnnounceSettings()).trades) return;
   later(tradeMessage(a, b, aGives, bGives), 1_000);
 }
+
+export async function announcePoll(question: string, closesAt: Date) {
+  if (!announceConfigured() || !(await getAnnounceSettings()).polls) return;
+  const end = closesAt.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
+  const link = siteUrl("/votes");
+  later({ content: `🗳️ **Nouveau vote :** ${question}\nRéponds avant ${end}${link ? ` : ${link}` : " !"}` }, 1_000);
+}
+
+export async function announcePollResult(question: string, winners: string[], total: number) {
+  if (!announceConfigured() || !(await getAnnounceSettings()).polls) return;
+  const text =
+    winners.length === 0
+      ? "personne n'a voté."
+      : winners.length === 1
+        ? `**${winners[0]}** l'emporte !`
+        : `égalité entre ${winners.map((w) => `**${w}**`).join(" et ")} !`;
+  later({ content: `🗳️ **Résultat du vote** « ${question} » : ${text} (${total} vote${total > 1 ? "s" : ""})` }, 1_000);
+}
+
+export async function announceBirthday(people: Person[]) {
+  if (!announceConfigured() || people.length === 0 || !(await getAnnounceSettings()).birthdays) return;
+  const names = people.map(mention).join(" et ");
+  const link = siteUrl("/");
+  await postAnnouncement({
+    content: `🎂 Joyeux anniversaire ${names} ! Aujourd'hui, ${people.length > 1 ? "leurs cartes sortent" : "sa carte sort"} 5 fois plus souvent dans les boosters. À vous de la trouver !${link ? ` ${link}` : ""}`,
+  });
+}

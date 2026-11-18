@@ -18,7 +18,7 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
     .toUpperCase();
   return (
     <div
-      className={`gcard gcard-${size} rarity-${card.rarity.toLowerCase()}`}
+      className={`gcard gcard-${size} rarity-${card.rarity.toLowerCase()} ${card.birthday ? "is-birthday" : ""}`}
       style={{ "--rc": r.color, "--ec": el.color } as React.CSSProperties}
     >
       <div className="gcard-inner">
@@ -69,6 +69,11 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
         )}
       </div>
       {badge && <span className="gcard-badge">{badge}</span>}
+      {card.birthday && !badge && (
+        <span className="gcard-badge birthday-badge" title="C'est son anniversaire aujourd'hui !">
+          🎂 ANNIV
+        </span>
+      )}
       {count !== undefined && count > 1 && <span className="gcard-count">×{count}</span>}
     </div>
   );

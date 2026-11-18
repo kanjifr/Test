@@ -22,7 +22,7 @@ export async function pendingIncomingCount(userId: string) {
 export const tradeInclude = {
   from: { select: { id: true, name: true, image: true } },
   to: { select: { id: true, name: true, image: true } },
-  items: { include: { card: { include: { subject: { select: { image: true, consent: true } } } } } },
+  items: { include: { card: { include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } } } },
 } satisfies Prisma.TradeInclude;
 
 export type TradeWithItems = Prisma.TradeGetPayload<{ include: typeof tradeInclude }>;
@@ -31,7 +31,7 @@ export type TradeWithItems = Prisma.TradeGetPayload<{ include: typeof tradeInclu
 export async function tradableCards(userId: string) {
   const owned = await prisma.userCard.findMany({
     where: { userId, count: { gte: 1 }, card: { active: true } },
-    include: { card: { include: { subject: { select: { image: true, consent: true } } } } },
+    include: { card: { include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } } },
     orderBy: { card: { number: "asc" } },
   });
   return owned.map((o) => ({ card: o.card, available: o.count }));

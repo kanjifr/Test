@@ -3,11 +3,16 @@ import { auth, signOut } from "@/auth";
 import { SITE_NAME } from "@/lib/game";
 import { pendingIncomingCount } from "@/lib/trades";
 import { NavLink } from "@/components/NavLink";
+import { prisma } from "@/lib/prisma";
 
 export async function Nav() {
   const session = await auth();
   const user = session?.user;
   const incoming = user?.id ? await pendingIncomingCount(user.id) : 0;
+  // Votes en cours auxquels le membre n'a pas encore répondu
+  const toVote = user?.id
+    ? await prisma.poll.count({ where: { closesAt: { gt: new Date() }, votes: { none: { userId: user.id } } } })
+    : 0;
   return (
     <header className="nav">
       <Link href="/" className="brand">
@@ -24,6 +29,10 @@ export async function Nav() {
             {incoming > 0 && <span className="nav-badge">{incoming}</span>}
           </NavLink>
           <NavLink href="/duels">Duels</NavLink>
+          <NavLink href="/votes" className="nav-trades">
+            Votes
+            {toVote > 0 && <span className="nav-badge">{toVote}</span>}
+          </NavLink>
           <NavLink href="/classement">Classement</NavLink>
           <NavLink href="/profil">Profil</NavLink>
           {user.staffRole && <NavLink href="/admin">Admin</NavLink>}

@@ -13,7 +13,7 @@ export default async function RecyclePage() {
     prisma.user.findUnique({ where: { id: me.id }, select: { bonusPacks: true, recycledCount: true } }),
     prisma.userCard.findMany({
       where: { userId: me.id, count: { gte: 2 }, card: { active: true } },
-      include: { card: { include: { subject: { select: { image: true, consent: true } } } } },
+      include: { card: { include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } } },
     }),
   ]);
   return (

@@ -6,9 +6,11 @@ export type AnnounceSettings = {
   pulls: "EPIQUE" | "LEGENDAIRE" | "MYTHIQUE" | "OFF";
   duels: boolean;
   trades: boolean;
+  polls: boolean;
+  birthdays: boolean;
 };
 
-export const DEFAULT_ANNOUNCE: AnnounceSettings = { pulls: "LEGENDAIRE", duels: true, trades: true };
+export const DEFAULT_ANNOUNCE: AnnounceSettings = { pulls: "LEGENDAIRE", duels: true, trades: true, polls: true, birthdays: true };
 
 export async function getAnnounceSettings(): Promise<AnnounceSettings> {
   const row = await prisma.setting.findUnique({ where: { key: "announce" } });

@@ -1,7 +1,7 @@
 export async function register() {
-  // Sauvegarde automatique quotidienne (uniquement côté serveur Node.js)
+  // Tâches de fond : sauvegarde quotidienne, fin des votes, anniversaires (côté serveur Node.js uniquement)
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { startBackupScheduler } = await import("@/lib/backup");
-    startBackupScheduler();
+    const { startScheduler } = await import("@/lib/scheduler");
+    startScheduler();
   }
 }

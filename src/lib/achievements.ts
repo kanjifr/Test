@@ -17,6 +17,7 @@ export type Stats = {
   mythicOwned: number;
   recycled: number;
   duelWins: number;
+  votes: number;
   tradesDone: number;
   featuredIn: number;
   bestElementDone: number; // nb max de cartes possédées dans un élément complet ou non
@@ -57,6 +58,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "trade_10", name: "Marchand du quartier", description: "Réaliser 10 échanges.", kanji: "商", tier: "ARGENT", progress: (s) => [s.tradesDone, 10] },
   { id: "duel_1", name: "Premier sang", description: "Gagner un duel contre un membre.", kanji: "刃", tier: "BRONZE", progress: (s) => [s.duelWins, 1] },
   { id: "duel_25", name: "Gladiateur", description: "Gagner 25 duels contre des membres.", kanji: "闘", tier: "ARGENT", progress: (s) => [s.duelWins, 25] },
+  { id: "vote_1", name: "Voix du peuple", description: "Participer à un vote de la communauté.", kanji: "票", tier: "BRONZE", progress: (s) => [s.votes, 1] },
   { id: "featured", name: "Visage du clan", description: "Apparaître sur une carte.", kanji: "顔", tier: "BRONZE", progress: (s) => [s.featuredIn, 1] },
 ];
 

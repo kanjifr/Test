@@ -26,7 +26,7 @@ export function parisDayStart(now = new Date()) {
   return new Date(utcMidnight.getTime() - (paris.getTime() - utc.getTime()));
 }
 
-const cardInclude = { card: { include: { subject: { select: { image: true, consent: true } } } } } as const;
+const cardInclude = { card: { include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } } } as const;
 
 /** Cartes possédées (actives) d'un membre, de la plus forte à la plus faible. */
 export async function ownedFighters(userId: string) {
@@ -51,7 +51,7 @@ export async function defenseTeamOf(userId: string): Promise<CardView[]> {
 
 /** Adversaire d'entraînement : 3 cartes d'un niveau proche de l'équipe du joueur. */
 export async function trainingTeam(team: Fighter[], rand: () => number): Promise<CardView[]> {
-  const cards = await prisma.card.findMany({ where: { active: true }, include: { subject: { select: { image: true, consent: true } } } });
+  const cards = await prisma.card.findMany({ where: { active: true }, include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } });
   const avg = team.reduce((s, f) => s + power(f), 0) / Math.max(1, team.length);
   const pool = cards
     .map(toFighter)

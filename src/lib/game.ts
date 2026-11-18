@@ -72,6 +72,8 @@ export type CardView = {
   defense: number;
   imageUrl: string | null;
   videoUrl: string | null;
+  /** Le membre représenté fête son anniversaire aujourd'hui */
+  birthday?: boolean;
 };
 
 /** Tirage pondéré d'une rareté. `minRarity` permet de garantir une carte rare+. */
@@ -90,10 +92,24 @@ export function rollRarity(rand: () => number, minRarity: Rarity = "COMMUNE"): R
  * Tire `size` cartes (jamais de Mythique, voir `mythicChance`). La dernière carte est au minimum Rare.
  * Si aucune carte n'existe dans la rareté tirée, on descend (puis monte) jusqu'à en trouver.
  */
+/** Tirage pondéré dans une liste (poids 1 par défaut). */
+function pickWeighted<T>(list: T[], rand: () => number, weightOf?: (c: T) => number): T {
+  if (!weightOf) return list[Math.floor(rand() * list.length)];
+  const total = list.reduce((s, c) => s + Math.max(0, weightOf(c)), 0);
+  let x = rand() * total;
+  for (const c of list) {
+    x -= Math.max(0, weightOf(c));
+    if (x < 0) return c;
+  }
+  return list[list.length - 1];
+}
+
 export function drawPack<T extends { rarity: Rarity }>(
   cards: T[],
   size: number,
   rand: () => number,
+  /** Poids d'une carte à l'intérieur de sa rareté (ex. carte d'anniversaire ×5) */
+  weightOf?: (c: T) => number,
 ): T[] {
   const pool = cards.filter((c) => RARITIES[c.rarity].weight > 0);
   if (pool.length === 0) return [];
@@ -111,7 +127,7 @@ export function drawPack<T extends { rarity: Rarity }>(
     ];
     for (const r of search) {
       const list = byRarity.get(r);
-      if (list?.length) return list[Math.floor(rand() * list.length)];
+      if (list?.length) return pickWeighted(list, rand, weightOf);
     }
     throw new Error("unreachable");
   };
@@ -139,13 +155,14 @@ export function drawBooster<T extends { rarity: Rarity }>(
   size: number,
   pityCount: number,
   rand: () => number,
+  weightOf?: (c: T) => number,
 ): { cards: T[]; mythic: boolean; pityCount: number } {
   const mythics = cards.filter((c) => c.rarity === "MYTHIQUE");
-  const drawn = drawPack(cards, size, rand);
+  const drawn = drawPack(cards, size, rand, weightOf);
   if (mythics.length === 0) return { cards: drawn, mythic: false, pityCount };
   const hit = rand() < mythicChance(pityCount);
   if (hit) {
-    const m = mythics[Math.floor(rand() * mythics.length)];
+    const m = pickWeighted(mythics, rand, weightOf);
     if (drawn.length > 0) drawn[0] = m;
     else drawn.push(m);
     drawn.sort(byRarityOrder);
