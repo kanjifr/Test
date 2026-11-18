@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Shippori_Mincho_B1, Zen_Kaku_Gothic_New } from "next/font/google";
+import { M_PLUS_Rounded_1c, Mochiy_Pop_One } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { AchievementNotifier } from "@/components/AchievementNotifier";
 import { SITE_NAME } from "@/lib/game";
 import "./globals.css";
 
-const display = Shippori_Mincho_B1({
+const display = Mochiy_Pop_One({
   subsets: ["latin"],
-  weight: ["600", "800"],
+  weight: "400",
   variable: "--font-display",
 });
-const body = Zen_Kaku_Gothic_New({
+const body = M_PLUS_Rounded_1c({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["500", "700", "800"],
   variable: "--font-body",
 });
 
@@ -28,6 +28,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${display.variable} ${body.variable}`}>
       <body>
         <div className="sky" aria-hidden />
+        <div className="petals" aria-hidden>
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
         <Nav />
         <main className="main">{children}</main>
         <AchievementNotifier />

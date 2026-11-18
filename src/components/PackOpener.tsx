@@ -210,96 +210,96 @@ export function PackOpener({
       {cinema && <Cinematic card={cinema} onClose={() => setCinema(null)} />}
 
       {(phase === "idle" || phase === "tearing") && (
-        <div className="pack-stage">
-          <button
-            type="button"
-            className={`pack ${phase === "tearing" ? `tearing ${best ? `aura aura-${best}` : ""}` : ""} ${pending ? "shaking" : ""} ${
-              phase !== "idle" ? "" : ready ? "ready" : "locked"
-            }`}
-            onClick={open}
-            disabled={!ready || pending || phase !== "idle"}
-            aria-label="Ouvrir le booster"
-          >
-            <span className="pack-top" />
-            <span className="pack-body">
-              <span className="pack-kanji">絆</span>
-              <span className="pack-name">{siteName}</span>
-              <span className="pack-sub">Booster · {packSize} cartes</span>
-            </span>
-          </button>
-          <div className="pack-caption">
-            {ready ? (
-              <span className="cta">
-                {pending
-                  ? "Ouverture…"
-                  : timerReady
-                    ? "Clique sur le booster pour l'ouvrir"
-                    : "Clique pour ouvrir un booster bonus 🎁"}
+        <div className={`booster-layout ${phase === "tearing" ? "is-tearing" : ""}`}>
+          <section className="pack-stage" aria-label="Ouvrir un booster">
+            <span className="moon" aria-hidden />
+            <p className="pack-hello">
+              {ready ? (timerReady ? "Ton booster t'attend !" : "Un booster bonus t'attend !") : "Ton prochain booster arrive…"}
+            </p>
+            <button
+              type="button"
+              className={`pack ${phase === "tearing" ? `tearing ${best ? `aura aura-${best}` : ""}` : ""} ${pending ? "shaking" : ""} ${
+                phase !== "idle" ? "" : ready ? "ready" : "locked"
+              }`}
+              onClick={open}
+              disabled={!ready || pending || phase !== "idle"}
+              aria-label="Ouvrir le booster"
+            >
+              <span className="pack-top" />
+              <span className="pack-body">
+                <span className="pack-spark s1" aria-hidden />
+                <span className="pack-spark s2" aria-hidden />
+                <span className="pack-kanji">絆</span>
+                <span className="pack-name">{siteName}</span>
+                <span className="pack-sub">Booster · {packSize} cartes</span>
               </span>
-            ) : (
-              <span>
-                Prochain booster dans <b className="timer">{formatLeft(nextAt - now)}</b>
-              </span>
-            )}
+            </button>
+            <button type="button" className="btn btn-open" onClick={open} disabled={!ready || pending || phase !== "idle"}>
+              {pending ? "Ouverture…" : ready ? (timerReady ? "Ouvrir !" : "Ouvrir un bonus !") : formatLeft(nextAt - now)}
+            </button>
             {bonus > 0 && (
               <p className="bonus-chip">
                 🎁 {bonus} booster{bonus > 1 ? "s" : ""} bonus en réserve
-                {!timerReady && <span className="muted"> · prochain gratuit dans {formatLeft(nextAt - now)}</span>}
-              </p>
-            )}
-            {!ready && (
-              <p className="small-text">
-                Pas envie d&apos;attendre ? <Link href="/recyclage">♻ Recycle tes doublons</Link> pour gagner des boosters.
               </p>
             )}
             {error && <p className="error">{error}</p>}
-          </div>
-          {phase === "idle" && (
-            <div className="pity">
-              {mythicOn && (
-                <>
-                  <div className="pity-head">
-                    <span className="pity-label">✦ Jauge Mythique</span>
-                    <span>
-                      {pity}/{pityHard}
-                    </span>
-                  </div>
-                  <div
-                    className="pity-bar"
-                    style={{ "--soft": `${(pitySoft / pityHard) * 100}%` } as React.CSSProperties}
-                    role="progressbar"
-                    aria-valuemin={0}
-                    aria-valuemax={pityHard}
-                    aria-valuenow={pity}
-                  >
-                    <span style={{ width: `${pityPct}%` }} />
-                  </div>
-                  <p className="pity-text">
-                    {pity >= pitySoft
-                      ? "🔥 Chance de Mythique augmentée ! "
-                      : ""}
-                    Mythique garantie au plus tard dans <b>{left}</b> booster{left > 1 ? "s" : ""}.
-                  </p>
-                </>
-              )}
-              <details className="rates">
-                <summary>Taux de drop</summary>
-                <ul>
-                  {rates.map((r) => (
-                    <li key={r.label}>
-                      <span style={{ color: r.color }}>{r.label}</span>
-                      <span>{r.pct}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="muted">
-                  La dernière carte de chaque booster est au moins Rare.
-                  {mythicOn &&
-                    ` Mythique : chance qui augmente à partir du ${pitySoft + 1}e booster sans Mythique, garantie au ${pityHard}e. La jauge repart à zéro quand tu en obtiens une.`}
+          </section>
+
+          <aside className="booster-aside" aria-hidden={phase === "tearing" ? true : undefined}>
+            {mythicOn && (
+              <section className="panel pity" aria-label="Jauge Mythique">
+                <div className="pity-head">
+                  <span className="pity-label">Jauge Mythique</span>
+                  <span className="pity-value">
+                    {pity}
+                    <small> / {pityHard}</small>
+                  </span>
+                </div>
+                <div
+                  className="pity-bar"
+                  style={{ "--soft": `${(pitySoft / pityHard) * 100}%` } as React.CSSProperties}
+                  role="progressbar"
+                  aria-label="Jauge Mythique"
+                  aria-valuemin={0}
+                  aria-valuemax={pityHard}
+                  aria-valuenow={pity}
+                >
+                  <span style={{ width: `${pityPct}%` }} />
+                </div>
+                <p className="pity-text">
+                  {pity >= pitySoft ? "🔥 Chance de Mythique augmentée ! " : ""}
+                  Mythique <b>garantie dans {left} booster{left > 1 ? "s" : ""}</b>. Après le trait doré, la chance s&apos;envole.
                 </p>
-              </details>
-            </div>
-          )}
+              </section>
+            )}
+
+            <section className="panel timer-panel" aria-label="Prochain booster gratuit">
+              <span className="panel-label">Prochain booster gratuit</span>
+              <span className="timer-big">{timerReady ? "Disponible !" : formatLeft(nextAt - now)}</span>
+              <Link href="/recyclage" className="btn btn-ghost btn-sm">
+                ♻ Recycler 10 doublons
+              </Link>
+            </section>
+
+            {children}
+
+            <details className="panel rates">
+              <summary>Taux de drop</summary>
+              <ul>
+                {rates.map((r) => (
+                  <li key={r.label}>
+                    <span style={{ color: r.color }}>{r.label}</span>
+                    <span>{r.pct}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="muted">
+                La dernière carte de chaque booster est au moins Rare.
+                {mythicOn &&
+                  ` Mythique : chance qui augmente à partir du ${pitySoft + 1}e booster sans Mythique, garantie au ${pityHard}e. La jauge repart à zéro quand tu en obtiens une.`}
+              </p>
+            </details>
+          </aside>
         </div>
       )}
 
@@ -368,7 +368,6 @@ export function PackOpener({
         </>
       )}
 
-      {phase === "idle" && children}
     </div>
   );
 }

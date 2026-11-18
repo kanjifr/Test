@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { SITE_NAME } from "@/lib/game";
 import { pendingIncomingCount } from "@/lib/trades";
+import { NavLink } from "@/components/NavLink";
 
 export async function Nav() {
   const session = await auth();
@@ -16,16 +17,16 @@ export async function Nav() {
       </Link>
       {user && (
         <nav className="nav-links">
-          <Link href="/">Booster</Link>
-          <Link href="/collection">Collection</Link>
-          <Link href="/echanges" className="nav-trades">
+          <NavLink href="/">Booster</NavLink>
+          <NavLink href="/collection">Collection</NavLink>
+          <NavLink href="/echanges" className="nav-trades">
             Échanges
             {incoming > 0 && <span className="nav-badge">{incoming}</span>}
-          </Link>
-          <Link href="/duels">Duels</Link>
-          <Link href="/classement">Classement</Link>
-          <Link href="/profil">Profil</Link>
-          {user.staffRole && <Link href="/admin">Admin</Link>}
+          </NavLink>
+          <NavLink href="/duels">Duels</NavLink>
+          <NavLink href="/classement">Classement</NavLink>
+          <NavLink href="/profil">Profil</NavLink>
+          {user.staffRole && <NavLink href="/admin">Admin</NavLink>}
           <form
             action={async () => {
               "use server";

@@ -37,6 +37,7 @@ export default async function Home({
   if (!session?.user) {
     return (
       <section className="hero">
+        <span className="moon" aria-hidden />
         <div className="hero-fan" aria-hidden>
           <CardBack />
           <CardBack />
@@ -126,15 +127,14 @@ export default async function Home({
         rates={rates}
       >
         {recent.length > 0 && (
-          <section className="feed">
+          <section className="panel feed" aria-label="Derniers grands tirages">
             <h2>Derniers grands tirages</h2>
             <div className="feed-list">
               {recent.map((p) => (
                 <div key={p.id} className="feed-item">
-                  <GameCard card={toCardView(p.card)} size="sm" />
+                  <GameCard card={toCardView(p.card)} size="xs" />
                   <p>
-                    <b>{p.user.name}</b> a obtenu{" "}
-                    <span style={{ color: RARITIES[p.card.rarity].color }}>{p.card.name}</span>
+                    <b>{p.user.name}</b> l&apos;a obtenue
                   </p>
                 </div>
               ))}
