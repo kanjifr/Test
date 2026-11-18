@@ -143,76 +143,88 @@ label small { font-weight: 400; }
 .panel h2 { margin-top: 0; }
 .narrow { max-width: 640px; margin: 0 auto; }
 
-/* ====== Carte ====== */
+/* ====== Carte (style anime) ====== */
 .gcard {
   --w: 200px;
+  --frame: linear-gradient(135deg, #f1eefa, #9a96b0 50%, #e5e2f0);
+  --tint: #5d5880;
+  --glow: 0 0 0 transparent;
   position: relative; width: var(--w); height: calc(var(--w) * 1.4); flex-shrink: 0;
-  border-radius: calc(var(--w) * 0.06); padding: calc(var(--w) * 0.03);
-  background: linear-gradient(140deg, var(--rc, #888), #1a1a22 45%, var(--rc, #888));
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border-radius: calc(var(--w) * 0.08); padding: calc(var(--w) * 0.025);
+  background: var(--frame);
+  box-shadow: 0 12px 28px rgba(10, 6, 40, 0.45), var(--glow);
   font-size: calc(var(--w) * 0.065);
-  user-select: none;
-  color: #fff;
-  text-align: left;
+  user-select: none; color: #fff; text-align: left;
 }
 .gcard-sm { --w: 150px; }
 .gcard-md { --w: 200px; }
 .gcard-lg { --w: min(300px, 80vw); }
 .gcard-inner {
-  position: relative; height: 100%; border-radius: calc(var(--w) * 0.04); overflow: hidden;
+  position: relative; height: 100%; border-radius: calc(var(--w) * 0.06); overflow: hidden;
   display: flex; flex-direction: column;
-  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ec) 45%, #111), #0d0d14 75%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--tint) 70%, var(--ec)), color-mix(in srgb, var(--tint) 70%, #140f3a) 75%);
 }
-.gcard-top { display: flex; align-items: center; justify-content: space-between; padding: 0.35em 0.5em; gap: 0.3em; z-index: 2; }
-.gcard-num { font-size: 0.75em; color: rgba(255, 255, 255, 0.75); font-weight: 700; }
-.gcard-rarity { font-size: 0.7em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--rc); }
-.gcard-el { display: grid; place-items: center; width: 1.8em; height: 1.8em; border-radius: 50%; background: var(--ec); color: #fff; font-weight: 700; font-size: 0.9em; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4); }
-.gcard-art { position: relative; flex: 1; margin: 0 0.4em; border-radius: 0.4em; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.18); background: #000; }
+.gcard-top { display: flex; align-items: center; justify-content: space-between; padding: 0.4em 0.45em; gap: 0.3em; z-index: 2; }
+.gcard-num { font-size: 0.7em; font-weight: 800; opacity: 0.9; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+.gcard-rarity { font-size: 0.6em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; background: var(--tint); color: #fff; border-radius: 999px; padding: 0.15em 0.6em; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45); }
+.gcard-el { display: grid; place-items: center; width: 1.75em; height: 1.75em; border-radius: 50%; font-weight: 700; font-size: 0.85em; background: rgba(20, 12, 60, 0.55); border: 1.5px solid rgba(255, 255, 255, 0.65); box-shadow: 0 0 8px var(--ec); }
+.gcard-art {
+  position: relative; flex: 1; margin: 0 0.4em; border-radius: 0.65em; overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--ec) 70%, #ffffff) 0, color-mix(in srgb, var(--ec) 55%, var(--tint)) 34%, color-mix(in srgb, var(--tint) 75%, #140f3a) 92%);
+}
 .gcard-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.gcard-placeholder { position: absolute; inset: 0; display: grid; place-items: center; background: var(--seigaiha), radial-gradient(circle, color-mix(in srgb, var(--ec) 70%, #000), #050508); background-size: 30px 15px, cover; }
-.ph-kanji { position: absolute; font-family: var(--font-display); font-size: 5em; color: rgba(255, 255, 255, 0.12); }
-.ph-initials { position: relative; font-family: var(--font-display); font-size: 2.6em; font-weight: 800; color: #fff; text-shadow: 0 0 20px var(--ec); }
+.gcard-placeholder { position: absolute; inset: 0; display: grid; place-items: center; background: var(--seigaiha); background-size: 30px 15px; }
+.ph-kanji { position: absolute; font-family: var(--font-display); font-size: 4.6em; color: rgba(255, 255, 255, 0.13); }
+.ph-initials { position: relative; font-family: var(--font-display); font-size: 2.6em; color: #fff; text-shadow: 0 0.07em 0 color-mix(in srgb, var(--tint) 80%, #000), 0 0 3px rgba(0, 0, 0, 0.45), 0 0 18px rgba(255, 255, 255, 0.55); }
 .gcard-vertical {
-  position: absolute; top: 0.4em; right: 0.3em; writing-mode: vertical-rl; font-family: var(--font-display); font-weight: 800;
-  font-size: 0.7em; padding: 0.5em 0.2em; background: rgba(10, 10, 16, 0.78); border: 1px solid var(--rc); border-radius: 0.3em;
-  max-height: 90%; overflow: hidden; color: #fff;
+  position: absolute; top: 0.45em; right: 0.35em; writing-mode: vertical-rl; font-weight: 800;
+  font-size: 0.62em; padding: 0.6em 0.25em; border-radius: 999px; max-height: 88%; overflow: hidden; color: #fff;
+  background: rgba(20, 12, 60, 0.55); border: 1px solid rgba(255, 255, 255, 0.6);
 }
-.gcard-bottom { padding: 0.35em 0.5em 0.45em; z-index: 2; }
-.gcard-name { font-family: var(--font-display); font-weight: 800; font-size: 1.25em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gcard-stats { display: flex; justify-content: space-between; font-size: 0.7em; margin-top: 0.25em; color: rgba(255, 255, 255, 0.85); }
-.gcard-stats b { color: var(--rc); }
-.gcard-elname { color: var(--ec); font-weight: 700; }
-.gcard-badge { position: absolute; top: -0.6em; left: 50%; transform: translateX(-50%); background: var(--gold); color: #1a1205; font-weight: 800; font-size: 0.7em; padding: 0.2em 0.7em; border-radius: 999px; box-shadow: 0 0 14px var(--gold); z-index: 3; letter-spacing: 0.06em; }
-.gcard-count { position: absolute; bottom: -0.5em; right: -0.5em; background: var(--crimson); color: #fff; font-weight: 800; font-size: 0.8em; padding: 0.2em 0.55em; border-radius: 999px; border: 2px solid var(--bg); z-index: 3; }
+.gcard-bottom { padding: 0.35em 0.5em 0.5em; z-index: 2; }
+.gcard-name { font-family: var(--font-display); font-size: 1.15em; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0.08em 0 var(--tint), 0 0 10px rgba(0, 0, 0, 0.35); }
+.gcard-stats { display: flex; justify-content: space-between; font-size: 0.66em; margin-top: 0.25em; font-weight: 800; }
+.gcard-stats b { color: #fff; opacity: 0.75; }
+.gcard-elname { color: #fff; }
+.gcard-badge { position: absolute; top: -0.6em; left: 50%; transform: translateX(-50%); background: #fff; color: #c2337a; font-weight: 800; font-size: 0.7em; padding: 0.2em 0.75em; border-radius: 999px; box-shadow: 0 0 16px rgba(255, 255, 255, 0.85); z-index: 3; letter-spacing: 0.06em; }
+.gcard-count { position: absolute; bottom: -0.5em; right: -0.5em; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 800; font-size: 0.8em; padding: 0.2em 0.6em; border-radius: 999px; border: 2px solid #fff; z-index: 3; }
 
-.rarity-commune { --rc: #9aa3ad; }
-.rarity-rare { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(59, 156, 255, 0.35); }
-.rarity-epique { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 26px rgba(178, 92, 255, 0.5); }
-.rarity-legendaire { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 36px rgba(255, 194, 61, 0.6); }
-.rarity-legendaire .gcard-inner { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ec) 45%, #2a1d00), #120c00 75%); }
+/* Cadres et halos par rareté */
+.rarity-commune { --rc: #d6d2ea; }
+.rarity-rare { --rc: #6fd0ff; --frame: linear-gradient(135deg, #c4f2ff, #2f8fd8 50%, #9fe9ff); --tint: #1f5fa8; --glow: 0 0 18px rgba(80, 190, 255, 0.55); }
+.rarity-epique { --rc: #c9a2ff; --frame: linear-gradient(135deg, #ecdcff, #7b3fe4 50%, #d6b4ff); --tint: #5b2fb8; --glow: 0 0 22px rgba(167, 123, 255, 0.65); }
+.rarity-legendaire { --rc: #ffd166; --frame: linear-gradient(135deg, #fff2bd, #e0a419 50%, #ffe08a); --tint: #9a5a08; --glow: 0 0 28px rgba(255, 209, 102, 0.7); }
+.rarity-mythique {
+  --rc: #ff8cc0; --tint: #a3236f;
+  --frame: conic-gradient(from var(--spin, 0deg), #ff5fa2, #ffd166, #5ef2ff, #a77bff, #ff5fa2);
+  --glow: 0 0 34px rgba(255, 95, 162, 0.8), 0 0 70px rgba(255, 209, 102, 0.35);
+  animation: mythSpin 4s linear infinite;
+}
+.rarity-mythique .gcard-rarity { background: var(--holo); color: #3a0a2a; }
 .gcard-holo {
   position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: 0.45; z-index: 1;
   background: linear-gradient(115deg, transparent 20%, rgba(255, 120, 200, 0.5) 35%, rgba(120, 220, 255, 0.5) 45%, rgba(255, 240, 120, 0.5) 55%, transparent 70%);
   background-size: 250% 250%; animation: holo 4s linear infinite;
 }
-.rarity-legendaire .gcard-holo { opacity: 0.6; }
+.rarity-legendaire .gcard-holo { opacity: 0.55; }
+.rarity-mythique .gcard-holo { opacity: 0.7; animation-duration: 2.5s; }
 @keyframes holo { from { background-position: 100% 100%; } to { background-position: -150% -150%; } }
 
-/* Dos de carte */
-.gcard-back { background: linear-gradient(140deg, var(--gold), #5b3d10 50%, var(--gold)); }
+/* Dos de carte : cadre holographique, nuit étoilée, kanji lumineux */
+.gcard-back { --frame: var(--holo); --glow: 0 0 18px rgba(255, 95, 162, 0.45); }
 .back-inner {
-  height: 100%; border-radius: calc(var(--w) * 0.04); display: grid; place-items: center; position: relative;
-  background: var(--seigaiha), linear-gradient(160deg, #6d1020, #2a0710 60%, #160409);
+  height: 100%; border-radius: calc(var(--w) * 0.06); display: grid; place-items: center; position: relative; overflow: hidden;
+  background: var(--seigaiha), radial-gradient(circle at 50% 38%, #c24a98, #4a2386 55%, #1d1250);
   background-size: calc(var(--w) * 0.2) calc(var(--w) * 0.1), cover;
-  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 .back-emblem {
-  width: 46%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
-  background: radial-gradient(circle, #1a0a0e 55%, var(--gold) 56% 60%, #1a0a0e 61% 66%, var(--gold) 67% 70%, transparent 71%);
-  font-family: var(--font-display); font-size: calc(var(--w) * 0.17); color: var(--gold); font-weight: 800;
+  width: 50%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle, rgba(20, 12, 60, 0.55) 58%, rgba(255, 255, 255, 0.9) 59% 61.5%, transparent 62.5% 66%, rgba(255, 209, 102, 0.95) 67% 69.5%, transparent 70.5%);
+  font-family: var(--font-display); font-size: calc(var(--w) * 0.17); color: #fff;
+  text-shadow: 0 0 16px rgba(255, 230, 180, 0.95), 0 0.06em 0 #7a2c86;
 }
-.back-label { position: absolute; bottom: 8%; font-size: 0.8em; color: rgba(228, 183, 90, 0.8); font-weight: 700; }
+.back-label { position: absolute; bottom: 8%; font-size: 0.8em; color: rgba(255, 255, 255, 0.85); font-weight: 800; }
 
 /* ====== Booster ====== */
 .opener { display: flex; flex-direction: column; align-items: center; min-height: 60vh; justify-content: center; padding: 0.5rem 0 2rem; }
@@ -522,7 +534,7 @@ code { background: rgba(0, 0, 0, 0.4); padding: 0.1rem 0.35rem; border-radius: 4
 /* Filtres de la collection */
 .grid-controls { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.8rem 1.5rem; margin-bottom: 1.5rem; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.chip { --cc: var(--gold); background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); color: var(--text); padding: 0.35rem 0.85rem; border-radius: 999px; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.chip { --cc: var(--accent); background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); color: var(--text); padding: 0.35rem 0.85rem; border-radius: 999px; font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
 .chip:hover { border-color: var(--cc); }
 .chip.on { background: color-mix(in srgb, var(--cc) 25%, transparent); border-color: var(--cc); color: #fff; }
 label.inline { flex-direction: row; align-items: center; gap: 0.5rem; font-weight: 400; white-space: nowrap; }
@@ -546,14 +558,6 @@ label.inline select { width: auto; }
 
 /* ====== Rareté Mythique ====== */
 .gcard-art video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.rarity-mythique {
-  background: conic-gradient(from var(--spin, 0deg), #ff2e63, #ff8a00, #ffe14d, #ff2e63, #b25cff, #ff2e63);
-  animation: mythSpin 4s linear infinite;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 46, 99, 0.65);
-}
-.rarity-mythique .gcard-inner { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ec) 40%, #3a0010), #12000a 75%); }
-.rarity-mythique .gcard-rarity { background: linear-gradient(90deg, #ff2e63, #ffe14d, #ff2e63); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.rarity-mythique .gcard-holo { opacity: 0.7; animation-duration: 2.5s; }
 @property --spin { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes mythSpin { to { --spin: 360deg; } }
 
