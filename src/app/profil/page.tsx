@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { setBirthday, setConsent, setFeaturedBadge } from "@/app/actions";
+import { setBirthday, setConsent, setFeaturedBadge, setShowcase } from "@/app/actions";
+import Link from "next/link";
+import { CopyLink } from "@/components/CopyLink";
 import { MONTHS } from "@/lib/birthday";
+import { RARITIES } from "@/lib/game";
 import { ACHIEVEMENTS, TIERS, badgeView } from "@/lib/achievements";
 import { checkAchievements } from "@/lib/achievements-server";
 import { Badge, NameWithBadge } from "@/components/Badge";
@@ -15,6 +18,11 @@ export default async function Profile() {
   const unlocked = new Map(
     (await prisma.userAchievement.findMany({ where: { userId: me.id } })).map((u) => [u.achievementId, u.unlockedAt]),
   );
+  const myCards = await prisma.userCard.findMany({
+    where: { userId: me.id, card: { active: true } },
+    include: { card: { select: { id: true, number: true, name: true, rarity: true } } },
+    orderBy: { card: { number: "asc" } },
+  });
   const user = await prisma.user.findUnique({
     where: { id: me.id },
     include: { _count: { select: { cards: true, featuredIn: true } } },
@@ -58,6 +66,31 @@ export default async function Profile() {
         {user._count.featuredIn > 0 && (
           <p className="muted">Tu apparais déjà sur {user._count.featuredIn} carte(s).</p>
         )}
+      </form>
+
+      <form action={setShowcase} className="consent showcase-form" id="vitrine" key={user.showcase.join(",")}>
+        <h3>✨ Ma vitrine</h3>
+        <p className="muted">Les 3 cartes mises en avant sur ton profil public.</p>
+        <div className="row">
+          {[0, 1, 2].map((i) => (
+            <label key={i}>
+              Carte {i + 1}
+              <select name="card" defaultValue={user.showcase[i] ?? ""}>
+                <option value="">—</option>
+                {myCards.map((c) => (
+                  <option key={c.card.id} value={c.card.id}>
+                    #{String(c.card.number).padStart(3, "0")} {c.card.name} ({RARITIES[c.card.rarity].label})
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+        <div className="row">
+          <button type="submit" className="btn">Enregistrer</button>
+          <Link className="btn btn-ghost" href={`/membre/${user.id}`}>Voir mon profil public</Link>
+          <CopyLink path={`/membre/${user.id}`} />
+        </div>
       </form>
 
       <form action={setBirthday} className="consent birthday-form" key={`${user.birthMonth}-${user.birthDay}`}>

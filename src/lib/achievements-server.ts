@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ACHIEVEMENTS, type Stats } from "@/lib/achievements";
 
 export async function computeStats(userId: string, extra: { luckyPack?: boolean } = {}): Promise<Stats> {
-  const [user, owned, cards, tradesDone, featuredIn, lucky, votes] = await Promise.all([
+  const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
@@ -17,6 +17,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
           .findUnique({ where: { userId_achievementId: { userId, achievementId: "lucky_pack" } } })
           .then(Boolean),
     prisma.pollVote.count({ where: { userId } }),
+    prisma.anecdote.count({ where: { authorId: userId, status: "APPROVED" } }),
   ]);
 
   const elementTotals = new Map<string, number>();
@@ -50,6 +51,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     recycled: user?.recycledCount ?? 0,
     duelWins: user?.duelWins ?? 0,
     votes,
+    anecdotes,
     tradesDone,
     featuredIn,
     bestElementDone: bestDone,

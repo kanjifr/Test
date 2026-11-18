@@ -14,7 +14,7 @@ const VERSION = 1;
  * et sans les jetons de connexion Discord). Les images et vidéos restent dans le volume.
  */
 export async function buildBackup() {
-  const [users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes] = await Promise.all([
+  const [users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes, anecdotes] = await Promise.all([
     prisma.user.findMany(),
     prisma.account.findMany({ select: { userId: true, type: true, provider: true, providerAccountId: true, createdAt: true, updatedAt: true } }),
     prisma.card.findMany(),
@@ -26,8 +26,9 @@ export async function buildBackup() {
     prisma.poll.findMany(),
     prisma.pollOption.findMany(),
     prisma.pollVote.findMany(),
+    prisma.anecdote.findMany(),
   ]);
-  const data = { users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes };
+  const data = { users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes, anecdotes };
   const counts = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.length]));
   return { format: FORMAT, version: VERSION, site: SITE_NAME, createdAt: new Date().toISOString(), counts, data };
 }
@@ -69,6 +70,7 @@ export async function restoreBackup(b: Backup) {
   const d = b.data;
   await prisma.$transaction(
     async (tx) => {
+      await tx.anecdote.deleteMany();
       await tx.pollVote.deleteMany();
       await tx.pollOption.deleteMany();
       await tx.poll.deleteMany();
@@ -101,6 +103,7 @@ export async function restoreBackup(b: Backup) {
         await tx.pollOption.createMany({ data: d.pollOptions ?? [] });
         await tx.pollVote.createMany({ data: d.pollVotes ?? [] });
       }
+      if (d.anecdotes?.length) await tx.anecdote.createMany({ data: d.anecdotes });
       // Les prochaines cartes créées continuent la numérotation
       await tx.$executeRawUnsafe(
         `SELECT setval(pg_get_serial_sequence('"Card"', 'number'), GREATEST(COALESCE((SELECT MAX("number") FROM "Card"), 0), 1), (SELECT COUNT(*) > 0 FROM "Card"))`,

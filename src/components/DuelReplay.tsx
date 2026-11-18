@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { GameCard } from "@/components/GameCard";
 import type { DuelLog, Hit } from "@/lib/duel";
 import type { CardView } from "@/lib/game";
+import { play } from "@/lib/sfx";
 
 type Step = { round: number; hit: number }; // hit = -1 : présentation de la manche, hits.length : fin de manche
 
@@ -50,6 +51,17 @@ export function DuelReplay({
   const [step, setStep] = useState<Step>({ round: 0, hit: -1 });
   const [done, setDone] = useState(false);
   const round = log.rounds[step.round];
+
+  // Bruitages : chaque coup, puis la fin du duel
+  useEffect(() => {
+    const h = round && step.hit >= 0 && step.hit < round.hits.length ? round.hits[step.hit] : null;
+    if (h) play(h.dodge ? "dodge" : h.crit ? "crit" : "hit");
+  }, [step, round]);
+  useEffect(() => {
+    if (!done) return;
+    if (log.winner === -1 || viewerSide === null) play("rare");
+    else play(log.winner === viewerSide ? "win" : "lose");
+  }, [done, log.winner, viewerSide]);
 
   useEffect(() => {
     if (done || !round) return;

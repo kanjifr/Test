@@ -7,6 +7,7 @@ import { openPack, type OpenResult } from "@/app/actions";
 import { CardBack, GameCard } from "@/components/GameCard";
 import { RARITIES, RARITY_ORDER } from "@/lib/game";
 import { holdAchievementToasts } from "@/components/AchievementToasts";
+import { play, playReveal } from "@/lib/sfx";
 
 type Pulled = Extract<OpenResult, { ok: true }>["cards"][number];
 type Phase = "idle" | "tearing" | "stack" | "done";
@@ -155,10 +156,11 @@ export function PackOpener({
     }
   }, [revealed, router]);
 
-  // Flash lumineux quand une Épique, Légendaire ou Mythique apparaît en haut de la pile
+  // Son de révélation, puis flash lumineux pour les Épiques, Légendaires et Mythiques
   useEffect(() => {
     if (phase !== "stack" || cinema) return;
     const r = cards[idx]?.rarity;
+    if (r) playReveal(r);
     if (r === "LEGENDAIRE" || r === "EPIQUE" || r === "MYTHIQUE") {
       setFlash(RARITIES[r].color);
       const t = setTimeout(() => setFlash(null), 900);
@@ -186,6 +188,7 @@ export function PackOpener({
       setLeaving(false);
       played.current = new Set();
       setPhase("tearing");
+      play("tear");
       const has = (r: Pulled["rarity"]) => res.cards.some((c) => c.rarity === r);
       const top = has("MYTHIQUE") ? 2800 : has("LEGENDAIRE") ? 2200 : has("EPIQUE") ? 1800 : 1300;
       setTimeout(() => setPhase("stack"), top);

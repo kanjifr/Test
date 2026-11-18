@@ -38,6 +38,7 @@ export const PERMISSIONS = {
   resetCollections: FULL,
   importCards: FULL,
   managePolls: FULL,
+  moderateAnecdotes: ["OWNER", "ADMIN", "MODERATOR"],
   manageBackups: ["OWNER"],
   manageAnnouncements: ["OWNER"],
   seedDemo: FULL,

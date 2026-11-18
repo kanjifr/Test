@@ -165,6 +165,14 @@ export function CardGrid({ items }: { items: GridItem[] }) {
               </p>
               {open.card.description && <p className="desc">{open.card.description}</p>}
               <p className="muted">Exemplaires possédés : {open.count}</p>
+              <p className="row">
+                <a className="btn" href={`/carte/${open.card.id}`}>
+                  📖 Fiche & livre d&apos;or
+                </a>
+                <a className="btn btn-ghost" href={`/api/cartes/${open.card.id}/image`} download={`kizuna-${open.card.name}.png`}>
+                  🖼️ Image
+                </a>
+              </p>
               <button type="button" className="btn btn-ghost" onClick={() => setOpen(null)}>
                 Fermer
               </button>

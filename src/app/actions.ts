@@ -150,3 +150,12 @@ export async function setBirthday(formData: FormData) {
   });
   revalidatePath("/", "layout");
 }
+
+export async function setShowcase(formData: FormData) {
+  const user = await requireUser();
+  const ids = [...new Set(formData.getAll("card").map(String).filter(Boolean))].slice(0, 3);
+  const owned = await prisma.userCard.findMany({ where: { userId: user.id, cardId: { in: ids } }, select: { cardId: true } });
+  const ok = new Set(owned.map((o) => o.cardId));
+  await prisma.user.update({ where: { id: user.id }, data: { showcase: ids.filter((id) => ok.has(id)) } });
+  revalidatePath("/", "layout");
+}

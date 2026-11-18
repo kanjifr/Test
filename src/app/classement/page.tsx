@@ -39,7 +39,7 @@ export default async function Leaderboard() {
             ) : (
               <span className="avatar-fallback">{u.name?.[0] ?? "?"}</span>
             )}
-            <Link href={`/collection?u=${u.id}`} className="board-name">
+            <Link href={`/membre/${u.id}`} className="board-name">
               <NameWithBadge name={u.name} badge={badgeView(u.featuredBadge)} />
             </Link>
             <span className="muted board-meta">

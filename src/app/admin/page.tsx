@@ -12,6 +12,7 @@ import { TEMPLATE_CSV } from "@/lib/import";
 import { lastBackupSent, webhookConfigured } from "@/lib/backup";
 import { restoreFromBackup, sendBackupNow } from "./backup-actions";
 import { closePoll, createPoll, deletePoll } from "./poll-actions";
+import { approveAnecdote, deleteAnecdote } from "@/app/carte/actions";
 import { isOpen, pollInclude, results } from "@/lib/polls";
 import { saveAnnounceSettings, sendTestAnnouncement } from "./announce-actions";
 import { announceConfigured } from "@/lib/announce";
@@ -40,6 +41,7 @@ export default async function AdminPage({
     reset: can(me.role, "resetCollections"),
     import: can(me.role, "importCards"),
     polls: can(me.role, "managePolls"),
+    anecdotes: can(me.role, "moderateAnecdotes"),
     backups: can(me.role, "manageBackups"),
     announce: can(me.role, "manageAnnouncements"),
     seed: can(me.role, "seedDemo"),
@@ -48,6 +50,14 @@ export default async function AdminPage({
   };
 
   const lastBackup = allow.backups ? await lastBackupSent() : null;
+  const pendingAnecdotes = allow.anecdotes
+    ? await prisma.anecdote.findMany({
+        where: { status: "PENDING" },
+        orderBy: { createdAt: "asc" },
+        take: 50,
+        include: { card: { select: { id: true, name: true, number: true } }, author: { select: { name: true } } },
+      })
+    : [];
   const polls = allow.polls ? await prisma.poll.findMany({ include: pollInclude, orderBy: { createdAt: "desc" }, take: 12 }) : [];
   const announceSettings = allow.announce ? await getAnnounceSettings() : null;
   const [cards, members, stats, logs] = await Promise.all([
@@ -262,6 +272,42 @@ export default async function AdminPage({
           ))}
         </div>
       </div>
+
+      {allow.anecdotes && (
+        <div className="panel admin-anecdotes" id="livre-d-or">
+          <h2>
+            📖 Livre d&apos;or <span className="muted">({pendingAnecdotes.length} en attente)</span>
+          </h2>
+          {pendingAnecdotes.length === 0 ? (
+            <p className="muted">Aucune anecdote à valider. Les anecdotes publiées se modifient directement sur la fiche de chaque carte.</p>
+          ) : (
+            <ul className="admin-anecdote-list">
+              {pendingAnecdotes.map((a) => (
+                <li key={a.id}>
+                  <p className="small-text">
+                    <b>{a.author?.name ?? "Ancien membre"}</b> sur{" "}
+                    <a href={`/carte/${a.card.id}#livre-d-or`}>
+                      #{String(a.card.number).padStart(3, "0")} {a.card.name}
+                    </a>{" "}
+                    <span className="muted">· {a.createdAt.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}</span>
+                  </p>
+                  <form action={approveAnecdote} className="anecdote-edit">
+                    <input type="hidden" name="id" value={a.id} />
+                    <textarea name="text" defaultValue={a.text} maxLength={500} rows={2} aria-label="Texte de l'anecdote (modifiable avant validation)" />
+                    <button className="btn btn-sm">✔ Valider</button>
+                  </form>
+                  <form action={deleteAnecdote}>
+                    <input type="hidden" name="id" value={a.id} />
+                    <ConfirmButton className="btn btn-sm btn-danger" message="Refuser et supprimer cette anecdote ?">
+                      Refuser
+                    </ConfirmButton>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {allow.polls && (
         <div className="panel admin-polls" id="votes">
