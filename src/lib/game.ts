@@ -37,9 +37,9 @@ export const RECYCLE_COST = clampInt(process.env.RECYCLE_COST, 10, 1, 1000);
 
 // --- Système de pity pour les cartes Mythiques ---
 // Chance par booster, augmentée à partir de PITY_SOFT, garantie au PITY_HARD-ième booster.
-export const MYTHIC_BASE_CHANCE = Math.min(1, Math.max(0, Number(process.env.MYTHIC_CHANCE ?? 0.015) || 0));
-export const PITY_HARD = clampInt(process.env.PITY_HARD, 60, 2, 1000);
-export const PITY_SOFT = Math.min(PITY_HARD - 1, clampInt(process.env.PITY_SOFT, 45, 1, 1000));
+export const MYTHIC_BASE_CHANCE = Math.min(1, Math.max(0, Number(process.env.MYTHIC_CHANCE ?? 0.004) || 0));
+export const PITY_HARD = clampInt(process.env.PITY_HARD, 140, 2, 1000);
+export const PITY_SOFT = Math.min(PITY_HARD - 1, clampInt(process.env.PITY_SOFT, 110, 1, 1000));
 
 /** Chance d'obtenir une Mythique dans le prochain booster, selon le nombre de boosters déjà ouverts sans en avoir. */
 export function mythicChance(pityCount: number): number {
