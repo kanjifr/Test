@@ -1,35 +1,75 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
-import { SITE_NAME } from "@/lib/game";
+import { PACK_COOLDOWN_MS, SITE_NAME } from "@/lib/game";
 import { pendingIncomingCount } from "@/lib/trades";
 import { NavLink } from "@/components/NavLink";
-import { SoundToggle } from "@/components/SoundToggle";
 import { prisma } from "@/lib/prisma";
+import { BoosterStatus } from "@/components/BoosterStatus";
+import { MoreMenu, type MoreSection } from "@/components/MoreMenu";
+import { TabBar } from "@/components/TabBar";
 
 export async function Nav() {
   const session = await auth();
   const user = session?.user;
-  const incoming = user?.id ? await pendingIncomingCount(user.id) : 0;
-  // Votes en cours auxquels le membre n'a pas encore répondu
-  // Anecdotes à valider (staff)
-  const toModerate = user?.staffRole ? await prisma.anecdote.count({ where: { status: "PENDING" } }) : 0;
-  const toVote = user?.id
-    ? await prisma.poll.count({ where: { closesAt: { gt: new Date() }, votes: { none: { userId: user.id } } } })
-    : 0;
-  // Tournois ouverts auxquels le membre n'est pas encore inscrit
-  const toJoin = user?.id
-    ? await prisma.tournament.count({ where: { status: "REGISTRATION", startsAt: { gt: new Date() }, entries: { none: { userId: user.id } } } })
-    : 0;
-  const coins = user?.id ? ((await prisma.user.findUnique({ where: { id: user.id }, select: { coins: true } }))?.coins ?? 0) : 0;
+
+  async function logout() {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
+
+  const brand = (
+    <Link href="/" className="brand">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="brand-logo" src="/logo/kizuna-embleme.svg" alt="" width={40} height={40} />
+      <span className="brand-name">{SITE_NAME}</span>
+    </Link>
+  );
+  if (!user?.id) return <header className="nav">{brand}</header>;
+
+  const now = new Date();
+  const [incoming, toModerate, toVote, toJoin, me] = await Promise.all([
+    pendingIncomingCount(user.id),
+    // Anecdotes à valider (staff)
+    user.staffRole ? prisma.anecdote.count({ where: { status: "PENDING" } }) : 0,
+    // Votes en cours auxquels le membre n'a pas encore répondu
+    prisma.poll.count({ where: { closesAt: { gt: now }, votes: { none: { userId: user.id } } } }),
+    // Tournois ouverts auxquels le membre n'est pas encore inscrit
+    prisma.tournament.count({ where: { status: "REGISTRATION", startsAt: { gt: now }, entries: { none: { userId: user.id } } } }),
+    prisma.user.findUnique({ where: { id: user.id }, select: { coins: true, lastPackAt: true, bonusPacks: true } }),
+  ]);
+  const nextAt = me?.lastPackAt ? me.lastPackAt.getTime() + PACK_COOLDOWN_MS : 0;
+  const coins = me?.coins ?? 0;
+
+  const sections: MoreSection[] = [
+    {
+      title: "Jeu",
+      items: [
+        { href: "/boutique", label: "Boutique", icon: "店", highlight: true },
+        { href: "/tournois", label: "Tournois", icon: "陣", badge: toJoin || undefined, highlight: true },
+        { href: "/votes", label: "Votes", icon: "票", badge: toVote || undefined },
+        { href: "/classement", label: "Classement", icon: "順" },
+        { href: "/recyclage", label: "Recyclage", icon: "環" },
+        { href: "/duels", label: "Duels", icon: "闘" },
+      ],
+    },
+    {
+      title: "Moi",
+      items: [
+        { href: `/membre/${user.id}`, label: "Mon profil public", icon: "顔" },
+        { href: "/profil", label: "Profil et succès", icon: "設" },
+        { href: "/collection", label: "Ma collection", icon: "集" },
+        { href: "/profil#appli", label: "Application et notifications", icon: "鈴" },
+      ],
+    },
+    ...(user.staffRole ? [{ title: "Staff", items: [{ href: "/admin", label: "Panel admin", icon: "管", badge: toModerate || undefined }] }] : []),
+  ];
+  const moreTotal = toVote + toJoin + (user.staffRole ? toModerate : 0);
+
   return (
-    <header className="nav">
-      <Link href="/" className="brand">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="brand-logo" src="/logo/kizuna-embleme.svg" alt="" width={40} height={40} />
-        <span>{SITE_NAME}</span>
-      </Link>
-      {user && (
-        <nav className="nav-links">
+    <>
+      <header className="nav">
+        {brand}
+        <nav className="nav-links desk-only" aria-label="Menu">
           <NavLink href="/">Booster</NavLink>
           <NavLink href="/collection">Collection</NavLink>
           <NavLink href="/echanges" className="nav-trades">
@@ -40,40 +80,24 @@ export async function Nav() {
             Duels
             {toJoin > 0 && <span className="nav-badge" title="Tournoi ouvert aux inscriptions">🏆</span>}
           </NavLink>
-          <NavLink href="/votes" className="nav-trades">
-            Votes
-            {toVote > 0 && <span className="nav-badge">{toVote}</span>}
-          </NavLink>
-          <NavLink href="/classement">Classement</NavLink>
-          <NavLink href="/profil">Profil</NavLink>
-          {user.staffRole && (
-            <NavLink href="/admin" className="nav-trades">
-              Admin
-              {toModerate > 0 && <span className="nav-badge">{toModerate}</span>}
-            </NavLink>
-          )}
-          <NavLink href="/boutique" className="nav-coins">
-            🪙 {coins.toLocaleString("fr-FR")}
-          </NavLink>
-          <SoundToggle />
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button type="submit" className="nav-user" title="Se déconnecter">
-              {user.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.image} alt="" referrerPolicy="no-referrer" />
-              ) : (
-                <span className="avatar-fallback">{user.name?.[0] ?? "?"}</span>
-              )}
-              <span className="logout">Déconnexion</span>
-            </button>
-          </form>
         </nav>
-      )}
-    </header>
+        <div className="nav-status">
+          <BoosterStatus nextAt={nextAt} bonus={me?.bonusPacks ?? 0} cooldownMs={PACK_COOLDOWN_MS} />
+          <Link href="/boutique" className="coin-chip" title="Mes pièces · Boutique">
+            🪙 <b>{coins.toLocaleString("fr-FR")}</b>
+          </Link>
+          <MoreMenu sections={sections} logout={logout} total={moreTotal} />
+          <Link href="/profil" className="nav-avatar" title="Mon profil">
+            {user.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.image} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              <span className="avatar-fallback">{user.name?.[0] ?? "?"}</span>
+            )}
+          </Link>
+        </div>
+      </header>
+      <TabBar trades={incoming} duels={toJoin > 0} more={moreTotal} nextAt={nextAt} bonus={me?.bonusPacks ?? 0} cooldownMs={PACK_COOLDOWN_MS} />
+    </>
   );
 }

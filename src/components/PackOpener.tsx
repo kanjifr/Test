@@ -189,6 +189,8 @@ export function PackOpener({
       setNextAt(res.nextAt);
       setPity(res.pity);
       setBonus(res.bonus);
+      // Met à jour l'anneau du menu et le badge de l'onglet « Ouvrir »
+      window.dispatchEvent(new CustomEvent("kizuna:pack", { detail: { nextAt: res.nextAt, bonus: res.bonus } }));
       setMythicOn(res.mythicAvailable);
       setCards(res.cards);
       setIdx(0);
