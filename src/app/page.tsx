@@ -95,7 +95,7 @@ export default async function Home({
   await checkAchievements(session.user.id);
   const today = parisToday();
   const now = new Date();
-  const [user, mythics, recent, birthdays, liveEvents, newSeries, quests, tournament] = await Promise.all([
+  const [user, mythics, recent, birthdays, liveEvents, newSeries, quests, tournament, expedition] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true, bonusPacks: true } }),
     prisma.card.count({ where: { ...boosterWhere(now), rarity: "MYTHIQUE" } }),
     prisma.pull.findMany({
@@ -134,6 +134,7 @@ export default async function Home({
       orderBy: { startsAt: "asc" },
       select: { name: true, startsAt: true, reward: true },
     }),
+    prisma.expedition.findFirst({ where: { userId: session.user.id, claimedAt: null }, select: { endsAt: true, destination: true } }),
   ]);
   const events = new Map<string, { until: Date | null; cards: typeof liveEvents }>();
   for (const c of liveEvents) {
@@ -197,10 +198,26 @@ export default async function Home({
         rates={rates}
       >
         <InstallHint />
-        {(birthdays.length > 0 || latestSeries || tournament || events.size > 0) && (
+        {(birthdays.length > 0 || latestSeries || tournament || events.size > 0 || expedition) && (
           <section className="news" aria-label="À la une">
             <h2 className="news-title">À la une</h2>
             <div className="news-strip">
+              {expedition && (
+                <Link href="/expeditions" className="news-card news-expedition">
+                  <span className="news-icon" aria-hidden>
+                    🧭
+                  </span>
+                  <div className="news-body">
+                    <b>{expedition.endsAt <= now ? "Tes cartes sont de retour !" : "Expédition en cours"}</b>
+                    <span>
+                      {expedition.endsAt <= now
+                        ? "Le butin t'attend."
+                        : `Retour vers ${expedition.endsAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}.`}
+                    </span>
+                    {expedition.endsAt <= now && <span className="news-cta">Ouvrir le butin →</span>}
+                  </div>
+                </Link>
+              )}
               {birthdays.length > 0 && (
                 <div className="news-card news-birthday">
                   <span className="news-icon" aria-hidden>

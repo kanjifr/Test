@@ -19,12 +19,13 @@ import {
 import { checkAchievements } from "@/lib/achievements-server";
 import { announceDuel } from "@/lib/announce";
 import { recordProgress } from "@/lib/quests";
+import { cardsAway } from "@/lib/expeditions-server";
 import { addCoins, getShopConfig } from "@/lib/coins";
 import { duelCoins, eloDelta, K_ATTACK, K_DEFENSE, REWARD_MIN_GAIN } from "@/lib/elo";
 
 export type DuelStart = { ok: true; id: string } | { ok: false; error: string };
 
-async function myTeam(userId: string, ids: unknown) {
+async function myTeam(userId: string, ids: unknown, forAttack = true) {
   const list = Array.isArray(ids) ? ids.map(String) : [];
   if (list.length !== DUEL_TEAM_SIZE || new Set(list).size !== DUEL_TEAM_SIZE) {
     throw new Error(`Choisis ${DUEL_TEAM_SIZE} cartes différentes.`);
@@ -32,6 +33,8 @@ async function myTeam(userId: string, ids: unknown) {
   const owned = new Map((await ownedFighters(userId)).map((f) => [f.id, f]));
   const team = list.map((id) => owned.get(id));
   if (team.some((f) => !f)) throw new Error("Une des cartes choisies n'est plus dans ta collection.");
+  const away = forAttack ? await cardsAway(userId) : new Set<string>();
+  if (list.some((id) => away.has(id))) throw new Error("Une des cartes choisies est en expédition : elle ne peut pas attaquer.");
   return team as NonNullable<(typeof team)[number]>[];
 }
 
@@ -134,7 +137,8 @@ export async function startDuel(input: { opponent: string; team: string[] }): Pr
 export async function saveDefenseTeam(ids: string[]): Promise<{ ok: boolean; error?: string }> {
   const me = await requireUser();
   try {
-    const team = await myTeam(me.id, ids);
+    // Une carte en expédition peut quand même défendre
+    const team = await myTeam(me.id, ids, false);
     await prisma.user.update({ where: { id: me.id }, data: { defenseTeam: team.map((f) => f.id) } });
     revalidatePath("/duels");
     return { ok: true };

@@ -27,7 +27,7 @@ export async function Nav() {
   if (!user?.id) return <header className="nav">{brand}</header>;
 
   const now = new Date();
-  const [incoming, toModerate, toVote, toJoin, me] = await Promise.all([
+  const [incoming, toModerate, toVote, toJoin, me, expBack] = await Promise.all([
     pendingIncomingCount(user.id),
     // Anecdotes à valider (staff)
     user.staffRole ? prisma.anecdote.count({ where: { status: "PENDING" } }) : 0,
@@ -36,6 +36,8 @@ export async function Nav() {
     // Tournois ouverts auxquels le membre n'est pas encore inscrit
     prisma.tournament.count({ where: { status: "REGISTRATION", startsAt: { gt: now }, entries: { none: { userId: user.id } } } }),
     prisma.user.findUnique({ where: { id: user.id }, select: { coins: true, lastPackAt: true, bonusPacks: true } }),
+    // Expédition revenue, butin à récupérer
+    prisma.expedition.count({ where: { userId: user.id, claimedAt: null, endsAt: { lte: now } } }),
   ]);
   const nextAt = me?.lastPackAt ? me.lastPackAt.getTime() + PACK_COOLDOWN_MS : 0;
   const coins = me?.coins ?? 0;
@@ -44,6 +46,7 @@ export async function Nav() {
     {
       title: "Jeu",
       items: [
+        { href: "/expeditions", label: "Expéditions", icon: "旅", badge: expBack || undefined, highlight: true },
         { href: "/boutique", label: "Boutique", icon: "店", highlight: true },
         { href: "/tournois", label: "Tournois", icon: "陣", badge: toJoin || undefined, highlight: true },
         { href: "/votes", label: "Votes", icon: "票", badge: toVote || undefined },
@@ -63,7 +66,7 @@ export async function Nav() {
     },
     ...(user.staffRole ? [{ title: "Staff", items: [{ href: "/admin", label: "Panel admin", icon: "管", badge: toModerate || undefined }] }] : []),
   ];
-  const moreTotal = toVote + toJoin + (user.staffRole ? toModerate : 0);
+  const moreTotal = toVote + toJoin + expBack + (user.staffRole ? toModerate : 0);
 
   return (
     <>

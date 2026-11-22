@@ -40,6 +40,7 @@ export type Stats = {
   tournamentWins: number;
   tournamentsPlayed: number;
   adventBest: number;
+  expeditionsDone: number;
 };
 
 export type Achievement = {
@@ -85,6 +86,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "tournament_win", name: "Vainqueur du tournoi", description: "Remporter un tournoi.", kanji: "冠", tier: "OR", progress: (s) => [s.tournamentWins, 1] },
   { id: "advent_1", name: "Premier flocon", description: "Ouvrir une case du calendrier de l'Avent.", kanji: "雪", tier: "BRONZE", progress: (s) => [s.adventBest > 0 ? 1 : 0, 1] },
   { id: "advent_24", name: "Esprit de Noël", description: "Ouvrir les 24 cases d'un calendrier de l'Avent.", kanji: "聖", tier: "OR", progress: (s) => [s.adventBest, 24] },
+  { id: "expedition_1", name: "Premier voyage", description: "Terminer une expédition.", kanji: "旅", tier: "BRONZE", progress: (s) => [s.expeditionsDone, 1] },
+  { id: "expedition_50", name: "Grand explorateur", description: "Terminer 50 expéditions.", kanji: "航", tier: "OR", progress: (s) => [s.expeditionsDone, 50] },
   { id: "vote_1", name: "Voix du peuple", description: "Participer à un vote de la communauté.", kanji: "票", tier: "BRONZE", progress: (s) => [s.votes, 1] },
   { id: "story_1", name: "Conteur", description: "Voir une de tes anecdotes publiée dans un livre d'or.", kanji: "話", tier: "BRONZE", progress: (s) => [s.anecdotes, 1] },
   { id: "series_1", name: "Saison bouclée", description: "Compléter une série entière (3 cartes minimum).", kanji: "季", tier: "ARGENT", progress: (s) => [s.seriesCompleted, 1] },

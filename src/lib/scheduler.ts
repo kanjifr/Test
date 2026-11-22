@@ -11,6 +11,15 @@ import { siteUrl } from "@/lib/discord";
 import { notifyAll, notifyUser } from "@/lib/push";
 import { PACK_COOLDOWN_MS } from "@/lib/game";
 
+/** Prévient les membres dont les cartes reviennent d'expédition. */
+async function expeditionsBack() {
+  const back = await prisma.expedition.findMany({ where: { endsAt: { lte: new Date() }, notified: false, claimedAt: null }, select: { id: true, userId: true } });
+  for (const e of back) {
+    await prisma.expedition.update({ where: { id: e.id }, data: { notified: true } });
+    await notifyUser(e.userId, "expedition", { title: "🧭 Tes cartes sont de retour !", body: "Viens ouvrir le butin de ton expédition.", url: "/expeditions", tag: "expedition" });
+  }
+}
+
 /** Prévient les membres dont le booster vient d'être prêt (une seule fois par booster). */
 async function boosterReady() {
   const due = await prisma.user.findMany({
@@ -66,7 +75,7 @@ export function startScheduler() {
   const g = globalThis as unknown as { __kizunaTimer?: NodeJS.Timeout };
   if (g.__kizunaTimer) return;
   const tick = async () => {
-    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays], ["saison de duel", finalizeDuelSeason], ["tournois", runDueTournaments], ["calendrier de l'Avent", advent], ["booster prêt", boosterReady]] as const) {
+    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays], ["saison de duel", finalizeDuelSeason], ["tournois", runDueTournaments], ["calendrier de l'Avent", advent], ["booster prêt", boosterReady], ["expéditions", expeditionsBack]] as const) {
       try {
         await job();
       } catch (e) {

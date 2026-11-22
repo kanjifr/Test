@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ACHIEVEMENTS, type Stats } from "@/lib/achievements";
 
 export async function computeStats(userId: string, extra: { luckyPack?: boolean } = {}): Promise<Stats> {
-  const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes, awards, tournamentsPlayed, advent] = await Promise.all([
+  const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes, awards, tournamentsPlayed, advent, expeditionsDone] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true, prestige: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
@@ -21,6 +21,8 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     prisma.seasonAward.findMany({ where: { userId }, select: { kind: true, rank: true } }),
     prisma.tournamentEntry.count({ where: { userId, tournament: { status: "FINISHED" } } }),
     prisma.adventClaim.groupBy({ by: ["year"], where: { userId }, _count: true }),
+    // Expéditions menées à terme (pas les rappels)
+    prisma.expedition.count({ where: { userId, claimedAt: { not: null }, NOT: { reward: { path: ["factor"], equals: 0 } } } }),
   ]);
 
   const elementTotals = new Map<string, number>();
@@ -60,6 +62,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     championships: awards.filter((a) => a.kind === "DUEL_MONTH" && a.rank === 1).length,
     tournamentWins: awards.filter((a) => a.kind === "TOURNAMENT" && a.rank === 1).length,
     tournamentsPlayed,
+    expeditionsDone,
     adventBest: advent.reduce((m, a) => Math.max(m, a._count), 0),
     shinyComplete: cards.length > 0 && owned.filter((o) => o.shiny > 0).length >= cards.length,
     packsOpened: user?.packsOpened ?? 0,

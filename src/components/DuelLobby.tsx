@@ -33,6 +33,7 @@ export function DuelLobby({
   sameOpponentLimit,
   rewardAvailable,
   highlight,
+  away = [],
 }: {
   cards: CardView[];
   defense: string[];
@@ -43,6 +44,8 @@ export function DuelLobby({
   rewardAvailable: boolean;
   /** Adversaire à mettre en avant (revanche) */
   highlight: string | null;
+  /** Cartes en expédition : elles ne peuvent pas attaquer */
+  away?: string[];
 }) {
   const router = useRouter();
   // Emplacements fixes (null = vide) : on peut déposer une carte dans n'importe lequel
@@ -58,7 +61,7 @@ export function DuelLobby({
     try {
       const saved = JSON.parse(localStorage.getItem(KEY) ?? "[]");
       if (Array.isArray(saved)) {
-        const next = Array.from({ length: teamSize }, (_, i) => (cards.some((c) => c.id === saved[i]) ? (saved[i] as string) : null));
+        const next = Array.from({ length: teamSize }, (_, i) => (cards.some((c) => c.id === saved[i]) && !away.includes(saved[i]) ? (saved[i] as string) : null));
         setSlots(next);
       }
     } catch {}
@@ -297,6 +300,13 @@ export function DuelLobby({
             <div className="duel-pick-grid">
               {cards.map((c) => {
                 const pos = slots.indexOf(c.id);
+                if (away.includes(c.id))
+                  return (
+                    <div key={c.id} className="duel-pick away" title="En expédition : cette carte ne peut pas attaquer">
+                      <GameCard card={c} size="xs" />
+                      <span className="away-tag">🧭 En expédition</span>
+                    </div>
+                  );
                 return (
                   <button
                     key={c.id}

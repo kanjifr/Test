@@ -8,6 +8,7 @@ export const PUSH_KINDS = {
   trade: "On me propose un échange",
   advent: "Nouvelle case du calendrier de l'Avent",
   tournament: "Tournois (ouverture et résultats)",
+  expedition: "Mes cartes reviennent d'expédition",
 } as const;
 export type PushKind = keyof typeof PUSH_KINDS;
 

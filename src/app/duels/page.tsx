@@ -15,7 +15,8 @@ import {
 import { DuelLobby } from "@/components/DuelLobby";
 import { NameWithBadge } from "@/components/Badge";
 import { deMonth, MEDALS, monthKey, monthRange, myMonthDuels, previousMonth, SEASON_REWARDS, seasonRanking } from "@/lib/seasons";
-import { MIN_SEASON_DUELS, preview, REWARD_MIN_GAIN, tierOf } from "@/lib/elo";
+import { MIN_SEASON_DUELS, preview, tierOf } from "@/lib/elo";
+import { cardsAway } from "@/lib/expeditions-server";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
     }),
     myMonthDuels(me.id, season),
   ]);
+  const away = [...(await cardsAway(me.id))];
   const myRating = user?.duelRating ?? 1000;
   const myTier = tierOf(myRating);
   const seasonEnd = monthRange(season)[1];
@@ -140,6 +142,7 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
         sameOpponentLimit={DUEL_SAME_OPPONENT_LIMIT}
         rewardAvailable={DUEL_DAILY_REWARD > 0 && rewardedToday === 0}
         highlight={adversaire ?? null}
+        away={away}
       />
 
       <div className="lobby-cols">
