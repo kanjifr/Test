@@ -184,60 +184,6 @@ export default async function Home({
 
   return (
     <>
-      {birthdays.length > 0 && (
-        <section className="panel birthday-banner" aria-label="Anniversaires du jour">
-          <div style={{ flex: "1 1 260px" }}>
-            <h2>🎂 Joyeux anniversaire {birthdays.map((b) => b.name).join(" et ")} !</h2>
-            <p>
-              Aujourd&apos;hui, {birthdays.length > 1 ? "leurs cartes sortent" : "sa carte sort"} {BIRTHDAY_BOOST} fois plus souvent
-              dans les boosters, jusqu&apos;à minuit.
-            </p>
-          </div>
-          <div className="row">
-            {birthdays.flatMap((b) => b.featuredIn).slice(0, 4).map((c) => (
-              <GameCard key={c.id} card={toCardView(c)} size="xs" />
-            ))}
-          </div>
-        </section>
-      )}
-      <InstallHint />
-      {advent && <AdventCalendar tiles={advent.tiles} grandMin={advent.grandMin} openedCount={advent.opened} today={at.day} />}
-      {latestSeries && (
-        <section className="panel series-banner" aria-label="Nouvelle série">
-          <h2>🌸 Nouvelle série : {latestSeries.name}</h2>
-          <p>
-            {latestSeries.description || "De nouvelles cartes viennent d'arriver dans les boosters."} {latestSeries._count.cards} carte
-            {latestSeries._count.cards > 1 ? "s" : ""} à découvrir !
-          </p>
-        </section>
-      )}
-      {tournament && (
-        <Link href="/tournois" className="panel tournament-banner">
-          <b>🏆 Tournoi : {tournament.name}</b>
-          <span>
-            {tournament.startsAt.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
-            {" · "}
-            {tournament.reward} booster{tournament.reward > 1 ? "s" : ""} pour le vainqueur · Inscris-toi →
-          </span>
-        </Link>
-      )}
-      {[...events].map(([name, e]) => (
-        <section key={name} className="panel event-banner" aria-label={`Événement ${name}`}>
-          <div style={{ flex: "1 1 260px" }}>
-            <h2>✿ Événement : {name}</h2>
-            <p>
-              {e.cards.length} carte{e.cards.length > 1 ? "s" : ""} limitée{e.cards.length > 1 ? "s" : ""} à obtenir
-              {e.until ? ` jusqu'au ${frDate(e.until)}` : ""}. Elles sortent {EVENT_BOOST} fois plus souvent pendant
-              l&apos;événement, puis ne s&apos;obtiendront plus que par échange !
-            </p>
-          </div>
-          <div className="row">
-            {e.cards.slice(0, 4).map((c) => (
-              <GameCard key={c.id} card={toCardView(c)} size="xs" />
-            ))}
-          </div>
-        </section>
-      ))}
       <PackOpener
         initialNextAt={nextAt}
         serverNow={Date.now()}
@@ -250,6 +196,82 @@ export default async function Home({
         mythicAvailable={mythics > 0}
         rates={rates}
       >
+        <InstallHint />
+        {(birthdays.length > 0 || latestSeries || tournament || events.size > 0) && (
+          <section className="news" aria-label="À la une">
+            <h2 className="news-title">À la une</h2>
+            <div className="news-strip">
+              {birthdays.length > 0 && (
+                <div className="news-card news-birthday">
+                  <span className="news-icon" aria-hidden>
+                    🎂
+                  </span>
+                  <div className="news-body">
+                    <b>Joyeux anniversaire {birthdays.map((b) => b.name).join(" et ")} !</b>
+                    <span>
+                      {birthdays.length > 1 ? "Leurs cartes sortent" : "Sa carte sort"} {BIRTHDAY_BOOST}× plus souvent jusqu&apos;à minuit.
+                    </span>
+                  </div>
+                  <div className="news-cards">
+                    {birthdays.flatMap((b) => b.featuredIn).slice(0, 2).map((c) => (
+                      <GameCard key={c.id} card={toCardView(c)} size="xs" />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {[...events].map(([name, e]) => (
+                <div key={name} className="news-card news-event">
+                  <span className="news-icon" aria-hidden>
+                    ✿
+                  </span>
+                  <div className="news-body">
+                    <b>Événement : {name}</b>
+                    <span>
+                      {e.cards.length} carte{e.cards.length > 1 ? "s" : ""} limitée{e.cards.length > 1 ? "s" : ""}
+                      {e.until ? ` jusqu'au ${frDate(e.until)}` : ""}, {EVENT_BOOST}× plus fréquentes. Ensuite : échange seulement !
+                    </span>
+                  </div>
+                  <div className="news-cards">
+                    {e.cards.slice(0, 2).map((c) => (
+                      <GameCard key={c.id} card={toCardView(c)} size="xs" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {tournament && (
+                <Link href="/tournois" className="news-card news-tournament">
+                  <span className="news-icon" aria-hidden>
+                    🏆
+                  </span>
+                  <div className="news-body">
+                    <b>Tournoi : {tournament.name}</b>
+                    <span>
+                      {tournament.startsAt.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
+                      {" · "}
+                      {tournament.reward} booster{tournament.reward > 1 ? "s" : ""} au vainqueur
+                    </span>
+                    <span className="news-cta">Inscris-toi →</span>
+                  </div>
+                </Link>
+              )}
+              {latestSeries && (
+                <Link href="/collection" className="news-card news-series">
+                  <span className="news-icon" aria-hidden>
+                    🌸
+                  </span>
+                  <div className="news-body">
+                    <b>Nouvelle série : {latestSeries.name}</b>
+                    <span>
+                      {latestSeries.description || "De nouvelles cartes dans les boosters."} {latestSeries._count.cards} carte
+                      {latestSeries._count.cards > 1 ? "s" : ""} à découvrir.
+                    </span>
+                  </div>
+                </Link>
+              )}
+            </div>
+          </section>
+        )}
+        {advent && <AdventCalendar tiles={advent.tiles} grandMin={advent.grandMin} openedCount={advent.opened} today={at.day} />}
         {QUEST_REWARD > 0 && <QuestBoard quests={quests} reward={QUEST_REWARD} endsAt={weekEnd(now).getTime()} />}
         {recent.length > 0 && (
           <section className="panel feed" aria-label="Derniers grands tirages">

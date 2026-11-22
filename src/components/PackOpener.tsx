@@ -257,23 +257,29 @@ export function PackOpener({
             <button type="button" className="btn btn-open" onClick={open} disabled={!ready || pending || phase !== "idle"}>
               {pending ? "Ouverture…" : ready ? (timerReady ? "Ouvrir !" : "Ouvrir un bonus !") : formatLeft(nextAt - now)}
             </button>
-            {bonus > 0 && (
-              <p className="bonus-chip">
-                🎁 {bonus} booster{bonus > 1 ? "s" : ""} bonus en réserve
-              </p>
-            )}
-            {error && <p className="error">{error}</p>}
-          </section>
-
-          <aside className="booster-aside" aria-hidden={phase === "tearing" ? true : undefined}>
+            <div className="stage-info">
+              {bonus > 0 && (
+                <span className="stage-chip gold">
+                  🎁 {bonus} bonus
+                </span>
+              )}
+              <span className="stage-chip" title="Prochain booster gratuit">
+                ⏱ {timerReady ? "Gratuit dispo" : formatLeft(nextAt - now)}
+              </span>
+              <Link href="/recyclage" className="stage-chip link" title="10 doublons = 1 booster bonus">
+                ♻ Recycler
+              </Link>
+            </div>
             {mythicOn && (
-              <section className="panel pity" aria-label="Jauge Mythique">
-                <div className="pity-head">
-                  <span className="pity-label">Jauge Mythique</span>
-                  <span className="pity-value">
-                    {pity}
-                    <small> / {pityHard}</small>
+              <div className="stage-pity" aria-label="Jauge Mythique">
+                <div className="stage-pity-head">
+                  <span>
+                    {pity >= pitySoft ? "🔥 " : ""}Jauge Mythique
                   </span>
+                  <b>
+                    {pity}
+                    <small>/{pityHard}</small>
+                  </b>
                 </div>
                 <div
                   className="pity-bar"
@@ -286,21 +292,16 @@ export function PackOpener({
                 >
                   <span style={{ width: `${pityPct}%` }} />
                 </div>
-                <p className="pity-text">
-                  {pity >= pitySoft ? "🔥 Chance de Mythique augmentée ! " : ""}
-                  Mythique <b>garantie dans {left} booster{left > 1 ? "s" : ""}</b>. Après le trait doré, la chance s&apos;envole.
-                </p>
-              </section>
+                <small className="stage-pity-text">
+                  Garantie dans <b>{left}</b> booster{left > 1 ? "s" : ""}
+                  {pity >= pitySoft ? " · chance augmentée !" : " · la chance s'envole après le trait doré"}
+                </small>
+              </div>
             )}
+            {error && <p className="error">{error}</p>}
+          </section>
 
-            <section className="panel timer-panel" aria-label="Prochain booster gratuit">
-              <span className="panel-label">Prochain booster gratuit</span>
-              <span className="timer-big">{timerReady ? "Disponible !" : formatLeft(nextAt - now)}</span>
-              <Link href="/recyclage" className="btn btn-ghost btn-sm">
-                ♻ Recycler 10 doublons
-              </Link>
-            </section>
-
+          <aside className="booster-aside" aria-hidden={phase === "tearing" ? true : undefined}>
             {children}
 
             <details className="panel rates">

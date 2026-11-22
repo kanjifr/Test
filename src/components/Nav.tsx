@@ -82,7 +82,7 @@ export async function Nav() {
           </NavLink>
         </nav>
         <div className="nav-status">
-          <BoosterStatus nextAt={nextAt} bonus={me?.bonusPacks ?? 0} cooldownMs={PACK_COOLDOWN_MS} />
+          <BoosterStatus nextAt={nextAt} bonus={me?.bonusPacks ?? 0} cooldownMs={PACK_COOLDOWN_MS} serverNow={now.getTime()} />
           <Link href="/boutique" className="coin-chip" title="Mes pièces · Boutique">
             🪙 <b>{coins.toLocaleString("fr-FR")}</b>
           </Link>
@@ -97,7 +97,7 @@ export async function Nav() {
           </Link>
         </div>
       </header>
-      <TabBar trades={incoming} duels={toJoin > 0} more={moreTotal} nextAt={nextAt} bonus={me?.bonusPacks ?? 0} cooldownMs={PACK_COOLDOWN_MS} />
+      <TabBar trades={incoming} duels={toJoin > 0} more={moreTotal} nextAt={nextAt} bonus={me?.bonusPacks ?? 0} cooldownMs={PACK_COOLDOWN_MS} serverNow={now.getTime()} />
     </>
   );
 }

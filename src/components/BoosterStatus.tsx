@@ -12,11 +12,25 @@ const left = (ms: number) => {
 };
 
 /** Anneau qui se remplit jusqu'au prochain booster, avec le nombre de boosters disponibles. */
-export function BoosterStatus({ nextAt: initialNext, bonus: initialBonus, cooldownMs, variant = "chip" }: { nextAt: number; bonus: number; cooldownMs: number; variant?: "chip" | "badge" }) {
+export function BoosterStatus({
+  nextAt: initialNext,
+  bonus: initialBonus,
+  cooldownMs,
+  serverNow,
+  variant = "chip",
+}: {
+  nextAt: number;
+  bonus: number;
+  cooldownMs: number;
+  /** Heure du serveur au rendu : le premier affichage est identique côté serveur et navigateur */
+  serverNow: number;
+  variant?: "chip" | "badge";
+}) {
   const [nextAt, setNextAt] = useState(initialNext);
   const [bonus, setBonus] = useState(initialBonus);
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(serverNow);
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 20_000);
     const onBonus = (e: Event) => setBonus(Number((e as CustomEvent).detail) || 0);
     const onPack = (e: Event) => {

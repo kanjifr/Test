@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { MORE_EVENT } from "@/components/MoreMenu";
 import { BoosterStatus } from "@/components/BoosterStatus";
 
-type Props = { trades: number; duels: boolean; more: number; nextAt: number; bonus: number; cooldownMs: number };
+type Props = { trades: number; duels: boolean; more: number; nextAt: number; bonus: number; cooldownMs: number; serverNow: number };
 
 /** Barre d'onglets en bas de l'écran (téléphone et application installée). */
-export function TabBar({ trades, duels, more, nextAt, bonus, cooldownMs }: Props) {
+export function TabBar({ trades, duels, more, nextAt, bonus, cooldownMs, serverNow }: Props) {
   const path = usePathname();
   const on = (href: string) => (path === href || path.startsWith(`${href}/`) ? "active" : "");
   return (
@@ -25,7 +25,7 @@ export function TabBar({ trades, duels, more, nextAt, bonus, cooldownMs }: Props
       <Link href="/" className={`tab tab-open ${path === "/" ? "active" : ""}`} aria-label="Ouvrir un booster">
         <span className="open-orb" aria-hidden>絆</span>
         <span>Ouvrir</span>
-        <BoosterStatus nextAt={nextAt} bonus={bonus} cooldownMs={cooldownMs} variant="badge" />
+        <BoosterStatus nextAt={nextAt} bonus={bonus} cooldownMs={cooldownMs} serverNow={serverNow} variant="badge" />
       </Link>
       <Link href="/duels" className={`tab ${on("/duels")} ${on("/tournois")}`}>
         <span className="tab-icon" aria-hidden>闘</span>
