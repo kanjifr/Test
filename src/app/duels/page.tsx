@@ -14,7 +14,8 @@ import {
 } from "@/lib/duel-server";
 import { DuelLobby } from "@/components/DuelLobby";
 import { NameWithBadge } from "@/components/Badge";
-import { deMonth, MEDALS, monthKey, monthRange, previousMonth, SEASON_REWARDS, seasonRanking } from "@/lib/seasons";
+import { deMonth, MEDALS, monthKey, monthRange, myMonthDuels, previousMonth, SEASON_REWARDS, seasonRanking } from "@/lib/seasons";
+import { MIN_SEASON_DUELS, preview, REWARD_MIN_GAIN, tierOf } from "@/lib/elo";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
   const since = parisDayStart();
   const [cards, user, members, todayDuels, rewardedToday, history, top] = await Promise.all([
     ownedFighters(me.id),
-    prisma.user.findUnique({ where: { id: me.id }, select: { defenseTeam: true, duelWins: true, duelLosses: true } }),
+    prisma.user.findUnique({ where: { id: me.id }, select: { defenseTeam: true, duelWins: true, duelLosses: true, duelRating: true, duelPeak: true } }),
     prisma.user.findMany({
       where: { id: { not: me.id } },
       select: {
@@ -33,6 +34,7 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
         image: true,
         duelWins: true,
         duelLosses: true,
+        duelRating: true,
         featuredBadge: true,
         _count: { select: { cards: { where: { card: { active: true } } } } },
       },
@@ -59,14 +61,17 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
     select: { id: true, name: true, startsAt: true, entries: { where: { userId: me.id }, select: { userId: true } } },
   });
   const season = monthKey();
-  const [seasonTop, lastPodium] = await Promise.all([
+  const [seasonTop, lastPodium, myDuels] = await Promise.all([
     seasonRanking(season, 10),
     prisma.seasonAward.findMany({
       where: { kind: "DUEL_MONTH", period: previousMonth(season) },
       orderBy: { rank: "asc" },
       include: { user: { select: { id: true, name: true, featuredBadge: true } } },
     }),
+    myMonthDuels(me.id, season),
   ]);
+  const myRating = user?.duelRating ?? 1000;
+  const myTier = tierOf(myRating);
   const seasonEnd = monthRange(season)[1];
   const daysLeft = Math.max(1, Math.ceil((seasonEnd.getTime() - Date.now()) / 86400_000));
   const fought = new Map<string, number>();
@@ -79,9 +84,14 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
       image: m.image,
       wins: m.duelWins,
       losses: m.duelLosses,
+      rating: m.duelRating,
+      tier: tierOf(m.duelRating),
+      stakes: preview(myRating, m.duelRating),
       badge: badgeView(m.featuredBadge),
       foughtToday: fought.get(m.id) ?? 0,
-    }));
+    }))
+    // Les adversaires de ton niveau d'abord
+    .sort((a, b) => Math.abs(a.rating - myRating) - Math.abs(b.rating - myRating));
 
   const outcome = (d: (typeof history)[number]) => {
     if (d.result === "DRAW") return { label: "Nul", cls: "draw" };
@@ -96,9 +106,18 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
         <Link href="/tournois" className="btn btn-ghost btn-sm">
           🏆 Tournois
         </Link>
-        <span className="muted">
-          Ton palmarès : <b>{user?.duelWins ?? 0}</b> victoire(s) · <b>{user?.duelLosses ?? 0}</b> défaite(s)
-        </span>
+        <div className="my-rating" style={{ "--tc": myTier.color } as React.CSSProperties}>
+          <span className="tier-medal" aria-hidden>
+            {myTier.kanji}
+          </span>
+          <span>
+            <b>{myRating}</b> <small>{myTier.label}</small>
+            <small className="muted">
+              {" "}
+              · record {user?.duelPeak ?? myRating} · {user?.duelWins ?? 0} V / {user?.duelLosses ?? 0} D
+            </small>
+          </span>
+        </div>
       </div>
 
       {openTournaments.map((t) => (
@@ -153,11 +172,14 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
         <div className="panel">
           <h2>⚔ Saison {deMonth(season)}</h2>
           <p className="muted small-text">
-            Fin dans {daysLeft} jour{daysLeft > 1 ? "s" : ""}. Le podium gagne un titre et {SEASON_REWARDS.join(", ")} boosters bonus. Victoires en
-            attaque et en défense, contre des membres.
+            Fin dans {daysLeft} jour{daysLeft > 1 ? "s" : ""}. Classement à la <b>cote</b> (au moins {MIN_SEASON_DUELS} duels dans le mois). Le podium
+            gagne un titre et {SEASON_REWARDS.join(", ")} boosters bonus.{" "}
+            {myDuels < MIN_SEASON_DUELS
+              ? `Encore ${MIN_SEASON_DUELS - myDuels} duel${MIN_SEASON_DUELS - myDuels > 1 ? "s" : ""} pour être classé.`
+              : "Tu es classé ce mois-ci !"}
           </p>
           {seasonTop.length === 0 ? (
-            <p className="muted">Personne n&apos;a encore gagné de duel ce mois-ci. À toi de jouer !</p>
+            <p className="muted">Personne n&apos;est encore classé ce mois-ci. À toi de jouer !</p>
           ) : (
             <ol className="duel-top">
               {seasonTop.map((t, i) => (
@@ -165,7 +187,7 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
                   <span className="rank">{i < 3 ? MEDALS[i] : i + 1}</span>
                   <NameWithBadge name={t.name} badge={badgeView(t.featuredBadge)} />
                   <span className="muted">
-                    {t.wins} V · {t.losses} D
+                    <b style={{ color: tierOf(t.rating).color }}>{t.rating}</b> · {t.wins} V · {t.losses} D
                   </span>
                 </li>
               ))}
@@ -211,6 +233,12 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
               </li>
             ))}
           </ul>
+          <h3>La cote</h3>
+          <p className="muted small-text">
+            Chaque joueur a une cote (1000 au départ). Battre un adversaire plus fort rapporte beaucoup de points, battre un adversaire bien
+            plus faible presque rien, et perdre contre lui en coûte beaucoup. Le défenseur gagne ou perd deux fois moins. Paliers : Bronze,
+            Argent (1100), Or (1250), Platine (1400), Diamant (1550), Maître (1700). Chaque mois, les cotes se rapprochent de 1000.
+          </p>
           <p className="muted small-text">
             Avantage : ×1,3 de dégâts. Désavantage : ×0,8. L&apos;ATK augmente les dégâts, la DEF les réduit et ajoute des
             points de vie. Coups critiques et esquives pimentent le tout.

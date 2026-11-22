@@ -20,6 +20,7 @@ import { checkAchievements } from "@/lib/achievements-server";
 import { announceDuel } from "@/lib/announce";
 import { recordProgress } from "@/lib/quests";
 import { addCoins, getShopConfig } from "@/lib/coins";
+import { duelCoins, eloDelta, K_ATTACK, K_DEFENSE, REWARD_MIN_GAIN } from "@/lib/elo";
 
 export type DuelStart = { ok: true; id: string } | { ok: false; error: string };
 
@@ -66,17 +67,36 @@ export async function startDuel(input: { opponent: string; team: string[] }): Pr
     const result = log.winner === 0 ? "ATTACKER" : log.winner === 1 ? "DEFENDER" : "DRAW";
 
     const duel = await prisma.$transaction(async (tx) => {
+      // Cote Elo : l'attaquant met K_ATTACK points en jeu, le défenseur K_DEFENSE
+      let attackerDelta: number | null = null;
+      let defenderDelta: number | null = null;
+      let ratings: { a: number; d: number } | null = null;
+      if (defenderId) {
+        const [ua, ud] = await Promise.all([
+          tx.user.findUniqueOrThrow({ where: { id: me.id }, select: { duelRating: true, duelPeak: true } }),
+          tx.user.findUniqueOrThrow({ where: { id: defenderId }, select: { duelRating: true, duelPeak: true } }),
+        ]);
+        ratings = { a: ua.duelRating, d: ud.duelRating };
+        const score = result === "ATTACKER" ? 1 : result === "DRAW" ? 0.5 : 0;
+        attackerDelta = eloDelta(ua.duelRating, ud.duelRating, score, K_ATTACK);
+        defenderDelta = eloDelta(ud.duelRating, ua.duelRating, 1 - score, K_DEFENSE);
+        const na = Math.max(0, ua.duelRating + attackerDelta);
+        const nd = Math.max(0, ud.duelRating + defenderDelta);
+        await tx.user.update({ where: { id: me.id }, data: { duelRating: na, duelPeak: Math.max(ua.duelPeak, na) } });
+        await tx.user.update({ where: { id: defenderId }, data: { duelRating: nd, duelPeak: Math.max(ud.duelPeak, nd) } });
+      }
+      // Booster du jour : seulement pour une vraie victoire (pas contre un adversaire bien plus faible)
       let rewarded = false;
-      if (defenderId && result === "ATTACKER" && DUEL_DAILY_REWARD > 0) {
+      if (defenderId && result === "ATTACKER" && DUEL_DAILY_REWARD > 0 && (attackerDelta ?? 0) >= REWARD_MIN_GAIN) {
         const already = await tx.duel.count({ where: { attackerId: me.id, rewarded: true, createdAt: { gte: parisDayStart() } } });
         rewarded = already === 0;
       }
       const d = await tx.duel.create({
-        data: { attackerId: me.id, defenderId, result, rewarded, log: log as unknown as Prisma.InputJsonValue },
+        data: { attackerId: me.id, defenderId, result, rewarded, attackerDelta, defenderDelta, log: log as unknown as Prisma.InputJsonValue },
       });
-      // Pièces pour l'attaquant (duels contre des membres uniquement)
-      if (defenderId) {
-        const gain = result === "ATTACKER" ? shop.duelWin : shop.duelLoss;
+      // Pièces pour l'attaquant, selon la difficulté du duel (duels contre des membres uniquement)
+      if (defenderId && ratings) {
+        const gain = duelCoins(result === "ATTACKER", ratings.a, ratings.d, { win: shop.duelWin, loss: shop.duelLoss });
         if (gain) await addCoins(tx, me.id, gain, result === "ATTACKER" ? "Victoire en duel" : "Duel livré");
       }
       if (defenderId && result !== "DRAW") {

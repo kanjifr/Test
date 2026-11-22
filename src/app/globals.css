@@ -1441,3 +1441,14 @@ a.news-card:hover { text-decoration: none; border-color: #fff; }
   .deal-card { width: 100%; container-type: inline-size; display: flex; flex-direction: column; align-items: center; }
   .deal-card .gcard { --w: 100cqi !important; }
 }
+
+/* ---- Cote Elo ---- */
+.my-rating { display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0.9rem 0.35rem 0.35rem; border-radius: 999px; background: rgba(255, 255, 255, 0.08); border: 1.5px solid var(--tc); }
+.my-rating b { font-family: var(--font-display); font-weight: 400; font-size: 1.3rem; }
+.tier-medal { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); color: #1a1205; background: radial-gradient(circle at 35% 30%, #fff8 0 10%, transparent 32%), var(--tc); box-shadow: 0 0 12px var(--tc); }
+.opp-name .stakes { font-weight: 800; font-size: 0.78rem; }
+.stakes .plus { color: var(--ok); }
+.stakes .minus { color: #ff9aa8; }
+.rating-delta { font-family: var(--font-display); font-size: 1.3rem; margin: 0.2rem 0; }
+.rating-delta.up { color: var(--ok); text-shadow: 0 0 12px rgba(110, 231, 168, 0.6); }
+.rating-delta.down { color: #ff9aa8; }

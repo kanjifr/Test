@@ -8,7 +8,19 @@ import { NameWithBadge } from "@/components/Badge";
 import { ELEMENTS, type CardView } from "@/lib/game";
 import type { BadgeView } from "@/lib/achievements";
 
-export type Opponent = { id: string; name: string | null; image: string | null; wins: number; losses: number; badge: BadgeView | null; foughtToday: number };
+export type Opponent = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  wins: number;
+  losses: number;
+  badge: BadgeView | null;
+  foughtToday: number;
+  rating: number;
+  tier: { label: string; kanji: string; color: string };
+  /** Points gagnés en cas de victoire, perdus en cas de défaite */
+  stakes: { win: number; loss: number };
+};
 
 const KEY = "kizuna.duel.team";
 
@@ -309,7 +321,7 @@ export function DuelLobby({
           <h2>Défier un membre</h2>
           <p className="muted small-text">
             {duelsLeft} duel{duelsLeft > 1 ? "s" : ""} restant{duelsLeft > 1 ? "s" : ""} aujourd&apos;hui
-            {rewardAvailable ? " · 🎁 ta première victoire du jour rapporte un booster bonus !" : " · récompense du jour déjà gagnée"}
+            {rewardAvailable ? " · 🎁 ta première victoire du jour (contre un adversaire de ton niveau) rapporte un booster bonus !" : " · récompense du jour déjà gagnée"}
           </p>
           {opponents.length === 0 ? (
             <p className="muted">Personne d&apos;autre n&apos;a encore {teamSize} cartes. Entraîne-toi en attendant !</p>
@@ -326,7 +338,14 @@ export function DuelLobby({
                   <span className="opp-name">
                     <NameWithBadge name={o.name} badge={o.badge} />
                     <small className="muted">
-                      {o.wins} V · {o.losses} D
+                      <b style={{ color: o.tier.color }}>
+                        {o.tier.kanji} {o.rating}
+                      </b>{" "}
+                      · {o.wins} V · {o.losses} D
+                    </small>
+                    <small className="stakes">
+                      <span className="plus">+{o.stakes.win}</span> / <span className="minus">{o.stakes.loss}</span>
+                      {o.stakes.win < 8 && <span className="muted"> · trop faible pour toi</span>}
                     </small>
                   </span>
                   <button

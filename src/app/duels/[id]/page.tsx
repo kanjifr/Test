@@ -25,7 +25,14 @@ export default async function DuelPage({ params }: { params: Promise<{ id: strin
         <h1>⚔ {names[0]} contre {names[1]}</h1>
         {duel.tournament ? <Link href={`/tournois/${duel.tournament.id}`}>← {duel.tournament.name}</Link> : <Link href="/duels">← Duels</Link>}
       </div>
-      <DuelReplay log={log} names={names} viewerSide={viewerSide} rewarded={duel.rewarded} rematchId={rematchId} />
+      <DuelReplay
+        log={log}
+        names={names}
+        viewerSide={viewerSide}
+        rewarded={duel.rewarded}
+        rematchId={rematchId}
+        ratingDelta={viewerSide === 0 ? duel.attackerDelta : viewerSide === 1 ? duel.defenderDelta : null}
+      />
     </section>
   );
 }

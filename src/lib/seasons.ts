@@ -3,6 +3,7 @@ import { announceText } from "@/lib/announce";
 import { siteUrl } from "@/lib/discord";
 import { checkAchievements } from "@/lib/achievements-server";
 import { addCoins, getShopConfig } from "@/lib/coins";
+import { MIN_SEASON_DUELS, softReset, START_RATING } from "@/lib/elo";
 
 /** Boosters bonus pour le podium d'une saison de duel (1er, 2e, 3e). */
 export const SEASON_REWARDS = [3, 2, 1];
@@ -49,13 +50,13 @@ export function monthLabel(key: string) {
   return new Date(Date.UTC(y, m - 1, 15)).toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
-export type SeasonRow = { userId: string; name: string | null; featuredBadge: string | null; wins: number; losses: number };
+export type SeasonRow = { userId: string; name: string | null; featuredBadge: string | null; rating: number; wins: number; losses: number; duels: number };
 
-/** Classement d'une saison : victoires et défaites contre des membres (attaque et défense). */
-export async function seasonRanking(key: string, limit = 10): Promise<SeasonRow[]> {
+/** Victoires, défaites et duels de chaque membre (contre des membres, hors tournois) sur un mois. */
+async function monthStats(key: string) {
   const [from, to] = monthRange(key);
-  const rows = await prisma.$queryRaw<{ userId: string; wins: bigint; losses: bigint }[]>`
-    SELECT "userId", SUM(win) AS wins, SUM(loss) AS losses FROM (
+  const rows = await prisma.$queryRaw<{ userId: string; wins: bigint; losses: bigint; duels: bigint }[]>`
+    SELECT "userId", SUM(win) AS wins, SUM(loss) AS losses, COUNT(*) AS duels FROM (
       SELECT "attackerId" AS "userId",
              CASE WHEN result = 'ATTACKER' THEN 1 ELSE 0 END AS win,
              CASE WHEN result = 'DEFENDER' THEN 1 ELSE 0 END AS loss
@@ -66,18 +67,29 @@ export async function seasonRanking(key: string, limit = 10): Promise<SeasonRow[
              CASE WHEN result = 'ATTACKER' THEN 1 ELSE 0 END
         FROM "Duel" WHERE "defenderId" IS NOT NULL AND "tournamentId" IS NULL AND "createdAt" >= ${from} AND "createdAt" < ${to}
     ) t
-    GROUP BY "userId"
-    HAVING SUM(win) > 0
-    ORDER BY SUM(win) DESC, SUM(loss) ASC
-    LIMIT ${limit}`;
+    GROUP BY "userId"`;
+  return new Map(rows.map((r) => [r.userId, { wins: Number(r.wins), losses: Number(r.losses), duels: Number(r.duels) }]));
+}
+
+/**
+ * Classement d'une saison : par cote Elo, parmi les membres qui ont disputé au moins
+ * MIN_SEASON_DUELS duels dans le mois (en attaque ou en défense).
+ */
+export async function seasonRanking(key: string, limit = 10): Promise<SeasonRow[]> {
+  const stats = await monthStats(key);
+  const eligible = [...stats].filter(([, s]) => s.duels >= MIN_SEASON_DUELS).map(([id]) => id);
   const users = await prisma.user.findMany({
-    where: { id: { in: rows.map((r) => r.userId) } },
-    select: { id: true, name: true, featuredBadge: true },
+    where: { id: { in: eligible } },
+    select: { id: true, name: true, featuredBadge: true, duelRating: true },
+    orderBy: { duelRating: "desc" },
+    take: limit,
   });
-  const byId = new Map(users.map((u) => [u.id, u]));
-  return rows
-    .filter((r) => byId.has(r.userId))
-    .map((r) => ({ userId: r.userId, name: byId.get(r.userId)!.name, featuredBadge: byId.get(r.userId)!.featuredBadge, wins: Number(r.wins), losses: Number(r.losses) }));
+  return users.map((u) => ({ userId: u.id, name: u.name, featuredBadge: u.featuredBadge, rating: u.duelRating, ...stats.get(u.id)! }));
+}
+
+/** Duels disputés par un membre ce mois-ci (pour savoir s'il est classé). */
+export async function myMonthDuels(userId: string, key: string) {
+  return (await monthStats(key)).get(userId)?.duels ?? 0;
 }
 
 /** Clôture la saison du mois précédent : titres et boosters pour le podium (une seule fois). */
@@ -97,11 +109,14 @@ export async function finalizeDuelSeason(now = new Date()) {
       await tx.user.update({ where: { id: p.userId }, data: { bonusPacks: { increment: SEASON_REWARDS[i] } } });
       if (shop.season[i]) await addCoins(tx, p.userId, shop.season[i], `Podium de la saison de duel ${key}`);
     }
+    // Nouvelle saison : chaque cote se rapproche de 1000 (la moitié de l'écart est gardée)
+    const rated = await tx.user.findMany({ where: { NOT: { duelRating: START_RATING } }, select: { id: true, duelRating: true } });
+    for (const u of rated) await tx.user.update({ where: { id: u.id }, data: { duelRating: softReset(u.duelRating) } });
   });
   for (const p of podium) await checkAchievements(p.userId);
   if (podium.length) {
-    const lines = podium.map((p, i) => `${MEDALS[i]} **${p.name}** : ${p.wins} victoire${p.wins > 1 ? "s" : ""} (+${SEASON_REWARDS[i]} booster${SEASON_REWARDS[i] > 1 ? "s" : ""})`);
+    const lines = podium.map((p, i) => `${MEDALS[i]} **${p.name}** : cote ${p.rating} (${p.wins} V · ${p.losses} D, +${SEASON_REWARDS[i]} booster${SEASON_REWARDS[i] > 1 ? "s" : ""})`);
     const link = siteUrl("/duels");
-    await announceText(`⚔ **Fin de la saison de duel ${deMonth(key)} !**\n${lines.join("\n")}\nUne nouvelle saison commence, tout le monde repart à zéro !${link ? ` ${link}` : ""}`);
+    await announceText(`⚔ **Fin de la saison de duel ${deMonth(key)} !**\n${lines.join("\n")}\nUne nouvelle saison commence : les cotes se rapprochent de 1000 !${link ? ` ${link}` : ""}`);
   }
 }

@@ -53,6 +53,9 @@ model User {
   // Duels : équipe de défense (3 identifiants de cartes, dans l'ordre) et palmarès
   defenseTeam    String[]  @default([])
   duelWins       Int       @default(0)
+  // Cote Elo de la saison de duel en cours (1000 au départ, adoucie chaque mois) et meilleure cote atteinte
+  duelRating     Int       @default(1000)
+  duelPeak       Int       @default(1000)
   duelLosses     Int       @default(0)
   // Anniversaire (jour et mois seulement, jamais l'année), renseigné par le membre
   birthMonth     Int?
@@ -95,6 +98,7 @@ model User {
   adventClaims      AdventClaim[]
   coinLogs          CoinLog[]
   pushSubscriptions PushSubscription[]
+  expeditions       Expedition[]
 }
 
 model Account {
@@ -293,19 +297,22 @@ enum DuelResult {
 }
 
 model Duel {
-  id           String      @id @default(cuid())
-  attackerId   String
+  id            String      @id @default(cuid())
+  attackerId    String
   // Vide pour un entraînement contre l'ordinateur
-  defenderId   String?
-  result       DuelResult
+  defenderId    String?
+  result        DuelResult
   // Déroulé complet du combat (cartes, coups, points de vie) pour la rediffusion
-  log          Json
+  log           Json
   // Booster bonus gagné grâce à ce duel
-  rewarded     Boolean     @default(false)
+  rewarded      Boolean     @default(false)
+  // Points de cote gagnés ou perdus par chacun (vide pour l'entraînement et les tournois)
+  attackerDelta Int?
+  defenderDelta Int?
   // Match de tournoi (hors palmarès, saisons et limites quotidiennes)
-  tournamentId String?
-  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
-  createdAt    DateTime    @default(now())
+  tournamentId  String?
+  tournament    Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
 
   attacker User  @relation("DuelAttacker", fields: [attackerId], references: [id], onDelete: Cascade)
   defender User? @relation("DuelDefender", fields: [defenderId], references: [id], onDelete: Cascade)
@@ -409,19 +416,20 @@ model Series {
  * Progression des quêtes de la semaine (une ligne par membre et par semaine).
  */
 model WeeklyProgress {
-  userId     String
+  userId      String
   // Semaine ISO à l'heure de Paris, ex : « 2026-W47 »
-  week       String
-  packs      Int      @default(0)
-  duelWins   Int      @default(0)
-  duels      Int      @default(0)
-  trades     Int      @default(0)
-  evolutions Int      @default(0)
-  recycled   Int      @default(0)
-  anecdotes  Int      @default(0)
+  week        String
+  packs       Int      @default(0)
+  duelWins    Int      @default(0)
+  duels       Int      @default(0)
+  trades      Int      @default(0)
+  evolutions  Int      @default(0)
+  recycled    Int      @default(0)
+  anecdotes   Int      @default(0)
+  expeditions Int      @default(0)
   // Quêtes dont la récompense a été récupérée
-  claimed    String[] @default([])
-  updatedAt  DateTime @updatedAt
+  claimed     String[] @default([])
+  updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -533,4 +541,27 @@ model PushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/**
+ * Expédition : 3 cartes partent en mission et reviennent avec des récompenses.
+ */
+model Expedition {
+  id          String    @id @default(cuid())
+  userId      String
+  // Identifiant de la destination (src/lib/expeditions.ts)
+  destination String
+  cardIds     String[]
+  hours       Int
+  startedAt   DateTime  @default(now())
+  endsAt      DateTime
+  // Récompense calculée au départ (affichée au retour)
+  reward      Json
+  claimedAt   DateTime?
+  notified    Boolean   @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, claimedAt])
+  @@index([endsAt, notified])
 }

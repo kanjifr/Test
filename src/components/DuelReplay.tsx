@@ -39,6 +39,7 @@ export function DuelReplay({
   names,
   viewerSide,
   rewarded,
+  ratingDelta = null,
   rematchId,
 }: {
   log: DuelLog;
@@ -46,6 +47,8 @@ export function DuelReplay({
   /** 0 = attaquant, 1 = défenseur, null = spectateur */
   viewerSide: 0 | 1 | null;
   rewarded: boolean;
+  /** Points de cote gagnés ou perdus par le spectateur (s'il a participé) */
+  ratingDelta?: number | null;
   rematchId: string | null;
 }) {
   const [step, setStep] = useState<Step>({ round: 0, hit: -1 });
@@ -89,6 +92,12 @@ export function DuelReplay({
         <p className="duel-score">
           {names[0]} <b>{log.score[0]}</b> – <b>{log.score[1]}</b> {names[1]}
         </p>
+        {ratingDelta !== null && (
+          <p className={`rating-delta ${ratingDelta >= 0 ? "up" : "down"}`}>
+            {ratingDelta >= 0 ? "▲ +" : "▼ "}
+            {ratingDelta} point{Math.abs(ratingDelta) > 1 ? "s" : ""} de cote
+          </p>
+        )}
         {rewarded && viewerSide === 0 && <p className="bonus-banner">🎁 Première victoire du jour : +1 booster bonus !</p>}
         <ol className="round-summary">
           {log.rounds.map((r, i) => (
