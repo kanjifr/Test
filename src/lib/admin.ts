@@ -42,6 +42,7 @@ export const PERMISSIONS = {
   manageTheme: FULL,
   manageAdvent: FULL,
   manageShop: FULL,
+  manageDuels: FULL,
   managePolls: FULL,
   moderateAnecdotes: ["OWNER", "ADMIN", "MODERATOR"],
   manageBackups: ["OWNER"],

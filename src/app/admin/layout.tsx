@@ -15,6 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ...(can(me.role, "moderateAnecdotes") || can(me.role, "managePolls")
       ? [{ href: "/admin/communaute", label: "Livre d'or et votes", icon: "話", badge: pending }]
       : []),
+    ...(can(me.role, "manageDuels") ? [{ href: "/admin/duels", label: "Duels", icon: "闘" }] : []),
     ...(can(me.role, "manageAdvent") ? [{ href: "/admin/avent", label: "Calendrier de l'Avent", icon: "雪" }] : []),
     ...(can(me.role, "manageShop") ? [{ href: "/admin/boutique", label: "Boutique et pièces", icon: "店" }] : []),
     ...(can(me.role, "manageTheme") || can(me.role, "manageAnnouncements") ? [{ href: "/admin/reglages", label: "Thème et annonces", icon: "設" }] : []),

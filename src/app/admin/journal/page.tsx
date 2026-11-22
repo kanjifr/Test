@@ -13,6 +13,7 @@ const KINDS = [
   ["coins", "Pièces"],
   ["collection", "Réinitialisations"],
   ["tournament", "Tournois"],
+  ["duels", "Duels"],
   ["anecdote", "Livre d'or"],
   ["backup", "Sauvegardes"],
 ] as const;

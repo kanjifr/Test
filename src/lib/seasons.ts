@@ -53,8 +53,17 @@ export function monthLabel(key: string) {
 export type SeasonRow = { userId: string; name: string | null; featuredBadge: string | null; rating: number; wins: number; losses: number; duels: number };
 
 /** Victoires, défaites et duels de chaque membre (contre des membres, hors tournois) sur un mois. */
+/** Date de la dernière remise à zéro des duels (Admin → Duels), ou null. */
+export async function duelsResetAt(): Promise<Date | null> {
+  const row = await prisma.setting.findUnique({ where: { key: "duels:resetAt" } });
+  return row ? new Date(row.value) : null;
+}
+
 async function monthStats(key: string) {
-  const [from, to] = monthRange(key);
+  const [start, to] = monthRange(key);
+  // Après une remise à zéro, la saison repart de ce moment-là
+  const reset = await duelsResetAt();
+  const from = reset && reset > start ? reset : start;
   const rows = await prisma.$queryRaw<{ userId: string; wins: bigint; losses: bigint; duels: bigint }[]>`
     SELECT "userId", SUM(win) AS wins, SUM(loss) AS losses, COUNT(*) AS duels FROM (
       SELECT "attackerId" AS "userId",

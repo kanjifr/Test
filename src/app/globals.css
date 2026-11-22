@@ -1491,3 +1491,5 @@ a.news-card:hover { text-decoration: none; border-color: #fff; }
   .exp-dests::-webkit-scrollbar { display: none; }
   .exp-dest { flex: 0 0 78%; scroll-snap-align: start; }
 }
+.danger-zone { border-color: rgba(255, 120, 150, 0.6); display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
+.danger-zone label:not(.switch) { display: flex; flex-direction: column; gap: 4px; }
