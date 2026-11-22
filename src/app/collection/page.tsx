@@ -57,67 +57,96 @@ export default async function CollectionPage({
     })
     .filter((x) => x.total > 0);
 
+  const doubles = owned.reduce((n, o) => n + Math.max(0, o.count - 1), 0);
+  const maxed = owned.filter((o) => o.level >= 5).length;
+  const rarityStats = RARITY_ORDER.map((r) => {
+    const total = items.filter((i) => i.card.rarity === r).length;
+    const got = items.filter((i) => i.card.rarity === r && i.count > 0).length;
+    return { r, total, got };
+  }).filter((x) => x.total > 0);
+
   return (
-    <section>
-      <div className="page-head">
-        <h1>
-          {isMe ? (
-            "Ma collection"
-          ) : (
-            <>
-              Collection de <NameWithBadge name={owner.name} badge={badgeView(owner.featuredBadge)} />
-            </>
-          )}
-        </h1>
-        {isMe && (
-          <Link href="/recyclage" className="btn btn-ghost btn-sm">
-            ♻ Recycler mes doublons
-          </Link>
-        )}
-        {!isMe && (
-          <div className="row">
-            <Link href={`/echanges/nouveau?avec=${owner.id}`} className="btn">
-              ⇄ Proposer un échange
-            </Link>
-            <Link href="/collection">← Ma collection</Link>
+    <section className="collection-page">
+      <header className="panel album-hero">
+        <div className="album-ring" style={{ "--p": pct } as React.CSSProperties} role="img" aria-label={`${have} cartes sur ${cards.length}`}>
+          <b>{pct}%</b>
+          <span>
+            {have}/{cards.length}
+          </span>
+        </div>
+        <div className="album-info">
+          <div className="album-title">
+            <h1>
+              {isMe ? (
+                "Ma collection"
+              ) : (
+                <>
+                  Collection de <NameWithBadge name={owner.name} badge={badgeView(owner.featuredBadge)} />
+                </>
+              )}
+            </h1>
+            <div className="row album-actions">
+              {isMe ? (
+                <>
+                  <Link href="/recyclage" className="btn btn-ghost btn-sm">
+                    ♻ Recycler
+                  </Link>
+                  <Link href="/boutique" className="btn btn-ghost btn-sm">
+                    🪙 Boutique
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href={`/echanges/nouveau?avec=${owner.id}`} className="btn btn-sm">
+                    ⇄ Proposer un échange
+                  </Link>
+                  <Link href="/collection" className="btn btn-ghost btn-sm">
+                    ← Ma collection
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
-        )}
-      </div>
-      <div className="progress">
-        <div className="progress-bar" style={{ width: `${pct}%` }} />
-        <span>
-          {have} / {cards.length} cartes · {pct}%
-        </span>
-      </div>
-      <div className="rarity-summary">
-        {RARITY_ORDER.map((r) => {
-          const total = items.filter((i) => i.card.rarity === r).length;
-          const got = items.filter((i) => i.card.rarity === r && i.count > 0).length;
-          return (
-            <span key={r} style={{ color: RARITIES[r].color }}>
-              {RARITIES[r].label} {got}/{total}
+          <div className="album-rarities">
+            {rarityStats.map(({ r, total, got }) => (
+              <div key={r} className={`album-rar ${got === total ? "done" : ""}`} style={{ "--rc": RARITIES[r].color } as React.CSSProperties}>
+                <span className="album-rar-label">{RARITIES[r].label}</span>
+                <b>
+                  {got}/{total}
+                </b>
+                <span className="album-rar-bar">
+                  <i style={{ width: `${(got / total) * 100}%` }} />
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="album-meta">
+            <span className="album-pill shiny-pill">
+              ✦ {shinyTotal}/{cards.length} brillante{shinyTotal > 1 ? "s" : ""}
             </span>
-          );
-        })}
-        <span className="shiny-count">
-          ✦ Brillantes {shinyTotal}/{cards.length}
-          {cards.length > 0 && shinyTotal >= cards.length && " · collection brillante complète !"}
-        </span>
-      </div>
+            {maxed > 0 && <span className="album-pill">★5 × {maxed}</span>}
+            <span className="album-pill">
+              {doubles} doublon{doubles > 1 ? "s" : ""}
+            </span>
+            {cards.length > 0 && shinyTotal >= cards.length && <span className="album-pill gold">Collection brillante complète !</span>}
+          </div>
+        </div>
+      </header>
+
       {perSeries.length > 1 && (
-        <div className="series-progress">
+        <div className="series-strip" role="list" aria-label="Progression par série">
           {perSeries.map((x) => {
             const p = Math.round((x.got / x.total) * 100);
             return (
-              <div key={x.id} className={`series-chip ${x.got === x.total ? "done" : ""}`}>
+              <div key={x.id} role="listitem" className={`series-chip ${x.got === x.total ? "done" : ""}`}>
                 <span className="series-name">
                   {x.name}
-                  {!x.inBoosters && <small className="muted"> · plus dans les boosters</small>}
+                  {!x.inBoosters && <small className="muted"> · hors boosters</small>}
                 </span>
+                <span className="series-count">{x.got === x.total ? "✓" : `${x.got}/${x.total}`}</span>
                 <span className="series-bar">
                   <span style={{ width: `${p}%` }} />
                 </span>
-                <span className="series-count">{x.got === x.total ? "✓ Complète" : `${x.got}/${x.total}`}</span>
               </div>
             );
           })}

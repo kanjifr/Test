@@ -6,7 +6,7 @@ import { evolveCard } from "@/app/collection/actions";
 import { levelCost, LEVEL_BONUS, MAX_LEVEL } from "@/lib/evolution";
 import { play } from "@/lib/sfx";
 import type { Rarity } from "@prisma/client";
-import { CardBack, GameCard } from "@/components/GameCard";
+import { GameCard } from "@/components/GameCard";
 import { ELEMENTS, RARITIES, RARITY_ORDER, type CardView } from "@/lib/game";
 
 export type GridItem = {
@@ -34,13 +34,24 @@ const STORAGE_KEY = "kizuna.collection.prefs";
 const rank = (r: Rarity) => RARITY_ORDER.indexOf(r);
 
 function Tile({ it, onOpen }: { it: GridItem; onOpen: (it: GridItem) => void }) {
-  return it.count > 0 ? (
-    <button type="button" className="grid-item" onClick={() => onOpen(it)}>
-      <GameCard card={it.card} size="sm" count={it.count} />
-    </button>
-  ) : (
+  if (it.count > 0)
+    return (
+      <button type="button" className="grid-item" onClick={() => onOpen(it)} aria-label={`${it.card.name}, ${RARITIES[it.card.rarity].label}`}>
+        <GameCard card={it.card} size="sm" count={it.count} />
+      </button>
+    );
+  // Carte pas encore obtenue : on montre sa rareté (et son événement), pas son visage
+  const r = RARITIES[it.card.rarity];
+  return (
     <div className="grid-item missing" title="Pas encore obtenue">
-      <CardBack size="sm" label={`#${String(it.card.number).padStart(3, "0")}`} />
+      <div className={`missing-card rarity-${it.card.rarity.toLowerCase()}`} style={{ "--rc": r.color } as React.CSSProperties}>
+        <span className="missing-num">#{String(it.card.number).padStart(3, "0")}</span>
+        <span className="missing-q" aria-hidden>
+          ?
+        </span>
+        <span className="missing-rarity">{r.label}</span>
+        {it.card.event && <span className="missing-event">✿ {it.card.event}</span>}
+      </div>
     </div>
   );
 }
@@ -68,6 +79,7 @@ export function CardGrid({ items, series = [], canEvolve = false }: { items: Gri
   const [evolving, startEvolve] = useTransition();
   const [evolveMsg, setEvolveMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [flash, setFlash] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   function evolve(id: string) {
     startEvolve(async () => {
       const res = await evolveCard(id);
@@ -121,6 +133,8 @@ export function CardGrid({ items, series = [], canEvolve = false }: { items: Gri
     return [...list].sort(cmp[prefs.sort]);
   }, [items, prefs]);
 
+  const activeFilters = [prefs.ownedOnly, prefs.shinyOnly, !!prefs.series && prefs.series !== "ALL"].filter(Boolean).length;
+
   // Avec un tri par rareté, on affiche une section par rareté
   const grouped = prefs.sort === "rarity-desc" || prefs.sort === "rarity-asc";
   const groups = grouped
@@ -131,13 +145,9 @@ export function CardGrid({ items, series = [], canEvolve = false }: { items: Gri
 
   return (
     <>
-      <div className="grid-controls">
-        <div className="chips" role="group" aria-label="Filtrer par rareté">
-          <button
-            type="button"
-            className={`chip ${prefs.rarity === "ALL" ? "on" : ""}`}
-            onClick={() => update({ rarity: "ALL" })}
-          >
+      <div className="coll-toolbar">
+        <div className="coll-chips" role="group" aria-label="Filtrer par rareté">
+          <button type="button" className={`chip ${prefs.rarity === "ALL" ? "on" : ""}`} onClick={() => update({ rarity: "ALL" })}>
             Toutes
           </button>
           {RARITY_ORDER.map((r) => (
@@ -146,15 +156,21 @@ export function CardGrid({ items, series = [], canEvolve = false }: { items: Gri
               type="button"
               className={`chip ${prefs.rarity === r ? "on" : ""}`}
               style={{ "--cc": RARITIES[r].color } as React.CSSProperties}
-              onClick={() => update({ rarity: r })}
+              onClick={() => update({ rarity: prefs.rarity === r ? "ALL" : r })}
             >
+              <span className="chip-dot" aria-hidden />
               {RARITIES[r].label}
             </button>
           ))}
         </div>
-        <div className="row">
+        <button type="button" className={`chip coll-filter-btn ${filtersOpen || activeFilters ? "on" : ""}`} aria-expanded={filtersOpen} onClick={() => setFiltersOpen((o) => !o)}>
+          ⚙ Filtres{activeFilters ? ` (${activeFilters})` : ""}
+        </button>
+      </div>
+      {filtersOpen && (
+        <div className="panel coll-filters">
           {(series.length > 1 || items.some((it) => it.card.event || it.card.alt)) && (
-            <label className="inline">
+            <label>
               Série
               <select value={prefs.series ?? "ALL"} onChange={(e) => update({ series: e.target.value })}>
                 <option value="ALL">Toutes</option>
@@ -169,12 +185,12 @@ export function CardGrid({ items, series = [], canEvolve = false }: { items: Gri
               </select>
             </label>
           )}
-          <label className="inline">
+          <label>
             Trier par
             <select value={prefs.sort} onChange={(e) => update({ sort: e.target.value as Sort })}>
-              {SORTS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
+              {SORTS.map((x) => (
+                <option key={x.value} value={x.value}>
+                  {x.label}
                 </option>
               ))}
             </select>
@@ -185,10 +201,20 @@ export function CardGrid({ items, series = [], canEvolve = false }: { items: Gri
           </label>
           <label className="switch">
             <input type="checkbox" checked={!!prefs.shinyOnly} onChange={(e) => update({ shinyOnly: e.target.checked })} />
-            <span>✦ Brillantes</span>
+            <span>✦ Seulement les brillantes</span>
           </label>
+          {activeFilters > 0 && (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => update({ ...DEFAULT_PREFS, sort: prefs.sort })}>
+              Tout effacer
+            </button>
+          )}
         </div>
-      </div>
+      )}
+      <p className="coll-count muted small-text">
+        {shown.length} carte{shown.length > 1 ? "s" : ""}
+        {shown.length !== items.length && ` sur ${items.length}`} · {shown.filter((i) => i.count > 0).length} obtenue
+        {shown.filter((i) => i.count > 0).length > 1 ? "s" : ""}
+      </p>
 
       {shown.length === 0 ? (
         <p className="muted">Aucune carte ne correspond à ces filtres.</p>
