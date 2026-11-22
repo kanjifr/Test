@@ -1493,3 +1493,60 @@ a.news-card:hover { text-decoration: none; border-color: #fff; }
 }
 .danger-zone { border-color: rgba(255, 120, 150, 0.6); display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
 .danger-zone label:not(.switch) { display: flex; flex-direction: column; gap: 4px; }
+
+/* ---- Arène ---- */
+.arena-start { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; padding: 2rem 1rem; text-align: center; }
+.arena-last { margin: 0; }
+.arena-score { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.8rem 1.5rem; align-items: center; }
+.arena-score > div { display: flex; flex-direction: column; gap: 4px; }
+.arena-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.pips { display: flex; gap: 5px; }
+.pip { width: 16px; height: 16px; border-radius: 50%; background: rgba(255, 255, 255, 0.12); border: 1.5px solid rgba(255, 255, 255, 0.3); }
+.pip.win.on { background: var(--gold); border-color: #fff3c4; box-shadow: 0 0 8px var(--gold); }
+.pip.loss.on { background: #ff5f7a; border-color: #ffc2cc; }
+.arena-now b { font-size: 0.95rem; }
+.arena-offer { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+.arena-choice { background: none; border: 0; padding: 0; cursor: pointer; transition: transform 0.2s; }
+.arena-choice:hover:not(:disabled) { transform: translateY(-8px) rotate(-1.5deg); }
+.arena-rewards { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.arena-rewards li { display: flex; justify-content: space-between; gap: 0.6rem; padding: 0.3rem 0.6rem; border-radius: 10px; background: rgba(255, 255, 255, 0.05); font-size: 0.88rem; }
+@media (max-width: 760px) {
+  .arena-offer { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+  .arena-choice { container-type: inline-size; width: 100%; }
+  .arena-choice .gcard { --w: 100cqi !important; }
+}
+
+/* ---- Plus ou moins ---- */
+.hl-start { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; padding: 2rem 1rem; text-align: center; }
+.hl-end-title { font-family: var(--font-display); font-size: 1.6rem; margin: 0; }
+.hl-end p { margin: 0.3rem 0; }
+.hl-board { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.2rem 1rem 1.5rem; }
+.hl-streak { font-size: 1.1rem; }
+.hl-streak b { font-family: var(--font-display); font-weight: 400; font-size: 1.8rem; color: var(--gold); }
+.hl-cards { display: flex; align-items: center; justify-content: center; gap: 1.2rem; }
+.hl-slot { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; border-radius: 18px; padding: 6px; transition: box-shadow 0.3s; }
+.hl-slot.good { box-shadow: 0 0 0 3px var(--ok), 0 0 26px rgba(110, 231, 168, 0.6); animation: hl-pop 0.4s ease-out; }
+.hl-slot.bad { box-shadow: 0 0 0 3px #ff5f7a, 0 0 26px rgba(255, 95, 122, 0.6); animation: hl-shake 0.4s; }
+@keyframes hl-pop { from { transform: scale(0.9); } }
+@keyframes hl-shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.hl-atk { font-family: var(--font-display); font-size: 1.3rem; padding: 2px 14px; border-radius: 999px; background: rgba(10, 6, 40, 0.6); border: 1.5px solid var(--line); }
+.hl-vs { font-family: var(--font-display); font-size: 2.4rem; color: var(--gold); text-shadow: 0 0 16px var(--gold); }
+.hl-buttons { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+.hl-up { background: linear-gradient(135deg, #3fbf7f, #5ef2ff) !important; }
+.hl-down { background: linear-gradient(135deg, #ff4f9a, #ff9a5c) !important; }
+@media (max-width: 760px) {
+  .hl-cards { gap: 0.4rem; }
+  .hl-cards .gcard { --w: 136px !important; }
+  .hl-vs { font-size: 1.6rem; }
+  .hl-buttons .btn-open { font-size: 1.2rem; padding: 0.8rem 1.6rem; }
+}
+.news-games { --nc: #a77bff; }
+.how { margin: -0.4rem 0 0.9rem; }
+.how summary { cursor: pointer; color: var(--gold); font-weight: 800; font-size: 0.9rem; }
+.how p { margin: 0.5rem 0 0; }
+@media (max-width: 760px) {
+  .arena-score { padding: 0.6rem 0.8rem; gap: 0.4rem 1rem; }
+  .arena-score .pip { width: 12px; height: 12px; }
+  .arena-now { flex-direction: row !important; align-items: baseline; gap: 0.5rem !important; width: 100%; }
+  .arena .page-head h1, .highlow .page-head h1 { font-size: 1.8rem; }
+}

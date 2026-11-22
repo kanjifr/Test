@@ -46,6 +46,8 @@ export async function Nav() {
     {
       title: "Jeu",
       items: [
+        { href: "/arene", label: "Arène", icon: "技", highlight: true },
+        { href: "/plus-ou-moins", label: "Plus ou moins", icon: "占", highlight: true },
         { href: "/expeditions", label: "Expéditions", icon: "旅", badge: expBack || undefined, highlight: true },
         { href: "/boutique", label: "Boutique", icon: "店", highlight: true },
         { href: "/tournois", label: "Tournois", icon: "陣", badge: toJoin || undefined, highlight: true },

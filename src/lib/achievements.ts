@@ -41,6 +41,9 @@ export type Stats = {
   tournamentsPlayed: number;
   adventBest: number;
   expeditionsDone: number;
+  arenaRuns: number;
+  arenaBest: number;
+  highlowBest: number;
 };
 
 export type Achievement = {
@@ -88,6 +91,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "advent_24", name: "Esprit de Noël", description: "Ouvrir les 24 cases d'un calendrier de l'Avent.", kanji: "聖", tier: "OR", progress: (s) => [s.adventBest, 24] },
   { id: "expedition_1", name: "Premier voyage", description: "Terminer une expédition.", kanji: "旅", tier: "BRONZE", progress: (s) => [s.expeditionsDone, 1] },
   { id: "expedition_50", name: "Grand explorateur", description: "Terminer 50 expéditions.", kanji: "航", tier: "OR", progress: (s) => [s.expeditionsDone, 50] },
+  { id: "arena_1", name: "Gladiateur novice", description: "Terminer une partie d'arène.", kanji: "技", tier: "BRONZE", progress: (s) => [s.arenaRuns, 1] },
+  { id: "arena_7", name: "Invaincu de l'arène", description: "Atteindre 7 victoires dans une partie d'arène.", kanji: "覇", tier: "OR", progress: (s) => [s.arenaBest, 7] },
+  { id: "highlow_10", name: "Devin", description: "Faire une série de 10 au Plus ou moins.", kanji: "占", tier: "ARGENT", progress: (s) => [s.highlowBest, 10] },
+  { id: "highlow_20", name: "Troisième œil", description: "Faire une série de 20 au Plus ou moins.", kanji: "眼", tier: "OR", progress: (s) => [s.highlowBest, 20] },
   { id: "vote_1", name: "Voix du peuple", description: "Participer à un vote de la communauté.", kanji: "票", tier: "BRONZE", progress: (s) => [s.votes, 1] },
   { id: "story_1", name: "Conteur", description: "Voir une de tes anecdotes publiée dans un livre d'or.", kanji: "話", tier: "BRONZE", progress: (s) => [s.anecdotes, 1] },
   { id: "series_1", name: "Saison bouclée", description: "Compléter une série entière (3 cartes minimum).", kanji: "季", tier: "ARGENT", progress: (s) => [s.seriesCompleted, 1] },

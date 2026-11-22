@@ -18,6 +18,7 @@ import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { BIRTHDAY_BOOST, parisToday } from "@/lib/birthday";
 import { boosterWhere, EVENT_BOOST, frDate } from "@/lib/series";
+import { parisDayStart } from "@/lib/duel-server";
 import { QUEST_REWARD, questStatus, weekEnd } from "@/lib/quests";
 import { QuestBoard } from "@/components/QuestBoard";
 import { InstallHint } from "@/components/InstallHint";
@@ -95,7 +96,7 @@ export default async function Home({
   await checkAchievements(session.user.id);
   const today = parisToday();
   const now = new Date();
-  const [user, mythics, recent, birthdays, liveEvents, newSeries, quests, tournament, expedition] = await Promise.all([
+  const [user, mythics, recent, birthdays, liveEvents, newSeries, quests, tournament, expedition, arenaToday, hlToday] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true, bonusPacks: true } }),
     prisma.card.count({ where: { ...boosterWhere(now), rarity: "MYTHIQUE" } }),
     prisma.pull.findMany({
@@ -135,7 +136,13 @@ export default async function Home({
       select: { name: true, startsAt: true, reward: true },
     }),
     prisma.expedition.findFirst({ where: { userId: session.user.id, claimedAt: null }, select: { endsAt: true, destination: true } }),
+    // Jeux du jour : partie d'arène gratuite et partie de Plus ou moins récompensée
+    prisma.arenaRun.count({ where: { userId: session.user.id, paid: false, createdAt: { gte: parisDayStart(now) } } }),
+    prisma.highLowRun.count({
+      where: { userId: session.user.id, rewarded: true, done: true, day: new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" }).format(now) },
+    }),
   ]);
+  const games = [arenaToday === 0 && "partie d'arène gratuite", hlToday === 0 && "Plus ou moins récompensé"].filter(Boolean) as string[];
   const events = new Map<string, { until: Date | null; cards: typeof liveEvents }>();
   for (const c of liveEvents) {
     const e = events.get(c.eventName!) ?? { until: c.availableUntil, cards: [] };
@@ -198,10 +205,22 @@ export default async function Home({
         rates={rates}
       >
         <InstallHint />
-        {(birthdays.length > 0 || latestSeries || tournament || events.size > 0 || expedition) && (
+        {(birthdays.length > 0 || latestSeries || tournament || events.size > 0 || expedition || games.length > 0) && (
           <section className="news" aria-label="À la une">
             <h2 className="news-title">À la une</h2>
             <div className="news-strip">
+              {games.length > 0 && (
+                <Link href={arenaToday === 0 ? "/arene" : "/plus-ou-moins"} className="news-card news-games">
+                  <span className="news-icon" aria-hidden>
+                    🎮
+                  </span>
+                  <div className="news-body">
+                    <b>Jeux du jour</b>
+                    <span>Il te reste : {games.join(" et ")}.</span>
+                    <span className="news-cta">Jouer →</span>
+                  </div>
+                </Link>
+              )}
               {expedition && (
                 <Link href="/expeditions" className="news-card news-expedition">
                   <span className="news-icon" aria-hidden>

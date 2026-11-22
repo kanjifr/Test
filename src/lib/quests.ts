@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export type QuestField = "packs" | "duelWins" | "duels" | "trades" | "evolutions" | "recycled" | "anecdotes" | "expeditions";
+export type QuestField = "packs" | "duelWins" | "duels" | "trades" | "evolutions" | "recycled" | "anecdotes" | "expeditions" | "arenaWins" | "highlow";
 
 export type Quest = { id: string; label: string; field: QuestField; target: number; icon: string };
 
@@ -18,6 +18,8 @@ export const QUEST_POOL: Quest[] = [
   { id: "recycle10", label: "Recycle 10 doublons", field: "recycled", target: 10, icon: "♻" },
   { id: "exp2", label: "Termine 2 expéditions", field: "expeditions", target: 2, icon: "🧭" },
   { id: "exp4", label: "Termine 4 expéditions", field: "expeditions", target: 4, icon: "🧭" },
+  { id: "arena5", label: "Gagne 5 combats d'arène", field: "arenaWins", target: 5, icon: "🏟️" },
+  { id: "highlow8", label: "Fais une série de 8 au Plus ou moins", field: "highlow", target: 8, icon: "🔼" },
   { id: "story1", label: "Écris une anecdote dans un livre d'or", field: "anecdotes", target: 1, icon: "📖" },
 ];
 export const QUESTS_PER_WEEK = 3;

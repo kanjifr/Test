@@ -99,6 +99,8 @@ model User {
   coinLogs          CoinLog[]
   pushSubscriptions PushSubscription[]
   expeditions       Expedition[]
+  arenaRuns         ArenaRun[]
+  highLowRuns       HighLowRun[]
 }
 
 model Account {
@@ -427,6 +429,8 @@ model WeeklyProgress {
   recycled    Int      @default(0)
   anecdotes   Int      @default(0)
   expeditions Int      @default(0)
+  arenaWins   Int      @default(0)
+  highlow     Int      @default(0)
   // Quêtes dont la récompense a été récupérée
   claimed     String[] @default([])
   updatedAt   DateTime @updatedAt
@@ -564,4 +568,56 @@ model Expedition {
 
   @@index([userId, claimedAt])
   @@index([endsAt, notified])
+}
+
+/**
+ * Partie d'arène : draft de 5 cartes puis combats contre l'ordinateur.
+ */
+model ArenaRun {
+  id        String    @id @default(cuid())
+  userId    String
+  // « DRAFT » (choix des cartes), « FIGHT » (combats) ou « DONE »
+  status    String    @default("DRAFT")
+  picks     String[]  @default([])
+  // Les 3 cartes proposées pour le prochain choix
+  offer     String[]  @default([])
+  wins      Int       @default(0)
+  losses    Int       @default(0)
+  // Entrée payée en pièces (sinon entrée gratuite du jour)
+  paid      Boolean   @default(false)
+  // Dernier combat (pour la rediffusion) et récompense finale
+  lastLog   Json?
+  lastNames String[]  @default([])
+  reward    Json?
+  createdAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, endedAt])
+}
+
+/**
+ * Partie de « Plus ou moins » : le paquet est tiré par le serveur, le joueur ne voit que les cartes révélées.
+ */
+model HighLowRun {
+  id        String    @id @default(cuid())
+  userId    String
+  // Jour (Paris) « AAAA-MM-JJ »
+  day       String
+  // Seule la première partie du jour rapporte des pièces
+  rewarded  Boolean   @default(false)
+  deck      String[]
+  index     Int       @default(0)
+  streak    Int       @default(0)
+  done      Boolean   @default(false)
+  coins     Int       @default(0)
+  createdAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, day])
+  @@index([day, streak])
 }

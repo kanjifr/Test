@@ -105,9 +105,14 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
     <section className="duels">
       <div className="page-head">
         <h1>⚔ Duels</h1>
-        <Link href="/tournois" className="btn btn-ghost btn-sm">
-          🏆 Tournois
-        </Link>
+        <span className="row">
+          <Link href="/arene" className="btn btn-ghost btn-sm">
+            🏟️ Arène
+          </Link>
+          <Link href="/tournois" className="btn btn-ghost btn-sm">
+            🏆 Tournois
+          </Link>
+        </span>
         <div className="my-rating" style={{ "--tc": myTier.color } as React.CSSProperties}>
           <span className="tier-medal" aria-hidden>
             {myTier.kanji}
