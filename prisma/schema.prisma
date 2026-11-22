@@ -71,16 +71,16 @@ model User {
   pulls      Pull[]
   featuredIn Card[]     @relation("CardSubject")
 
-  tradesSent     Trade[] @relation("TradeFrom")
-  tradesReceived Trade[] @relation("TradeTo")
-  achievements   UserAchievement[]
-  adminLogs      AdminLog[]
-  pollVotes      PollVote[]
-  anecdotes      Anecdote[] @relation("AnecdoteAuthor")
-  anecdotesReviewed Anecdote[] @relation("AnecdoteReviewer")
-  pollOptions    PollOption[]
-  duelsAttacked  Duel[]  @relation("DuelAttacker")
-  duelsDefended  Duel[]  @relation("DuelDefender")
+  tradesSent        Trade[]           @relation("TradeFrom")
+  tradesReceived    Trade[]           @relation("TradeTo")
+  achievements      UserAchievement[]
+  adminLogs         AdminLog[]
+  pollVotes         PollVote[]
+  anecdotes         Anecdote[]        @relation("AnecdoteAuthor")
+  anecdotesReviewed Anecdote[]        @relation("AnecdoteReviewer")
+  pollOptions       PollOption[]
+  duelsAttacked     Duel[]            @relation("DuelAttacker")
+  duelsDefended     Duel[]            @relation("DuelDefender")
 }
 
 model Account {
@@ -136,6 +136,18 @@ model Card {
   videoUrl    String?
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
+
+  // Série (saison) de la carte
+  seriesId       String?
+  series         Series?   @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  // Carte d'événement : tirable seulement entre ces deux dates (vide = pas de limite)
+  eventName      String?
+  availableFrom  DateTime?
+  availableUntil DateTime?
+  // Version alternative d'une autre carte (même personne, autre style), plus rare à tirer
+  variantOfId    String?
+  variantOf      Card?     @relation("CardVariant", fields: [variantOfId], references: [id], onDelete: SetNull)
+  variants       Card[]    @relation("CardVariant")
 
   subjectId String?
   subject   User?   @relation("CardSubject", fields: [subjectId], references: [id], onDelete: SetNull)
@@ -281,7 +293,9 @@ model Duel {
   @@index([defenderId, createdAt])
 }
 
-/** Réglages modifiables depuis le panel admin (clé → valeur). */
+/**
+ * Réglages modifiables depuis le panel admin (clé → valeur).
+ */
 model Setting {
   key       String   @id
   value     String
@@ -336,7 +350,9 @@ enum AnecdoteStatus {
   APPROVED
 }
 
-/** Livre d'or : anecdotes et messages sur la personne représentée par une carte. */
+/**
+ * Livre d'or : anecdotes et messages sur la personne représentée par une carte.
+ */
 model Anecdote {
   id           String         @id @default(cuid())
   cardId       String
@@ -353,4 +369,17 @@ model Anecdote {
 
   @@index([cardId, status])
   @@index([status, createdAt])
+}
+
+/**
+ * Série de cartes (Saison 1, Saison 2…). Les anciennes séries restent dans les collections.
+ */
+model Series {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  // Les cartes de la série sortent dans les boosters
+  inBoosters  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  cards       Card[]
 }

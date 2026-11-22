@@ -10,6 +10,7 @@ import { GameCard } from "@/components/GameCard";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { ANECDOTE_MAX } from "@/lib/anecdotes";
 import { deleteAnecdote, editAnecdote, submitAnecdote } from "../actions";
+import { eventOver, frDate, inWindow } from "@/lib/series";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,9 @@ export default async function CardPage({
     include: {
       subject: { select: { id: true, name: true, image: true, consent: true, birthMonth: true, birthDay: true } },
       owners: { select: { userId: true, count: true, shiny: true } },
+      series: { select: { name: true, inBoosters: true } },
+      variantOf: { select: { id: true, name: true, number: true, active: true } },
+      variants: { where: { active: true }, select: { id: true, name: true, number: true } },
       anecdotes: {
         where: { OR: [{ status: "APPROVED" }, { status: "PENDING", authorId: me.id }] },
         orderBy: { createdAt: "asc" },
@@ -73,6 +77,41 @@ export default async function CardPage({
               {mine ? <>Tu en as <b>{mine}</b>{myShiny > 0 && <> dont <b>{myShiny}</b> brillante{myShiny > 1 ? "s" : ""} ✦</>}</> : "Tu ne l'as pas encore"}
             </li>
             {shinyAround > 0 && <li>✦ <b>{shinyAround}</b> version{shinyAround > 1 ? "s" : ""} brillante{shinyAround > 1 ? "s" : ""} dans la communauté</li>}
+            {card.series && (
+              <li>
+                Série <b>{card.series.name}</b>
+                {!card.series.inBoosters && " · ne sort plus des boosters"}
+              </li>
+            )}
+            {card.eventName && (
+              <li>
+                ✿ Carte de l&apos;événement <b>{card.eventName}</b>
+                {card.availableUntil &&
+                  (eventOver(card)
+                    ? ` · terminé le ${frDate(card.availableUntil)}, obtenable uniquement par échange`
+                    : inWindow(card)
+                      ? ` · disponible jusqu'au ${frDate(card.availableUntil)}`
+                      : card.availableFrom
+                        ? ` · à partir du ${frDate(card.availableFrom)}`
+                        : "")}
+              </li>
+            )}
+            {card.variantOf?.active && (
+              <li>
+                Version alternative de <Link href={`/carte/${card.variantOf.id}`}>#{String(card.variantOf.number).padStart(3, "0")} {card.variantOf.name}</Link>
+              </li>
+            )}
+            {card.variants.length > 0 && (
+              <li>
+                Version{card.variants.length > 1 ? "s" : ""} alternative{card.variants.length > 1 ? "s" : ""} :{" "}
+                {card.variants.map((v, i) => (
+                  <span key={v.id}>
+                    {i > 0 && ", "}
+                    <Link href={`/carte/${v.id}`}>#{String(v.number).padStart(3, "0")} {v.name}</Link>
+                  </span>
+                ))}
+              </li>
+            )}
             {card.subject?.consent && (
               <li>
                 Carte de <Link href={`/membre/${card.subject.id}`}>{card.subject.name}</Link>

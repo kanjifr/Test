@@ -79,6 +79,10 @@ export type CardView = {
   birthday?: boolean;
   /** Version brillante (shiny) */
   shiny?: boolean;
+  /** Nom de l'événement (carte limitée dans le temps) */
+  event?: string | null;
+  /** Version alternative d'une autre carte */
+  alt?: boolean;
 };
 
 /** Tirage pondéré d'une rareté. `minRarity` permet de garantir une carte rare+. */

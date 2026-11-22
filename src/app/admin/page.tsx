@@ -18,6 +18,8 @@ import { saveAnnounceSettings, sendTestAnnouncement } from "./announce-actions";
 import { announceConfigured } from "@/lib/announce";
 import { getAnnounceSettings } from "@/lib/settings";
 import { deleteCard, resetCollection, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
+import { createSeries, deleteSeries, updateSeries } from "./series-actions";
+import { eventOver, frDate, inWindow, toParisDay } from "@/lib/series";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +49,13 @@ export default async function AdminPage({
     seed: can(me.role, "seedDemo"),
     log: can(me.role, "viewLog"),
     roles: can(me.role, "manageRoles"),
+    series: can(me.role, "manageSeries"),
   };
+  const series = await prisma.series.findMany({
+    orderBy: { createdAt: "asc" },
+    include: { _count: { select: { cards: true } } },
+  });
+  const seriesName = new Map(series.map((x) => [x.id, x.name]));
 
   const lastBackup = allow.backups ? await lastBackupSent() : null;
   const pendingAnecdotes = allow.anecdotes
@@ -158,6 +166,53 @@ export default async function AdminPage({
               <input type="number" name="defense" min={0} max={999} defaultValue={editing?.defense ?? 50} />
             </label>
           </div>
+          <fieldset className="video-field">
+            <legend>Série, événement, version alternative</legend>
+            <label>
+              Série
+              <select name="seriesId" defaultValue={editing ? (editing.seriesId ?? "") : (series.at(-1)?.id ?? "")}>
+                <option value="">— Hors série —</option>
+                {series.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                    {x.inBoosters ? "" : " (hors boosters)"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Carte d&apos;événement (facultatif)
+              <input name="eventName" maxLength={30} defaultValue={editing?.eventName ?? ""} placeholder="ex : Halloween" />
+            </label>
+            <div className="row">
+              <label>
+                Disponible du
+                <input type="date" name="availableFrom" defaultValue={toParisDay(editing?.availableFrom)} />
+              </label>
+              <label>
+                au (inclus)
+                <input type="date" name="availableUntil" defaultValue={toParisDay(editing?.availableUntil)} />
+              </label>
+            </div>
+            <small className="muted">
+              En dehors de ces dates, la carte ne sort plus des boosters : elle ne s&apos;obtient que par échange. Pendant
+              l&apos;événement, elle sort 3 fois plus souvent que les autres cartes de sa rareté.
+            </small>
+            <label>
+              Version alternative de…
+              <select name="variantOfId" defaultValue={editing?.variantOfId ?? ""}>
+                <option value="">— Non, c&apos;est une carte normale —</option>
+                {cards
+                  .filter((c) => !c.variantOfId && c.id !== editing?.id)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      #{String(c.number).padStart(3, "0")} {c.name}
+                    </option>
+                  ))}
+              </select>
+              <small className="muted">Même personne, autre style. Elle sort 2,5 fois moins souvent que les autres cartes de sa rareté.</small>
+            </label>
+          </fieldset>
           <label>
             Membre représenté (avatar Discord utilisé si pas d&apos;image)
             <select name="subjectId" defaultValue={editing?.subjectId ?? prefill.subjectId ?? ""}>
@@ -245,6 +300,12 @@ export default async function AdminPage({
                 <span className="muted">
                   {c.subject ? `Membre : ${c.subject.name}` : "Pas de membre lié"} · {c._count.owners} possesseurs
                 </span>
+                <span className="muted small-text">
+                  {c.seriesId ? seriesName.get(c.seriesId) : "Hors série"}
+                  {c.eventName &&
+                    ` · ✿ ${c.eventName}${c.availableUntil ? (eventOver(c) ? " (terminé)" : inWindow(c) ? ` (jusqu'au ${frDate(c.availableUntil)})` : " (à venir)") : ""}`}
+                  {c.variantOfId && " · ALT"}
+                </span>
                 <div className="row">
                   <Link href={`/admin?edit=${c.id}`} className="btn btn-sm">
                     Modifier
@@ -272,6 +333,59 @@ export default async function AdminPage({
           ))}
         </div>
       </div>
+
+      {allow.series && (
+        <div className="panel admin-series" id="saisons">
+          <h2>🌸 Séries (saisons)</h2>
+          <p className="muted small-text">
+            Chaque carte appartient à une série. Seules les séries cochées « dans les boosters » sortent des boosters ; les
+            autres restent dans les collections et s&apos;obtiennent par échange. Chaque série a sa propre barre de
+            progression dans la collection.
+          </p>
+          <ul className="series-list">
+            {series.map((x) => (
+              <li key={x.id}>
+                <form action={updateSeries} className="series-row">
+                  <input type="hidden" name="id" value={x.id} />
+                  <input name="name" defaultValue={x.name} maxLength={40} required aria-label="Nom de la série" />
+                  <input name="description" defaultValue={x.description} maxLength={200} placeholder="Description" aria-label="Description" />
+                  <label className="switch">
+                    <input type="checkbox" name="inBoosters" defaultChecked={x.inBoosters} />
+                    <span>Dans les boosters</span>
+                  </label>
+                  {!x.inBoosters && (
+                    <label className="switch">
+                      <input type="checkbox" name="announce" defaultChecked />
+                      <span>Annoncer sur Discord si je l&apos;ajoute</span>
+                    </label>
+                  )}
+                  <span className="muted small-text">{x._count.cards} carte(s)</span>
+                  <button className="btn btn-sm">Enregistrer</button>
+                </form>
+                <form action={deleteSeries}>
+                  <input type="hidden" name="id" value={x.id} />
+                  <ConfirmButton className="btn btn-sm btn-danger" message={`Supprimer la série ${x.name} ? Ses cartes ne sont pas supprimées : elles passent « hors série ».`}>
+                    Supprimer
+                  </ConfirmButton>
+                </form>
+              </li>
+            ))}
+          </ul>
+          <form action={createSeries} className="series-row series-new">
+            <input name="name" maxLength={40} required placeholder="Nom de la nouvelle série (ex : Saison 2 : Les Ombres)" aria-label="Nom" />
+            <input name="description" maxLength={200} placeholder="Description (facultatif)" aria-label="Description" />
+            <label className="switch">
+              <input type="checkbox" name="inBoosters" />
+              <span>Dans les boosters tout de suite</span>
+            </label>
+            <button className="btn btn-sm">+ Créer la série</button>
+          </form>
+          <p className="muted small-text">
+            Conseil : crée la série sans la mettre dans les boosters, ajoute ses cartes, puis coche « Dans les boosters » le
+            jour de la sortie (avec l&apos;annonce Discord).
+          </p>
+        </div>
+      )}
 
       {allow.anecdotes && (
         <div className="panel admin-anecdotes" id="livre-d-or">

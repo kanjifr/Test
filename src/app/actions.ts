@@ -11,6 +11,7 @@ import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
 import { announcePull } from "@/lib/announce";
+import { boosterWhere, seriesWeight } from "@/lib/series";
 
 const rand = () => randomInt(0, 1_000_000) / 1_000_000;
 
@@ -30,8 +31,9 @@ export type OpenResult =
 export async function openPack(): Promise<OpenResult> {
   const user = await requireUser();
 
+  // Cartes des séries ouvertes aux boosters, et cartes d'événement en cours
   const cards = await prisma.card.findMany({
-    where: { active: true },
+    where: boosterWhere(),
     include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } },
   });
   // Il faut au moins une carte non Mythique pour remplir un booster
@@ -69,8 +71,9 @@ export async function openPack(): Promise<OpenResult> {
     select: { pityCount: true, bonusPacks: true, lastPackAt: true },
   });
   // Les cartes des membres qui fêtent leur anniversaire sortent plus souvent aujourd'hui
+  // Les cartes d'événement sortent plus souvent pendant l'événement, les alternatives plus rarement
   const weightOf = (c: (typeof cards)[number]) =>
-    c.subject?.consent && isBirthdayToday(c.subject.birthMonth, c.subject.birthDay) ? BIRTHDAY_BOOST : 1;
+    (c.subject?.consent && isBirthdayToday(c.subject.birthMonth, c.subject.birthDay) ? BIRTHDAY_BOOST : 1) * seriesWeight(c);
   const booster = drawBooster(cards, PACK_SIZE, Math.min(me.pityCount, PITY_HARD - 1), rand, weightOf);
   const drawn = booster.cards;
   const mythicAvailable = cards.some((c) => c.rarity === "MYTHIQUE");

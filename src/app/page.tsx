@@ -16,6 +16,7 @@ import {
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { BIRTHDAY_BOOST, parisToday } from "@/lib/birthday";
+import { boosterWhere, EVENT_BOOST, frDate } from "@/lib/series";
 
 export const dynamic = "force-dynamic";
 
@@ -87,9 +88,10 @@ export default async function Home({
 
   await checkAchievements(session.user.id);
   const today = parisToday();
-  const [user, mythics, recent, birthdays] = await Promise.all([
+  const now = new Date();
+  const [user, mythics, recent, birthdays, liveEvents, newSeries] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true, bonusPacks: true } }),
-    prisma.card.count({ where: { active: true, rarity: "MYTHIQUE" } }),
+    prisma.card.count({ where: { ...boosterWhere(now), rarity: "MYTHIQUE" } }),
     prisma.pull.findMany({
       where: { card: { rarity: { in: ["EPIQUE", "LEGENDAIRE", "MYTHIQUE"] } } },
       orderBy: { createdAt: "desc" },
@@ -107,7 +109,29 @@ export default async function Home({
         featuredIn: { where: { active: true }, include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } },
       },
     }),
+    // Cartes d'événement qu'on peut obtenir en ce moment
+    prisma.card.findMany({
+      where: { ...boosterWhere(now), eventName: { not: null }, NOT: { availableFrom: null, availableUntil: null } },
+      orderBy: { number: "asc" },
+      include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } },
+    }),
+    // Séries arrivées dans les boosters ces 14 derniers jours
+    prisma.adminLog.findMany({
+      where: { action: "series.update", details: { contains: "ajoutée aux boosters" }, createdAt: { gte: new Date(now.getTime() - 14 * 86400_000) } },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    }),
   ]);
+  const events = new Map<string, { until: Date | null; cards: typeof liveEvents }>();
+  for (const c of liveEvents) {
+    const e = events.get(c.eventName!) ?? { until: c.availableUntil, cards: [] };
+    e.cards.push(c);
+    if (c.availableUntil && (!e.until || c.availableUntil < e.until)) e.until = c.availableUntil;
+    events.set(c.eventName!, e);
+  }
+  const latestSeries = newSeries.length
+    ? await prisma.series.findFirst({ where: { inBoosters: true }, orderBy: { createdAt: "desc" }, include: { _count: { select: { cards: { where: { active: true } } } } } })
+    : null;
   const nextAt = user?.lastPackAt ? user.lastPackAt.getTime() + PACK_COOLDOWN_MS : 0;
 
   const fmt = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
@@ -142,6 +166,32 @@ export default async function Home({
           </div>
         </section>
       )}
+      {latestSeries && (
+        <section className="panel series-banner" aria-label="Nouvelle série">
+          <h2>🌸 Nouvelle série : {latestSeries.name}</h2>
+          <p>
+            {latestSeries.description || "De nouvelles cartes viennent d'arriver dans les boosters."} {latestSeries._count.cards} carte
+            {latestSeries._count.cards > 1 ? "s" : ""} à découvrir !
+          </p>
+        </section>
+      )}
+      {[...events].map(([name, e]) => (
+        <section key={name} className="panel event-banner" aria-label={`Événement ${name}`}>
+          <div style={{ flex: "1 1 260px" }}>
+            <h2>✿ Événement : {name}</h2>
+            <p>
+              {e.cards.length} carte{e.cards.length > 1 ? "s" : ""} limitée{e.cards.length > 1 ? "s" : ""} à obtenir
+              {e.until ? ` jusqu'au ${frDate(e.until)}` : ""}. Elles sortent {EVENT_BOOST} fois plus souvent pendant
+              l&apos;événement, puis ne s&apos;obtiendront plus que par échange !
+            </p>
+          </div>
+          <div className="row">
+            {e.cards.slice(0, 4).map((c) => (
+              <GameCard key={c.id} card={toCardView(c)} size="xs" />
+            ))}
+          </div>
+        </section>
+      ))}
       <PackOpener
         initialNextAt={nextAt}
         serverNow={Date.now()}

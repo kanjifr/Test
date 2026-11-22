@@ -5,10 +5,11 @@ import type { Rarity } from "@prisma/client";
 import { CardBack, GameCard } from "@/components/GameCard";
 import { ELEMENTS, RARITIES, RARITY_ORDER, type CardView } from "@/lib/game";
 
-export type GridItem = { card: CardView; count: number; shiny?: number };
+export type GridItem = { card: CardView; count: number; shiny?: number; seriesId?: string | null };
+export type SeriesOption = { id: string; name: string };
 
 type Sort = "number" | "rarity-desc" | "rarity-asc" | "count";
-type Prefs = { sort: Sort; rarity: Rarity | "ALL"; ownedOnly: boolean; shinyOnly?: boolean };
+type Prefs = { sort: Sort; rarity: Rarity | "ALL"; ownedOnly: boolean; shinyOnly?: boolean; series?: string };
 
 const SORTS: { value: Sort; label: string }[] = [
   { value: "number", label: "Numéro" },
@@ -33,7 +34,19 @@ function Tile({ it, onOpen }: { it: GridItem; onOpen: (it: GridItem) => void }) 
   );
 }
 
-export function CardGrid({ items }: { items: GridItem[] }) {
+/** Filtre de série : "ALL", l'id d'une série, "none" (hors série), "event" ou "alt". */
+const matchSeries = (it: GridItem, f: string | undefined) =>
+  !f || f === "ALL"
+    ? true
+    : f === "event"
+      ? !!it.card.event
+      : f === "alt"
+        ? !!it.card.alt
+        : f === "none"
+          ? !it.seriesId
+          : it.seriesId === f;
+
+export function CardGrid({ items, series = [] }: { items: GridItem[]; series?: SeriesOption[] }) {
   const [open, setOpen] = useState<GridItem | null>(null);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
 
@@ -64,7 +77,8 @@ export function CardGrid({ items }: { items: GridItem[] }) {
       (it) =>
         (prefs.rarity === "ALL" || it.card.rarity === prefs.rarity) &&
         (!prefs.ownedOnly || it.count > 0) &&
-        (!prefs.shinyOnly || (it.shiny ?? 0) > 0),
+        (!prefs.shinyOnly || (it.shiny ?? 0) > 0) &&
+        matchSeries(it, series.length || prefs.series === "event" || prefs.series === "alt" ? prefs.series : "ALL"),
     );
     const byNumber = (a: GridItem, b: GridItem) => a.card.number - b.card.number;
     const cmp: Record<Sort, (a: GridItem, b: GridItem) => number> = {
@@ -108,6 +122,22 @@ export function CardGrid({ items }: { items: GridItem[] }) {
           ))}
         </div>
         <div className="row">
+          {(series.length > 1 || items.some((it) => it.card.event || it.card.alt)) && (
+            <label className="inline">
+              Série
+              <select value={prefs.series ?? "ALL"} onChange={(e) => update({ series: e.target.value })}>
+                <option value="ALL">Toutes</option>
+                {series.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+                {items.some((it) => !it.seriesId) && <option value="none">Hors série</option>}
+                {items.some((it) => it.card.event) && <option value="event">✿ Cartes d&apos;événement</option>}
+                {items.some((it) => it.card.alt) && <option value="alt">Versions alternatives</option>}
+              </select>
+            </label>
+          )}
           <label className="inline">
             Trier par
             <select value={prefs.sort} onChange={(e) => update({ sort: e.target.value as Sort })}>

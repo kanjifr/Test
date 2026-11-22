@@ -80,6 +80,12 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
           🎂 ANNIV
         </span>
       )}
+      {(card.alt || card.event) && size !== "xs" && (
+        <span className="gcard-tags">
+          {card.alt && <span className="gcard-tag tag-alt" title="Version alternative">ALT</span>}
+          {card.event && <span className="gcard-tag tag-event" title={`Carte d'événement : ${card.event}`}>✿ {card.event}</span>}
+        </span>
+      )}
       {count !== undefined && count > 1 && <span className="gcard-count">×{count}</span>}
     </div>
   );

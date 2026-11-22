@@ -26,6 +26,11 @@ export type Stats = {
   bestElementTarget: number; // taille de cet élément
   elementCompleted: boolean;
   luckyPack: boolean;
+  /** Séries (3 cartes minimum) entièrement possédées */
+  seriesCompleted: number;
+  seriesTotal: number;
+  eventOwned: number;
+  altOwned: number;
 };
 
 export type Achievement = {
@@ -64,6 +69,11 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "duel_25", name: "Gladiateur", description: "Gagner 25 duels contre des membres.", kanji: "闘", tier: "ARGENT", progress: (s) => [s.duelWins, 25] },
   { id: "vote_1", name: "Voix du peuple", description: "Participer à un vote de la communauté.", kanji: "票", tier: "BRONZE", progress: (s) => [s.votes, 1] },
   { id: "story_1", name: "Conteur", description: "Voir une de tes anecdotes publiée dans un livre d'or.", kanji: "話", tier: "BRONZE", progress: (s) => [s.anecdotes, 1] },
+  { id: "series_1", name: "Saison bouclée", description: "Compléter une série entière (3 cartes minimum).", kanji: "季", tier: "ARGENT", progress: (s) => [s.seriesCompleted, 1] },
+  { id: "series_all", name: "Gardien des saisons", description: "Compléter toutes les séries (au moins 2).", kanji: "暦", tier: "OR", progress: (s) => [s.seriesTotal >= 2 ? s.seriesCompleted : 0, Math.max(2, s.seriesTotal)] },
+  { id: "event_1", name: "Souvenir d'un soir", description: "Obtenir une carte d'événement.", kanji: "祭", tier: "BRONZE", progress: (s) => [s.eventOwned, 1] },
+  { id: "event_5", name: "Toujours au rendez-vous", description: "Posséder 5 cartes d'événement différentes.", kanji: "宴", tier: "OR", progress: (s) => [s.eventOwned, 5] },
+  { id: "alt_1", name: "Autre facette", description: "Obtenir une version alternative.", kanji: "貌", tier: "ARGENT", progress: (s) => [s.altOwned, 1] },
   { id: "featured", name: "Visage du clan", description: "Apparaître sur une carte.", kanji: "顔", tier: "BRONZE", progress: (s) => [s.featuredIn, 1] },
 ];
 

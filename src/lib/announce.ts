@@ -125,3 +125,14 @@ export async function announceBirthday(people: Person[]) {
     content: `🎂 Joyeux anniversaire ${names} ! Aujourd'hui, ${people.length > 1 ? "leurs cartes sortent" : "sa carte sort"} 5 fois plus souvent dans les boosters. À vous de la trouver !${link ? ` ${link}` : ""}`,
   });
 }
+
+/** Annonce décidée par le staff (case « Annoncer sur Discord ») : pas de réglage à vérifier. */
+export async function announceText(content: string) {
+  if (!announceConfigured()) return;
+  later({ content }, 1_000);
+}
+
+export async function announceSeries(name: string, count: number) {
+  const link = siteUrl("/");
+  await announceText(`🌸 **Nouvelle série : ${name} !** ${count} nouvelle${count > 1 ? "s" : ""} carte${count > 1 ? "s" : ""} à découvrir dans les boosters.${link ? ` ${link}` : ""}`);
+}

@@ -6,9 +6,9 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
-      select: { count: true, shiny: true, card: { select: { rarity: true, element: true } } },
+      select: { count: true, shiny: true, card: { select: { rarity: true, element: true, seriesId: true, eventName: true, variantOfId: true } } },
     }),
-    prisma.card.findMany({ where: { active: true }, select: { rarity: true, element: true } }),
+    prisma.card.findMany({ where: { active: true }, select: { rarity: true, element: true, seriesId: true } }),
     prisma.trade.count({ where: { status: "ACCEPTED", OR: [{ fromId: userId }, { toId: userId }] } }),
     prisma.card.count({ where: { subjectId: userId, subject: { consent: true } } }),
     extra.luckyPack
@@ -39,7 +39,17 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     }
   }
 
+  const seriesTotals = new Map<string, number>();
+  for (const c of cards) if (c.seriesId) seriesTotals.set(c.seriesId, (seriesTotals.get(c.seriesId) ?? 0) + 1);
+  const seriesOwned = new Map<string, number>();
+  for (const o of owned) if (o.card.seriesId) seriesOwned.set(o.card.seriesId, (seriesOwned.get(o.card.seriesId) ?? 0) + 1);
+  const bigSeries = [...seriesTotals].filter(([, n]) => n >= 3);
+
   return {
+    seriesCompleted: bigSeries.filter(([id, n]) => (seriesOwned.get(id) ?? 0) >= n).length,
+    seriesTotal: bigSeries.length,
+    eventOwned: owned.filter((o) => o.card.eventName).length,
+    altOwned: owned.filter((o) => o.card.variantOfId).length,
     packsOpened: user?.packsOpened ?? 0,
     uniqueCards: owned.length,
     totalActiveCards: cards.length,

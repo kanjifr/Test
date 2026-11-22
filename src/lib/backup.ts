@@ -14,7 +14,7 @@ const VERSION = 1;
  * et sans les jetons de connexion Discord). Les images et vidéos restent dans le volume.
  */
 export async function buildBackup() {
-  const [users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes, anecdotes] = await Promise.all([
+  const [users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes, anecdotes, series] = await Promise.all([
     prisma.user.findMany(),
     prisma.account.findMany({ select: { userId: true, type: true, provider: true, providerAccountId: true, createdAt: true, updatedAt: true } }),
     prisma.card.findMany(),
@@ -27,8 +27,9 @@ export async function buildBackup() {
     prisma.pollOption.findMany(),
     prisma.pollVote.findMany(),
     prisma.anecdote.findMany(),
+    prisma.series.findMany(),
   ]);
-  const data = { users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes, anecdotes };
+  const data = { users, accounts, cards, userCards, trades, tradeItems, achievements, logs, polls, pollOptions, pollVotes, anecdotes, series };
   const counts = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, v.length]));
   return { format: FORMAT, version: VERSION, site: SITE_NAME, createdAt: new Date().toISOString(), counts, data };
 }
@@ -81,13 +82,20 @@ export async function restoreBackup(b: Backup) {
       await tx.pull.deleteMany();
       await tx.adminLog.deleteMany();
       await tx.card.deleteMany();
+      await tx.series.deleteMany();
       await tx.account.deleteMany();
       await tx.session.deleteMany();
       await tx.user.deleteMany();
 
       await tx.user.createMany({ data: d.users });
       await tx.account.createMany({ data: d.accounts });
-      await tx.card.createMany({ data: d.cards });
+      // Séries (absentes des sauvegardes faites avant leur ajout)
+      if (d.series?.length) await tx.series.createMany({ data: d.series });
+      // Les versions alternatives font référence à d'autres cartes : on relie après coup
+      await tx.card.createMany({ data: d.cards.map((c) => ({ ...c, variantOfId: null })) });
+      for (const c of d.cards.filter((c) => c.variantOfId)) {
+        await tx.card.update({ where: { id: c.id }, data: { variantOfId: c.variantOfId } });
+      }
       // Les contre-propositions font référence à d'autres échanges : on relie après coup
       await tx.trade.createMany({ data: d.trades.map((t) => ({ ...t, parentId: null })) });
       for (const t of d.trades.filter((t) => t.parentId)) {

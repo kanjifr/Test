@@ -22,5 +22,7 @@ export function toCardView(card: Card & { subject?: Subject | null }): CardView 
     imageUrl: image,
     videoUrl: revoked || card.rarity !== "MYTHIQUE" ? null : card.videoUrl || null,
     birthday: !revoked && isBirthdayToday(card.subject?.birthMonth, card.subject?.birthDay),
+    event: card.eventName || null,
+    alt: !!card.variantOfId,
   };
 }

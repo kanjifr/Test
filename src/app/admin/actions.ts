@@ -10,6 +10,7 @@ import { ELEMENT_KEYS, RARITY_ORDER } from "@/lib/game";
 import { deleteUpload, saveUpload } from "@/lib/uploads";
 import { DEMO_CARDS } from "@/lib/demo";
 import { checkAchievements } from "@/lib/achievements-server";
+import { parisDay } from "@/lib/series";
 
 function str(fd: FormData, k: string, max: number) {
   return String(fd.get(k) ?? "").trim().slice(0, max);
@@ -80,7 +81,31 @@ export async function saveCard(fd: FormData) {
     redirect(`/admin?err=${encodeURIComponent((e as Error).message)}${id ? `&edit=${id}` : ""}`);
   }
 
+  // Série, événement et version alternative
+  const seriesId = str(fd, "seriesId", 64) || null;
+  if (seriesId && !(await prisma.series.findUnique({ where: { id: seriesId } }))) {
+    redirect(`/admin?err=${encodeURIComponent("Série introuvable.")}${id ? `&edit=${id}` : ""}`);
+  }
+  const eventName = str(fd, "eventName", 30) || null;
+  const availableFrom = parisDay(str(fd, "availableFrom", 10), false);
+  const availableUntil = parisDay(str(fd, "availableUntil", 10), true);
+  if (availableFrom && availableUntil && availableFrom > availableUntil) {
+    redirect(`/admin?err=${encodeURIComponent("La date de début de l'événement est après la date de fin.")}${id ? `&edit=${id}` : ""}`);
+  }
+  let variantOfId = str(fd, "variantOfId", 64) || null;
+  if (variantOfId) {
+    const base = await prisma.card.findUnique({ where: { id: variantOfId }, select: { id: true, variantOfId: true } });
+    // Une alternative pointe toujours vers la carte d'origine (jamais vers elle-même ni vers une autre alternative)
+    variantOfId = base && base.id !== id ? (base.variantOfId ?? base.id) : null;
+    if (variantOfId === id) variantOfId = null;
+  }
+
   const data = {
+    seriesId,
+    eventName,
+    availableFrom,
+    availableUntil,
+    variantOfId,
     name,
     title: str(fd, "title", 40),
     description: str(fd, "description", 300),
@@ -131,7 +156,8 @@ export async function deleteCard(fd: FormData) {
 export async function seedDemo() {
   const me = await requireStaff("seedDemo");
   if ((await prisma.card.count()) === 0) {
-    await prisma.card.createMany({ data: DEMO_CARDS });
+    const first = await prisma.series.findFirst({ orderBy: { createdAt: "asc" } });
+    await prisma.card.createMany({ data: DEMO_CARDS.map((c) => ({ ...c, seriesId: first?.id ?? null })) });
     await logAdmin(me, "card.seed", `a créé les ${DEMO_CARDS.length} cartes de démo`);
   }
   revalidatePath("/", "layout");

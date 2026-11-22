@@ -16,6 +16,11 @@ const COLUMNS: Record<string, string[]> = {
   image: ["image", "img", "photo"],
   video: ["video"],
   member: ["membre", "member", "discord", "id discord"],
+  series: ["serie", "series", "saison"],
+  event: ["evenement", "event"],
+  from: ["debut", "du", "from", "date debut"],
+  until: ["fin", "au", "until", "date fin"],
+  variantOf: ["alternative de", "alternative_de", "alternative", "variante de", "variante"],
 };
 
 const RARITY_ALIASES: Record<string, Rarity> = Object.fromEntries(
@@ -53,8 +58,25 @@ export type ImportRow = {
   image: string;
   video: string;
   member: string;
+  /** undefined quand la colonne est absente du tableau (on ne touche pas à la valeur existante) */
+  series?: string;
+  event?: string;
+  from?: string | null;
+  until?: string | null;
+  variantOf?: string;
   errors: string[];
 };
+
+/** Date « JJ/MM/AAAA » ou « AAAA-MM-JJ » → « AAAA-MM-JJ ». null si vide, "" si invalide. */
+function readDate(v: string): string | null {
+  const t = v.trim();
+  if (!t) return null;
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  m = t.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  return "";
+}
 
 function stat(v: string | undefined, label: string, errors: string[]) {
   if (!v?.trim()) return 50;
@@ -85,6 +107,7 @@ export function readImportTable(text: string): { rows: ImportRow[]; error?: stri
     return { rows: [], error: `${MAX_IMPORT_ROWS} cartes maximum par import (le fichier en contient ${table.length - 1}).` };
   }
   const get = (r: string[], k: keyof typeof COLUMNS) => (col[k] === undefined ? "" : (r[col[k]!] ?? "").trim());
+  const opt = (r: string[], k: keyof typeof COLUMNS) => (col[k] === undefined ? undefined : get(r, k));
 
   const rows = table.slice(1).map((r, i): ImportRow => {
     const errors: string[] = [];
@@ -98,6 +121,13 @@ export function readImportTable(text: string): { rows: ImportRow[]; error?: stri
     if (!element) errors.push(`élément inconnu « ${rawElement} »`);
     const video = get(r, "video");
     if (video && rarity && rarity !== "MYTHIQUE") errors.push("une vidéo n'est possible que pour une Mythique");
+    const rawFrom = opt(r, "from");
+    const rawUntil = opt(r, "until");
+    const from = rawFrom === undefined ? undefined : readDate(rawFrom);
+    const until = rawUntil === undefined ? undefined : readDate(rawUntil);
+    if (from === "") errors.push(`date de début « ${rawFrom} » illisible (format JJ/MM/AAAA)`);
+    if (until === "") errors.push(`date de fin « ${rawUntil} » illisible (format JJ/MM/AAAA)`);
+    if (from && until && from > until) errors.push("la date de début est après la date de fin");
     return {
       line: i + 2,
       name,
@@ -110,6 +140,11 @@ export function readImportTable(text: string): { rows: ImportRow[]; error?: stri
       image: get(r, "image"),
       video,
       member: get(r, "member"),
+      series: opt(r, "series"),
+      event: opt(r, "event")?.slice(0, 30),
+      from,
+      until,
+      variantOf: opt(r, "variantOf"),
       errors,
     };
   });
@@ -117,8 +152,9 @@ export function readImportTable(text: string): { rows: ImportRow[]; error?: stri
 }
 
 export const TEMPLATE_CSV = [
-  "nom;titre;description;rarete;element;attaque;defense;image;video;membre",
-  "Akane;La lame du matin;Toujours la première levée.;Commune;Flamme;42;30;akane.png;;",
-  "Kaito;Flot implacable;;Rare;Eau;61;52;https://exemple.com/kaito.jpg;;",
-  "Kuro;L'éveil du dragon;Personne ne l'a vu deux fois.;Mythique;Ombre;120;110;kuro.png;kuro.mp4;123456789012345678",
+  "nom;titre;description;rarete;element;attaque;defense;image;video;membre;serie;evenement;debut;fin;alternative_de",
+  "Akane;La lame du matin;Toujours la première levée.;Commune;Flamme;42;30;akane.png;;;Saison 1;;;;",
+  "Kaito;Flot implacable;;Rare;Eau;61;52;https://exemple.com/kaito.jpg;;;Saison 1;;;;",
+  "Kuro;L'éveil du dragon;Personne ne l'a vu deux fois.;Mythique;Ombre;120;110;kuro.png;kuro.mp4;123456789012345678;Saison 1;;;;",
+  "Akane citrouille;Nuit des lanternes;;Épique;Flamme;55;40;akane-halloween.png;;;Saison 1;Halloween;25/10/2026;02/11/2026;Akane",
 ].join("\r\n");

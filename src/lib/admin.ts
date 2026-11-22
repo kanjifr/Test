@@ -37,6 +37,7 @@ export const PERMISSIONS = {
   giftBoosters: FULL,
   resetCollections: FULL,
   importCards: FULL,
+  manageSeries: FULL,
   managePolls: FULL,
   moderateAnecdotes: ["OWNER", "ADMIN", "MODERATOR"],
   manageBackups: ["OWNER"],

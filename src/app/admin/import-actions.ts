@@ -7,6 +7,7 @@ import { readImportTable } from "@/lib/import";
 import { deleteUpload, saveUpload } from "@/lib/uploads";
 import { checkAchievements } from "@/lib/achievements-server";
 import { norm } from "@/lib/csv";
+import { parisDay } from "@/lib/series";
 
 export type ImportPreviewRow = {
   line: number;
@@ -40,10 +41,12 @@ export async function importCards(fd: FormData): Promise<ImportResult> {
   const files = new Map<string, File>();
   for (const f of fd.getAll("files")) if (f instanceof File && f.size > 0) files.set(baseName(f.name), f);
 
-  const [existing, members] = await Promise.all([
-    prisma.card.findMany({ select: { id: true, name: true } }),
+  const [existing, members, seriesList] = await Promise.all([
+    prisma.card.findMany({ select: { id: true, name: true, number: true, variantOfId: true } }),
     prisma.user.findMany({ select: { id: true, name: true, discordId: true, consent: true } }),
+    prisma.series.findMany({ select: { id: true, name: true }, orderBy: { createdAt: "asc" } }),
   ]);
+  const seriesByName = new Map(seriesList.map((x) => [norm(x.name), x.id]));
   const byName = new Map(existing.map((c) => [norm(c.name), c.id]));
   const seen = new Map<string, number>();
 
@@ -78,10 +81,27 @@ export async function importCards(fd: FormData): Promise<ImportResult> {
       else if (!m.consent) errors.push(`${m.name} n'a pas accepté d'apparaître sur une carte`);
       else subjectId = m.id;
     }
+    let seriesId: string | null | undefined;
+    if (r.series !== undefined) {
+      seriesId = r.series ? (seriesByName.get(norm(r.series)) ?? null) : null;
+      if (r.series && !seriesId) errors.push(`série « ${r.series} » inconnue (crée-la d'abord dans le panel admin, section Séries)`);
+    }
+    // La carte d'origine d'une alternative doit déjà exister sur le site (nom ou numéro)
+    let variantOfId: string | null | undefined;
+    if (r.variantOf !== undefined) {
+      variantOfId = null;
+      if (r.variantOf) {
+        const n = Number(r.variantOf.replace(/^#/, ""));
+        const base = existing.find((c) => (Number.isInteger(n) && c.number === n) || norm(c.name) === norm(r.variantOf!));
+        if (!base) errors.push(`carte d'origine « ${r.variantOf} » introuvable (importe-la d'abord)`);
+        else if (base.id === existingId) errors.push("une carte ne peut pas être sa propre version alternative");
+        else variantOfId = base.variantOfId ?? base.id;
+      }
+    }
     const image = resolveMedia(r.image, "image", errors);
     const video = resolveMedia(r.video, "vidéo", errors);
     if (video?.url && !/\.(mp4|webm)(\?.*)?$/i.test(video.url)) errors.push("la vidéo doit être un .mp4 ou .webm");
-    return { r, errors, existingId, subjectId, image, video };
+    return { r, errors, existingId, subjectId, image, video, seriesId, variantOfId };
   });
 
   const preview: ImportPreviewRow[] = plan.map((p) => ({
@@ -126,6 +146,12 @@ export async function importCards(fd: FormData): Promise<ImportResult> {
           attack: p.r.attack,
           defense: p.r.defense,
           subjectId: p.subjectId,
+          // Sans colonne « serie », une nouvelle carte rejoint la série la plus récente
+          ...(p.seriesId !== undefined ? { seriesId: p.seriesId } : p.existingId ? {} : { seriesId: seriesList.at(-1)?.id ?? null }),
+          ...(p.variantOfId !== undefined ? { variantOfId: p.variantOfId } : {}),
+          ...(p.r.event !== undefined ? { eventName: p.r.event || null } : {}),
+          ...(p.r.from !== undefined ? { availableFrom: p.r.from ? parisDay(p.r.from, false) : null } : {}),
+          ...(p.r.until !== undefined ? { availableUntil: p.r.until ? parisDay(p.r.until, true) : null } : {}),
           ...(p.image ? { imageUrl: await upload(p.image, "image") } : {}),
           ...(p.video ? { videoUrl: await upload(p.video, "video") } : {}),
         },
