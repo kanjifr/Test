@@ -40,7 +40,7 @@ export async function submitAnecdote(fd: FormData) {
     await checkAchievements(me.id);
   }
   revalidatePath(`/carte/${cardId}`);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   back(staff ? "ok=publiee" : "ok=attente");
 }
 
@@ -59,7 +59,7 @@ export async function approveAnecdote(fd: FormData) {
     await checkAchievements(a.authorId);
   }
   revalidatePath(`/carte/${a.cardId}`);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 export async function editAnecdote(fd: FormData) {
@@ -70,7 +70,7 @@ export async function editAnecdote(fd: FormData) {
   const a = await prisma.anecdote.update({ where: { id }, data: { text }, include: { card: { select: { name: true } } } });
   await logAdmin(me, "anecdote.edit", `a modifié une anecdote sur la carte ${a.card.name}`);
   revalidatePath(`/carte/${a.cardId}`);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 export async function deleteAnecdote(fd: FormData) {
@@ -79,5 +79,5 @@ export async function deleteAnecdote(fd: FormData) {
   const a = await prisma.anecdote.delete({ where: { id }, include: { card: { select: { name: true } }, author: { select: { name: true } } } });
   await logAdmin(me, "anecdote.delete", `a supprimé une anecdote de ${a.author?.name ?? "?"} sur la carte ${a.card.name}`);
   revalidatePath(`/carte/${a.cardId}`);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }

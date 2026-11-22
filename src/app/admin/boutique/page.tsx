@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/session";
 import { fmtCoins, getShopConfig } from "@/lib/coins";
@@ -29,7 +28,6 @@ export default async function ShopAdmin({ searchParams }: { searchParams: Promis
     <section className="admin">
       <div className="page-head">
         <h1>🪙 Boutique et pièces</h1>
-        <Link href="/admin">← Panel admin</Link>
       </div>
       {ok === "1" && <p className="success">Réglages enregistrés ✔</p>}
       {ok === "2" && <p className="success">Pièces envoyées ✔</p>}

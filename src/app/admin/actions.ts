@@ -26,15 +26,15 @@ export async function saveCard(fd: FormData) {
   const name = str(fd, "name", 40);
   const rarity = str(fd, "rarity", 20) as Rarity;
   const element = str(fd, "element", 20) as Element;
-  if (!name) redirect(`/admin?err=${encodeURIComponent("Le nom est obligatoire.")}`);
+  if (!name) redirect(`/admin/cartes?err=${encodeURIComponent("Le nom est obligatoire.")}`);
   if (!RARITY_ORDER.includes(rarity) || !ELEMENT_KEYS.includes(element)) {
-    redirect(`/admin?err=${encodeURIComponent("Rareté ou élément invalide.")}`);
+    redirect(`/admin/cartes?err=${encodeURIComponent("Rareté ou élément invalide.")}`);
   }
 
   const subjectId = str(fd, "subjectId", 64) || null;
   if (subjectId) {
     const s = await prisma.user.findUnique({ where: { id: subjectId }, select: { consent: true } });
-    if (!s?.consent) redirect(`/admin?err=${encodeURIComponent("Ce membre n'a pas donné son accord.")}`);
+    if (!s?.consent) redirect(`/admin/cartes?err=${encodeURIComponent("Ce membre n'a pas donné son accord.")}`);
   }
 
   const existing = id ? await prisma.card.findUnique({ where: { id } }) : null;
@@ -78,19 +78,19 @@ export async function saveCard(fd: FormData) {
       videoUrl = videoInput;
     }
   } catch (e) {
-    redirect(`/admin?err=${encodeURIComponent((e as Error).message)}${id ? `&edit=${id}` : ""}`);
+    redirect(`/admin/cartes?err=${encodeURIComponent((e as Error).message)}${id ? `&edit=${id}` : ""}`);
   }
 
   // Série, événement et version alternative
   const seriesId = str(fd, "seriesId", 64) || null;
   if (seriesId && !(await prisma.series.findUnique({ where: { id: seriesId } }))) {
-    redirect(`/admin?err=${encodeURIComponent("Série introuvable.")}${id ? `&edit=${id}` : ""}`);
+    redirect(`/admin/cartes?err=${encodeURIComponent("Série introuvable.")}${id ? `&edit=${id}` : ""}`);
   }
   const eventName = str(fd, "eventName", 30) || null;
   const availableFrom = parisDay(str(fd, "availableFrom", 10), false);
   const availableUntil = parisDay(str(fd, "availableUntil", 10), true);
   if (availableFrom && availableUntil && availableFrom > availableUntil) {
-    redirect(`/admin?err=${encodeURIComponent("La date de début de l'événement est après la date de fin.")}${id ? `&edit=${id}` : ""}`);
+    redirect(`/admin/cartes?err=${encodeURIComponent("La date de début de l'événement est après la date de fin.")}${id ? `&edit=${id}` : ""}`);
   }
   let variantOfId = str(fd, "variantOfId", 64) || null;
   if (variantOfId) {
@@ -128,7 +128,7 @@ export async function saveCard(fd: FormData) {
   if (subjectId) await checkAchievements(subjectId);
 
   revalidatePath("/", "layout");
-  redirect("/admin?ok=1");
+  redirect("/admin/cartes?ok=1");
 }
 
 export async function toggleCard(fd: FormData) {
@@ -169,7 +169,7 @@ export async function resetCooldown(fd: FormData) {
   const id = str(fd, "userId", 64);
   const u = await prisma.user.update({ where: { id }, data: { bonusPacks: { increment: 1 } } });
   await logAdmin(me, "booster.gift", `a offert un booster bonus à ${u.name} (${u.bonusPacks} en réserve)`);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 
 const ROLES: Role[] = ["MEMBER", "MODERATOR", "ADMIN"];

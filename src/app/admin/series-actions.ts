@@ -11,13 +11,13 @@ const str = (fd: FormData, k: string, max: number) => String(fd.get(k) ?? "").tr
 export async function createSeries(fd: FormData) {
   const me = await requireStaff("manageSeries");
   const name = str(fd, "name", 40);
-  if (!name) redirect(`/admin?err=${encodeURIComponent("Donne un nom à la série.")}#saisons`);
+  if (!name) redirect(`/admin/series?err=${encodeURIComponent("Donne un nom à la série.")}`);
   const s = await prisma.series.create({
     data: { name, description: str(fd, "description", 200), inBoosters: fd.get("inBoosters") === "on" },
   });
   await logAdmin(me, "series.create", `a créé la série « ${s.name} »`);
   revalidatePath("/", "layout");
-  redirect(`/admin?ok=${encodeURIComponent(`Série « ${s.name} » créée ✔`)}#saisons`);
+  redirect(`/admin/series?ok=${encodeURIComponent(`Série « ${s.name} » créée ✔`)}`);
 }
 
 export async function updateSeries(fd: FormData) {

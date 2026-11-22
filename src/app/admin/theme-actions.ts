@@ -13,5 +13,5 @@ export async function setTheme(fd: FormData) {
   await prisma.setting.upsert({ where: { key: "theme" }, create: { key: "theme", value }, update: { value } });
   await logAdmin(me, "theme.set", `a choisi le thème du site : ${THEMES[value].label}`);
   revalidatePath("/", "layout");
-  redirect(`/admin?ok=${encodeURIComponent("Thème du site enregistré ✔")}#theme`);
+  redirect(`/admin/reglages?ok=${encodeURIComponent("Thème du site enregistré ✔")}`);
 }

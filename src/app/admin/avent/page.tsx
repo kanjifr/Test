@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireStaff } from "@/lib/session";
 import { adventToday, getAdventConfig, KIND_LABELS, rewardText, type AdventReward } from "@/lib/advent";
@@ -25,7 +24,6 @@ export default async function AdventAdmin({ searchParams }: { searchParams: Prom
     <section className="admin">
       <div className="page-head">
         <h1>🎄 Calendrier de l&apos;Avent</h1>
-        <Link href="/admin">← Panel admin</Link>
       </div>
       {ok && <p className="success">Calendrier enregistré ✔</p>}
 

@@ -8,7 +8,7 @@ import { logAdmin, requireStaff } from "@/lib/session";
 import { RARITY_ORDER } from "@/lib/game";
 import { POLL_MAX_DAYS, announceNewPoll, finalizePolls } from "@/lib/polls";
 
-const back = (key: "err" | "ok", msg: string) => redirect(`/admin?${key}=${encodeURIComponent(msg)}#votes`);
+const back = (key: "err" | "ok", msg: string) => redirect(`/admin/communaute?${key}=${encodeURIComponent(msg)}#votes`);
 
 export async function createPoll(fd: FormData) {
   const me = await requireStaff("managePolls");

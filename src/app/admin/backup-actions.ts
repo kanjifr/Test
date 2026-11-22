@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { logAdmin, requireStaff } from "@/lib/session";
 import { readBackup, restoreBackup, saveLocalCopy, sendBackupToDiscord } from "@/lib/backup";
 
-const back = (key: "err" | "ok", msg: string) => redirect(`/admin?${key}=${encodeURIComponent(msg)}#sauvegardes`);
+const back = (key: "err" | "ok", msg: string) => redirect(`/admin/sauvegardes?${key}=${encodeURIComponent(msg)}`);
 
 export async function sendBackupNow() {
   const me = await requireStaff("manageBackups");
@@ -15,7 +15,7 @@ export async function sendBackupNow() {
     back("err", (e as Error).message);
   }
   await logAdmin(me, "backup.manual", "a envoyé une sauvegarde sur Discord");
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   back("ok", "Sauvegarde envoyée sur Discord ✔");
 }
 
