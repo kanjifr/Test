@@ -34,6 +34,7 @@ export function DuelLobby({
   rewardAvailable,
   highlight,
   away = [],
+  myRating = 1000,
 }: {
   cards: CardView[];
   defense: string[];
@@ -46,6 +47,8 @@ export function DuelLobby({
   highlight: string | null;
   /** Cartes en expédition : elles ne peuvent pas attaquer */
   away?: string[];
+  /** Cote du joueur, pour ranger les adversaires par niveau */
+  myRating?: number;
 }) {
   const router = useRouter();
   // Emplacements fixes (null = vide) : on peut déposer une carte dans n'importe lequel
@@ -225,7 +228,7 @@ export function DuelLobby({
   }
 
   return (
-    <div className={`lobby ${drag ? "is-dragging" : ""}`}>
+    <div className={`lobby duel-grid ${drag ? "is-dragging" : ""}`}>
       {drag && dock && (
         <div className="drop-dock" aria-hidden="true">
           {slots.map((id, i) => (
@@ -241,10 +244,12 @@ export function DuelLobby({
           <GameCard card={dragged} size="xs" />
         </div>
       )}
+      <div className="duel-left">
       <div className="panel lobby-team">
         <div className="lobby-head">
           <h2>Ton équipe</h2>
-          <p className="muted small-text">
+          <p className="muted small-text mobile-only-text">Touche ou glisse 3 cartes ci-dessous. L&apos;ordre compte : carte 1 contre carte 1.</p>
+          <p className="muted small-text desk-only-text">
             Glisse {teamSize} cartes dans les emplacements (ou clique dessus) : ta carte 1 affronte la carte 1 adverse,
             etc. Glisse une carte d&apos;un emplacement à l&apos;autre pour changer l&apos;ordre, ou hors des emplacements pour
             la retirer. L&apos;équipe adverse reste secrète jusqu&apos;au combat.
@@ -291,8 +296,7 @@ export function DuelLobby({
         </p>
       </div>
 
-      <div className="lobby-cols">
-        <div className="panel">
+        <div className="panel duel-cards">
           <h2>Tes cartes</h2>
           {cards.length < teamSize ? (
             <p className="muted">Il te faut au moins {teamSize} cartes différentes pour combattre. Ouvre des boosters !</p>
@@ -327,7 +331,8 @@ export function DuelLobby({
           )}
         </div>
 
-        <div className="panel">
+      </div>
+        <div className="panel duel-opponents">
           <h2>Défier un membre</h2>
           <p className="muted small-text">
             {duelsLeft} duel{duelsLeft > 1 ? "s" : ""} restant{duelsLeft > 1 ? "s" : ""} aujourd&apos;hui
@@ -336,43 +341,63 @@ export function DuelLobby({
           {opponents.length === 0 ? (
             <p className="muted">Personne d&apos;autre n&apos;a encore {teamSize} cartes. Entraîne-toi en attendant !</p>
           ) : (
-            <ul className="opponents">
-              {opponents.map((o) => (
-                <li key={o.id} className={o.id === highlight ? "highlight" : ""}>
-                  {o.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={o.image} alt="" referrerPolicy="no-referrer" />
+            <>
+              {[
+                { key: "near", title: "⚖ À ta portée", hint: "Les duels les plus intéressants", list: opponents.filter((o) => Math.abs(o.rating - myRating) <= 150).sort((a, b) => b.rating - a.rating) },
+                { key: "up", title: "▲ Plus forts", hint: "Gros gain si tu gagnes", list: opponents.filter((o) => o.rating - myRating > 150).sort((a, b) => a.rating - b.rating) },
+                { key: "down", title: "▼ Plus faibles", hint: "Peu de points à gagner, beaucoup à perdre", list: opponents.filter((o) => myRating - o.rating > 150).sort((a, b) => b.rating - a.rating) },
+              ]
+                .filter((g) => g.list.length > 0)
+                .map((g) => {
+                  const rows = (
+                    <ul className="opponents">
+                      {g.list.map((o) => (
+                        <li key={o.id} className={o.id === highlight ? "highlight" : ""}>
+                          <span className="opp-medal" style={{ "--tc": o.tier.color } as React.CSSProperties} title={o.tier.label}>
+                            {o.tier.kanji}
+                          </span>
+                          <span className="opp-name">
+                            <NameWithBadge name={o.name} badge={o.badge} />
+                            <small className="muted">
+                              <b style={{ color: o.tier.color }}>{o.rating}</b> · {o.tier.label} · {o.wins} V / {o.losses} D
+                            </small>
+                          </span>
+                          <span className="opp-stakes" title="Points gagnés si tu gagnes / perdus si tu perds">
+                            <span className="plus">+{o.stakes.win}</span>
+                            <span className="minus">{o.stakes.loss}</span>
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm"
+                            disabled={!ready || pending || duelsLeft <= 0 || o.foughtToday >= sameOpponentLimit}
+                            onClick={() => fight(o.id)}
+                            title={o.foughtToday >= sameOpponentLimit ? "Déjà défié assez de fois aujourd'hui" : !ready ? "Choisis d'abord 3 cartes" : undefined}
+                          >
+                            ⚔
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                  return g.key === "down" ? (
+                    <details key={g.key} className="opp-group">
+                      <summary>
+                        {g.title} <span className="muted small-text">({g.list.length}) · {g.hint}</span>
+                      </summary>
+                      {rows}
+                    </details>
                   ) : (
-                    <span className="avatar-fallback">{o.name?.[0] ?? "?"}</span>
-                  )}
-                  <span className="opp-name">
-                    <NameWithBadge name={o.name} badge={o.badge} />
-                    <small className="muted">
-                      <b style={{ color: o.tier.color }}>
-                        {o.tier.kanji} {o.rating}
-                      </b>{" "}
-                      · {o.wins} V · {o.losses} D
-                    </small>
-                    <small className="stakes">
-                      <span className="plus">+{o.stakes.win}</span> / <span className="minus">{o.stakes.loss}</span>
-                      {o.stakes.win < 8 && <span className="muted"> · trop faible pour toi</span>}
-                    </small>
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    disabled={!ready || pending || duelsLeft <= 0 || o.foughtToday >= sameOpponentLimit}
-                    onClick={() => fight(o.id)}
-                    title={o.foughtToday >= sameOpponentLimit ? "Déjà défié assez de fois aujourd'hui" : undefined}
-                  >
-                    ⚔ Défier
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <div key={g.key} className="opp-group">
+                      <h3>
+                        {g.title} <span className="muted small-text">· {g.hint}</span>
+                      </h3>
+                      {rows}
+                    </div>
+                  );
+                })}
+            </>
           )}
         </div>
-      </div>
     </div>
   );
 }

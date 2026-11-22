@@ -1550,3 +1550,84 @@ a.news-card:hover { text-decoration: none; border-color: #fff; }
   .arena-now { flex-direction: row !important; align-items: baseline; gap: 0.5rem !important; width: 100%; }
   .arena .page-head h1, .highlow .page-head h1 { font-size: 1.8rem; }
 }
+
+/* =====================================================================
+   Page Duels v2 : cote en vedette, adversaires par niveau, classements
+   ===================================================================== */
+.duel-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 1rem 1.5rem; align-items: center; margin-bottom: 1rem; border-color: color-mix(in srgb, var(--tc) 60%, transparent); box-shadow: 0 0 30px color-mix(in srgb, var(--tc) 25%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.duel-hero-medal { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-size: 2.6rem; color: #1a1205; background: radial-gradient(circle at 35% 30%, #fff9 0 10%, transparent 34%), radial-gradient(circle, var(--tc) 0 60%, color-mix(in srgb, var(--tc) 55%, #000) 62% 68%, var(--tc) 70%); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.45), 0 0 30px var(--tc); }
+.duel-hero-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.duel-hero-main p { margin: 0; }
+.duel-hero-tier { font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tc); font-size: 0.85rem; }
+.duel-hero-rating b { font-family: var(--font-display); font-weight: 400; font-size: 2.6rem; line-height: 1; }
+.tier-bar { height: 9px; border-radius: 999px; background: rgba(10, 6, 40, 0.55); overflow: hidden; max-width: 360px; }
+.tier-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--tc) 60%, #fff), var(--tc)); box-shadow: 0 0 10px var(--tc); }
+.duel-hero-stats { display: grid; grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 0.5rem; }
+.duel-hero-stats > div { display: flex; flex-direction: column; padding: 0.5rem 0.75rem; border-radius: 14px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); }
+.duel-hero-stats b { font-family: var(--font-display); font-weight: 400; font-size: 1.35rem; }
+.duel-hero-stats span { font-size: 0.75rem; color: var(--muted); }
+.duel-hero-stats .gold { border-color: var(--gold); background: rgba(255, 209, 102, 0.12); }
+/* Zone de combat : équipe et cartes à gauche, adversaires à droite */
+.duel-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 1rem; align-items: start; }
+.duel-grid > .drag-ghost, .duel-grid > .drop-dock { grid-column: auto; }
+.duel-left { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.duel-left .panel, .duel-opponents { margin: 0; }
+.duel-opponents { position: sticky; top: 96px; max-height: calc(100vh - 110px); overflow-y: auto; }
+.duel-cards .duel-pick-grid { max-height: 420px; }
+.opp-group { margin-top: 0.8rem; }
+.opp-group h3, .opp-group summary { font-size: 1rem; margin: 0 0 0.4rem; font-family: var(--font-display); font-weight: 400; cursor: default; }
+.opp-group summary { cursor: pointer; }
+.opponents li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 0.6rem; align-items: center; }
+.opp-medal { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-display); font-size: 0.95rem; color: #1a1205; background: radial-gradient(circle at 35% 30%, #fff8 0 10%, transparent 32%), var(--tc); box-shadow: 0 0 8px color-mix(in srgb, var(--tc) 60%, transparent); flex: none; }
+.opp-stakes { display: flex; flex-direction: column; align-items: flex-end; font-weight: 800; font-size: 0.8rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.opp-stakes .plus { color: var(--ok); }
+.opp-stakes .minus { color: #ff9aa8; }
+/* Classements */
+.ladders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; align-items: start; }
+.ladders .panel { margin: 0; }
+.ladders .page-head h2 { margin: 0; }
+.ladders details > summary { list-style: none; cursor: pointer; }
+.ladders details > summary::-webkit-details-marker { display: none; }
+.ladders details > summary h2 { display: inline; margin: 0; }
+.ladders details > summary::after { content: " ▾"; color: var(--muted); }
+.ladders details[open] > summary { margin-bottom: 0.8rem; }
+.ladder { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.ladder li { display: grid; grid-template-columns: 2rem auto minmax(0, 1fr) auto auto; gap: 0.6rem; align-items: center; padding: 0.4rem 0.6rem; border-radius: 12px; background: rgba(255, 255, 255, 0.05); }
+.ladder li.top-1 { background: rgba(255, 209, 102, 0.14); }
+.ladder li.top-2 { background: rgba(201, 211, 221, 0.12); }
+.ladder li.top-3 { background: rgba(205, 138, 82, 0.12); }
+.ladder li.me { box-shadow: 0 0 0 2px var(--accent); }
+.ladder .rank { text-align: center; font-weight: 800; }
+.ladder-name { color: var(--text); font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ladder-wl { font-size: 0.8rem; }
+.ladder-rating { font-family: var(--font-display); font-weight: 400; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.duel-history .plus { color: var(--ok); font-weight: 800; }
+.duel-history .minus { color: #ff9aa8; font-weight: 800; }
+@media (max-width: 1000px) {
+  .duel-grid { grid-template-columns: minmax(0, 1fr); }
+  .duel-opponents { position: static; max-height: none; }
+  .duel-hero { grid-template-columns: auto minmax(0, 1fr); }
+  .duel-hero-stats { grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .ladders { grid-template-columns: minmax(0, 1fr); }
+  .duel-hero { padding: 0.9rem; gap: 0.7rem 1rem; }
+  .duel-hero-medal { width: 70px; height: 70px; font-size: 1.9rem; }
+  .duel-hero-rating b { font-size: 2rem; }
+  .duel-hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .duel-hero-stats b { font-size: 1.1rem; }
+  .ladder li { grid-template-columns: 1.6rem auto minmax(0, 1fr) auto; }
+  .ladder-wl { display: none; }
+  .opponents li { gap: 0.45rem; }
+}
+.mobile-only-text { display: none; }
+@media (max-width: 760px) {
+  .desk-only-text { display: none; }
+  .mobile-only-text { display: block; margin: 0.2rem 0 0.4rem; }
+  .duel-cards .duel-pick-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem 0.4rem; max-height: 380px; overflow-y: auto; padding: 8px 2px; }
+  .duel-cards .duel-pick { container-type: inline-size; padding: 3px; }
+  .duel-cards .duel-pick .gcard { --w: 100cqi !important; }
+  .duel-cards .pick-stats { font-size: 0.62rem; text-align: center; }
+  .lobby-team .slots { flex-wrap: nowrap; }
+  .lobby-team .row .btn { flex: 1 1 auto; }
+}
