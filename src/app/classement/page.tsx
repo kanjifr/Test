@@ -17,13 +17,15 @@ export default async function Leaderboard() {
         image: true,
         packsOpened: true,
         featuredBadge: true,
+        prestige: true,
         _count: { select: { cards: { where: { card: { active: true } } }, achievements: true } },
       },
     }),
   ]);
   const ranked = users
     .map((u) => ({ ...u, unique: u._count.cards }))
-    .sort((a, b) => b.unique - a.unique || b.packsOpened - a.packsOpened)
+    // Chaque prestige vaut une collection complète
+    .sort((a, b) => b.prestige - a.prestige || b.unique - a.unique || b.packsOpened - a.packsOpened)
     .slice(0, 50);
 
   return (
@@ -35,12 +37,18 @@ export default async function Leaderboard() {
             <span className="rank">{i + 1}</span>
             {u.image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={u.image} alt="" referrerPolicy="no-referrer" />
+              <img src={u.image} alt="" referrerPolicy="no-referrer" className={u.prestige > 0 ? "prestige-frame" : undefined} />
             ) : (
               <span className="avatar-fallback">{u.name?.[0] ?? "?"}</span>
             )}
             <Link href={`/membre/${u.id}`} className="board-name">
               <NameWithBadge name={u.name} badge={badgeView(u.featuredBadge)} />
+              {u.prestige > 0 && (
+                <span className="prestige-stars" title={`Prestige ${u.prestige}`}>
+                  {" "}
+                  {"✪".repeat(Math.min(u.prestige, 5))}
+                </span>
+              )}
             </Link>
             <span className="muted board-meta">
               {u.packsOpened} boosters · {u._count.achievements} succès

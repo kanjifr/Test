@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { setBirthday, setConsent, setFeaturedBadge, setShowcase } from "@/app/actions";
+import { prestigeReset, setBirthday, setConsent, setFeaturedBadge, setShowcase } from "@/app/actions";
+import { prestigeProgress, PRESTIGE_REWARD } from "@/lib/prestige";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import Link from "next/link";
 import { CopyLink } from "@/components/CopyLink";
 import { MONTHS } from "@/lib/birthday";
@@ -11,8 +13,10 @@ import { Badge, NameWithBadge } from "@/components/Badge";
 
 export const dynamic = "force-dynamic";
 
-export default async function Profile() {
+export default async function Profile({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
   const me = await requireUser();
+  const { ok, err } = await searchParams;
+  const prestige = await prestigeProgress(me.id);
   // Débloque aussi les succès déjà mérités avant leur ajout au site
   const stats = await checkAchievements(me.id);
   const unlocked = new Map(
@@ -35,7 +39,7 @@ export default async function Profile() {
       <div className="profile-row">
         {user.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="avatar-lg" src={user.image} alt="" referrerPolicy="no-referrer" />
+          <img className={`avatar-lg ${user.prestige > 0 ? "prestige-frame" : ""}`} src={user.image} alt="" referrerPolicy="no-referrer" />
         ) : (
           <span className="avatar-fallback avatar-lg">{user.name?.[0] ?? "?"}</span>
         )}
@@ -48,6 +52,38 @@ export default async function Profile() {
             {ACHIEVEMENTS.length} succès
           </p>
         </div>
+      </div>
+
+      <div className={`consent prestige-box ${prestige.ready ? "ready" : ""}`} id="prestige">
+        <h3>
+          ✪ Prestige{user.prestige > 0 && <span className="title-chip prestige-chip">{"✪".repeat(Math.min(user.prestige, 5))} Prestige {user.prestige}</span>}
+        </h3>
+        {ok === "prestige" && <p className="success">Bienvenue au prestige {user.prestige} ! Ta nouvelle collection commence, avec {PRESTIGE_REWARD} boosters bonus pour bien démarrer.</p>}
+        {err && <p className="error">{err}</p>}
+        <p className="muted">
+          Quand tu possèdes toutes les cartes (hors cartes d&apos;événement), tu peux remettre ta collection à zéro. Tu gagnes
+          une étoile de prestige pour toujours, un cadre doré sur ton profil et {PRESTIGE_REWARD} boosters bonus. Tes succès, titres et
+          ton palmarès sont conservés ; tes cartes, leurs niveaux et tes brillantes repartent à zéro.
+        </p>
+        <div className="series-chip">
+          <span className="series-name">Progression</span>
+          <span className="series-count">
+            {prestige.owned}/{prestige.total}
+          </span>
+          <span className="series-bar">
+            <span style={{ width: `${prestige.total ? Math.min(100, (prestige.owned / prestige.total) * 100) : 0}%` }} />
+          </span>
+        </div>
+        {prestige.ready && (
+          <form action={prestigeReset}>
+            <ConfirmButton
+              className="btn"
+              message={`Passer au prestige ${user.prestige + 1} ? TOUTES tes cartes (niveaux et brillantes compris) seront retirées de ta collection. C'est définitif.`}
+            >
+              ✪ Passer au prestige {user.prestige + 1}
+            </ConfirmButton>
+          </form>
+        )}
       </div>
 
       <form action={setConsent} className="consent" key={String(user.consent)}>

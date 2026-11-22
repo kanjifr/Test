@@ -1010,3 +1010,10 @@ label.inline select { width: auto; }
 @media (max-width: 560px) { .tournament-history li { grid-template-columns: 1fr; gap: 0.1rem; } }
 .tournament-banner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.4rem 1rem; margin-bottom: 1rem; text-decoration: none; border-color: rgba(255, 209, 102, 0.6); box-shadow: 0 0 24px rgba(255, 209, 102, 0.25); }
 .tournament-banner b { font-size: 1.1rem; }
+
+/* ---- Prestige ---- */
+.prestige-frame { box-shadow: 0 0 0 3px #ffd166, 0 0 0 5px rgba(94, 242, 255, 0.7), 0 0 22px rgba(255, 209, 102, 0.8) !important; }
+.prestige-stars { color: #ffd166; text-shadow: 0 0 8px rgba(255, 209, 102, 0.8); }
+.prestige-box h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.prestige-box .series-chip { margin: 0.6rem 0; }
+.prestige-box.ready { border-color: #ffd166; box-shadow: 0 0 24px rgba(255, 209, 102, 0.35); }

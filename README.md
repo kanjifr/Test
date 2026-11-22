@@ -19,6 +19,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 📜 **Quêtes de la semaine** : 3 quêtes tirées chaque lundi (boosters, duels, échanges, évolutions, recyclage, livre d'or), 1 booster bonus par quête.
 - 🏅 **Saisons de duel** : classement remis à zéro chaque mois ; le podium gagne un titre affiché sur le profil et 3, 2, 1 boosters bonus (annonce Discord).
 - 🏆 **Tournois** : le staff crée un tournoi, les membres s'inscrivent, et à l'heure prévue le tableau à élimination directe se joue tout seul avec les équipes de défense. Rediffusion de chaque match, titre et boosters pour le vainqueur et le finaliste.
+- ✪ **Prestige** : un membre qui possède toutes les cartes (hors événements) peut remettre sa collection à zéro contre une étoile de prestige permanente, un cadre doré et 3 boosters bonus. Succès « Collection brillante » pour toutes les cartes en version brillante.
 - ⚔ **Duels** : équipe de 3 cartes contre la défense d'un membre (ou entraînement), combat au tour par tour animé avec ATK, DEF, éléments, critiques et esquives. Première victoire du jour = 1 booster bonus. Classement des duellistes.
 - 🏅 **15 succès** (Bronze, Argent, Or) avec une notification quand on en débloque un, une progression visible sur le profil et un badge à afficher à côté de son pseudo
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres

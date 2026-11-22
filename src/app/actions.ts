@@ -2,6 +2,9 @@
 
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { prestigeProgress, PRESTIGE_REWARD } from "@/lib/prestige";
+import { siteUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { drawBooster, PACK_COOLDOWN_MS, PACK_SIZE, PITY_HARD, SHINY_CHANCE, type CardView } from "@/lib/game";
@@ -10,7 +13,7 @@ import { BIRTHDAY_BOOST, isBirthdayToday, validBirthday } from "@/lib/birthday";
 import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
-import { announcePull } from "@/lib/announce";
+import { announcePull, announceText } from "@/lib/announce";
 import { boosterWhere, seriesWeight } from "@/lib/series";
 import { currentWeek, QUEST_REWARD, questsOfWeek, recordProgress } from "@/lib/quests";
 
@@ -188,4 +191,32 @@ export async function claimQuest(questId: string): Promise<ClaimResult> {
   if (bonus === null) return { ok: false, error: "Récompense déjà récupérée." };
   revalidatePath("/");
   return { ok: true, bonus };
+}
+
+/** Prestige : le membre qui a toute la collection la remet à zéro contre une étoile permanente. */
+export async function prestigeReset(): Promise<void> {
+  const user = await requireUser();
+  const { ready } = await prestigeProgress(user.id);
+  if (!ready) redirect("/profil?err=" + encodeURIComponent("Il te faut toutes les cartes (hors événements) pour passer au prestige."));
+  const u = await prisma.$transaction(async (tx) => {
+    await tx.userCard.deleteMany({ where: { userId: user.id } });
+    // Les échanges en attente ne sont plus réalisables
+    await tx.trade.updateMany({
+      where: { status: "PENDING", OR: [{ fromId: user.id }, { toId: user.id }] },
+      data: { status: "CANCELLED", resolvedAt: new Date() },
+    });
+    return tx.user.update({
+      where: { id: user.id },
+      data: { prestige: { increment: 1 }, bonusPacks: { increment: PRESTIGE_REWARD }, showcase: [], defenseTeam: [] },
+      select: { prestige: true, name: true },
+    });
+  });
+  await prisma.adminLog.create({
+    data: { actorId: user.id, actorName: u.name ?? "?", action: "prestige", details: `est passé au prestige ${u.prestige} (collection remise à zéro)` },
+  });
+  await checkAchievements(user.id);
+  const link = siteUrl(`/membre/${user.id}`);
+  await announceText(`✪ **${u.name}** a complété toute la collection et passe au **prestige ${u.prestige}** ! Sa collection repart de zéro…${link ? ` ${link}` : ""}`).catch(() => {});
+  revalidatePath("/", "layout");
+  redirect("/profil?ok=prestige#prestige");
 }

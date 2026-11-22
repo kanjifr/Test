@@ -99,7 +99,10 @@ export default async function CollectionPage({
             </span>
           );
         })}
-        <span className="shiny-count">✦ Brillantes {shinyTotal}</span>
+        <span className="shiny-count">
+          ✦ Brillantes {shinyTotal}/{cards.length}
+          {cards.length > 0 && shinyTotal >= cards.length && " · collection brillante complète !"}
+        </span>
       </div>
       {perSeries.length > 1 && (
         <div className="series-progress">

@@ -54,9 +54,9 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
       <header className="panel member-head">
         {user.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="member-avatar" src={user.image} alt="" referrerPolicy="no-referrer" />
+          <img className={`member-avatar ${user.prestige > 0 ? "prestige-frame" : ""}`} src={user.image} alt="" referrerPolicy="no-referrer" />
         ) : (
-          <span className="avatar-fallback member-avatar">{user.name?.[0] ?? "?"}</span>
+          <span className={`avatar-fallback member-avatar ${user.prestige > 0 ? "prestige-frame" : ""}`}>{user.name?.[0] ?? "?"}</span>
         )}
         <div className="member-id">
           <h1>
