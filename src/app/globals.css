@@ -956,3 +956,15 @@ label.inline select { width: auto; }
 .series-banner { flex-direction: column; align-items: flex-start; gap: 0.3rem; border-color: rgba(94, 242, 255, 0.6); box-shadow: 0 0 30px rgba(94, 242, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
 .event-banner h2, .series-banner h2 { margin: 0 0 0.3rem; font-size: clamp(1.2rem, 3vw, 1.6rem); }
 .event-banner p, .series-banner p { margin: 0; }
+
+/* ---- Évolution des cartes (★1 à ★5) ---- */
+.gcard-level { font-size: calc(var(--w, 220px) * 0.065); line-height: 1; letter-spacing: 0.05em; color: #ffd166; text-shadow: 0 0 6px rgba(255, 209, 102, 0.9), 0 1px 0 #6a1f74; margin-bottom: 2px; }
+.gcard-level .lvl-empty { color: rgba(255, 255, 255, 0.28); text-shadow: none; }
+.gcard.lvl-max { box-shadow: 0 0 0 2px #ffd166, 0 0 22px rgba(255, 209, 102, 0.75); animation: lvl-max-glow 2.4s ease-in-out infinite; border-radius: 14px; }
+@keyframes lvl-max-glow { 50% { box-shadow: 0 0 0 2px #fff3c4, 0 0 34px rgba(255, 209, 102, 0.95); } }
+@media (prefers-reduced-motion: reduce) { .gcard.lvl-max { animation: none; } }
+.evolve-box { margin: 0.6rem 0; padding: 0.7rem 0.9rem; border-radius: 14px; background: rgba(255, 255, 255, 0.07); border: 1.5px solid rgba(255, 209, 102, 0.4); }
+.evolve-box .lvl-stars { color: #ffd166; font-size: 1.25rem; letter-spacing: 0.08em; }
+.evolve-box p { margin: 0.25rem 0; }
+.evolve-flash { animation: evolve-flash 0.9s ease-out; }
+@keyframes evolve-flash { 0% { filter: brightness(2.2) saturate(1.4); transform: scale(1.06); } 100% { filter: none; transform: none; } }

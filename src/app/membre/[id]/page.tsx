@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/session";
 import { ACHIEVEMENTS, TIERS, badgeView } from "@/lib/achievements";
 import { ROLE_LABELS, staffRole } from "@/lib/admin";
 import { toCardView } from "@/lib/cards";
+import { boosted } from "@/lib/evolution";
 import { SITE_NAME } from "@/lib/game";
 import { Badge, NameWithBadge } from "@/components/Badge";
 import { GameCard } from "@/components/GameCard";
@@ -92,7 +93,14 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           <div className="showcase">
             {showcase.map((o) => (
               <Link key={o.cardId} href={`/carte/${o.cardId}`} className="showcase-item">
-                <GameCard card={{ ...toCardView(o.card), shiny: o.shiny > 0 }} size="md" count={o.count} />
+                <GameCard
+                  card={(() => {
+                    const v = toCardView(o.card);
+                    return { ...v, shiny: o.shiny > 0, level: o.level, attack: boosted(v.attack, o.level), defense: boosted(v.defense, o.level) };
+                  })()}
+                  size="md"
+                  count={o.count}
+                />
               </Link>
             ))}
           </div>

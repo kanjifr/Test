@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { toCardView } from "@/lib/cards";
 import type { CardView } from "@/lib/game";
 import { power, type Fighter } from "@/lib/duel";
+import { boosted } from "@/lib/evolution";
 
 export const DUEL_TEAM_SIZE = 3;
 const intEnv = (v: string | undefined, d: number) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Math.floor(Number(v)) : d);
@@ -28,11 +29,14 @@ export function parisDayStart(now = new Date()) {
 
 const cardInclude = { card: { include: { subject: { select: { image: true, consent: true, birthMonth: true, birthDay: true } } } } } as const;
 
-/** Cartes possédées (actives) d'un membre, de la plus forte à la plus faible. */
+/** Cartes possédées (actives) d'un membre, niveau d'évolution compris, de la plus forte à la plus faible. */
 export async function ownedFighters(userId: string) {
   const owned = await prisma.userCard.findMany({ where: { userId, card: { active: true } }, include: cardInclude });
   return owned
-    .map((o): CardView => ({ ...toFighter(o.card), shiny: o.shiny > 0 }))
+    .map((o): CardView => {
+      const f = toFighter(o.card);
+      return { ...f, shiny: o.shiny > 0, level: o.level, attack: boosted(f.attack, o.level), defense: boosted(f.defense, o.level) };
+    })
     .sort((a, b) => power(b) - power(a) || a.number - b.number);
 }
 

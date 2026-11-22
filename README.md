@@ -15,6 +15,7 @@ Un site d'ouverture de boosters à l'ambiance « Japon nocturne / sabres et él�
 - 🌸 **Séries (saisons)** : chaque carte appartient à une série. L'admin choisit quelles séries sortent des boosters ; les anciennes restent dans les collections (échanges). Progression et succès par série.
 - ✿ **Cartes d'événement** : tirables seulement entre deux dates (3× plus souvent pendant l'événement), puis uniquement par échange. Bannière sur l'accueil.
 - 🎭 **Versions alternatives** : même personne, autre style, 2,5× plus rares que les autres cartes de leur rareté.
+- ⬆ **Évolution des cartes** : fusionne des doublons (1, 2, 3 puis 4) pour monter une carte de ★1 à ★5. +5 % d'ATK et de DEF par étoile en duel, cadre doré à ★5. Les brillantes ne sont jamais fusionnées.
 - ⚔ **Duels** : équipe de 3 cartes contre la défense d'un membre (ou entraînement), combat au tour par tour animé avec ATK, DEF, éléments, critiques et esquives. Première victoire du jour = 1 booster bonus. Classement des duellistes.
 - 🏅 **15 succès** (Bronze, Argent, Or) avec une notification quand on en débloque un, une progression visible sur le profil et un badge à afficher à côté de son pseudo
 - 🏆 **Classement** des collectionneurs, avec la possibilité de voir la collection des autres

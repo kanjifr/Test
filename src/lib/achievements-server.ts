@@ -3,10 +3,10 @@ import { ACHIEVEMENTS, type Stats } from "@/lib/achievements";
 
 export async function computeStats(userId: string, extra: { luckyPack?: boolean } = {}): Promise<Stats> {
   const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true, prestige: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
-      select: { count: true, shiny: true, card: { select: { rarity: true, element: true, seriesId: true, eventName: true, variantOfId: true } } },
+      select: { count: true, shiny: true, level: true, card: { select: { rarity: true, element: true, seriesId: true, eventName: true, variantOfId: true } } },
     }),
     prisma.card.findMany({ where: { active: true }, select: { rarity: true, element: true, seriesId: true } }),
     prisma.trade.count({ where: { status: "ACCEPTED", OR: [{ fromId: userId }, { toId: userId }] } }),
@@ -50,6 +50,10 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     seriesTotal: bigSeries.length,
     eventOwned: owned.filter((o) => o.card.eventName).length,
     altOwned: owned.filter((o) => o.card.variantOfId).length,
+    maxLevel: owned.reduce((m, o) => Math.max(m, o.level), 1),
+    maxedCards: owned.filter((o) => o.level >= 5).length,
+    prestige: user?.prestige ?? 0,
+    shinyComplete: cards.length > 0 && owned.filter((o) => o.shiny > 0).length >= cards.length,
     packsOpened: user?.packsOpened ?? 0,
     uniqueCards: owned.length,
     totalActiveCards: cards.length,

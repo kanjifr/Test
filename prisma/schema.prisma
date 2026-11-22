@@ -59,6 +59,8 @@ model User {
   // Vitrine du profil public : jusqu'à 3 identifiants de cartes, dans l'ordre
   showcase      String[]  @default([])
   birthDay      Int?
+  // Prestige : nombre de fois où le membre a remis sa collection complète à zéro
+  prestige      Int       @default(0)
   // Badge choisi pour être affiché à côté du pseudo
   featuredBadge String?
   // Rôle attribué depuis le site (le propriétaire est défini par OWNER_DISCORD_IDS)
@@ -81,6 +83,7 @@ model User {
   pollOptions       PollOption[]
   duelsAttacked     Duel[]            @relation("DuelAttacker")
   duelsDefended     Duel[]            @relation("DuelDefender")
+  weeklyProgresses  WeeklyProgress[]
 }
 
 model Account {
@@ -165,6 +168,8 @@ model UserCard {
   count   Int      @default(1)
   // Dont versions brillantes (shiny)
   shiny   Int      @default(0)
+  // Niveau d'évolution (★1 à ★5), monté en fusionnant des doublons
+  level   Int      @default(1)
   firstAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -382,4 +387,27 @@ model Series {
   inBoosters  Boolean  @default(true)
   createdAt   DateTime @default(now())
   cards       Card[]
+}
+
+/**
+ * Progression des quêtes de la semaine (une ligne par membre et par semaine).
+ */
+model WeeklyProgress {
+  userId     String
+  // Semaine ISO à l'heure de Paris, ex : « 2026-W47 »
+  week       String
+  packs      Int      @default(0)
+  duelWins   Int      @default(0)
+  duels      Int      @default(0)
+  trades     Int      @default(0)
+  evolutions Int      @default(0)
+  recycled   Int      @default(0)
+  anecdotes  Int      @default(0)
+  // Quêtes dont la récompense a été récupérée
+  claimed    String[] @default([])
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, week])
 }

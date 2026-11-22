@@ -31,6 +31,10 @@ export type Stats = {
   seriesTotal: number;
   eventOwned: number;
   altOwned: number;
+  maxLevel: number;
+  maxedCards: number;
+  prestige: number;
+  shinyComplete: boolean;
 };
 
 export type Achievement = {
@@ -74,6 +78,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "event_1", name: "Souvenir d'un soir", description: "Obtenir une carte d'événement.", kanji: "祭", tier: "BRONZE", progress: (s) => [s.eventOwned, 1] },
   { id: "event_5", name: "Toujours au rendez-vous", description: "Posséder 5 cartes d'événement différentes.", kanji: "宴", tier: "OR", progress: (s) => [s.eventOwned, 5] },
   { id: "alt_1", name: "Autre facette", description: "Obtenir une version alternative.", kanji: "貌", tier: "ARGENT", progress: (s) => [s.altOwned, 1] },
+  { id: "evolve_1", name: "Éveil", description: "Faire évoluer une carte.", kanji: "覚", tier: "BRONZE", progress: (s) => [s.maxLevel >= 2 ? 1 : 0, 1] },
+  { id: "evolve_max", name: "Forme ultime", description: "Amener une carte au niveau ★5.", kanji: "昇", tier: "OR", progress: (s) => [s.maxLevel, 5] },
+  { id: "evolve_5max", name: "Maître forgeron", description: "Posséder 5 cartes au niveau ★5.", kanji: "鍛", tier: "OR", progress: (s) => [s.maxedCards, 5] },
   { id: "featured", name: "Visage du clan", description: "Apparaître sur une carte.", kanji: "顔", tier: "BRONZE", progress: (s) => [s.featuredIn, 1] },
 ];
 

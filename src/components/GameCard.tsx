@@ -1,4 +1,5 @@
 import { ELEMENTS, RARITIES, type CardView } from "@/lib/game";
+import { MAX_LEVEL } from "@/lib/evolution";
 
 type Props = {
   card: CardView;
@@ -18,7 +19,7 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
     .toUpperCase();
   return (
     <div
-      className={`gcard gcard-${size} rarity-${card.rarity.toLowerCase()} ${card.birthday ? "is-birthday" : ""} ${card.shiny ? "is-shiny" : ""}`}
+      className={`gcard gcard-${size} rarity-${card.rarity.toLowerCase()} ${card.birthday ? "is-birthday" : ""} ${card.shiny ? "is-shiny" : ""} ${(card.level ?? 1) > 1 ? `lvl-${card.level}` : ""} ${card.level === MAX_LEVEL ? "lvl-max" : ""}`}
       style={{ "--rc": r.color, "--ec": el.color } as React.CSSProperties}
     >
       <div className="gcard-inner">
@@ -53,6 +54,12 @@ export function GameCard({ card, size = "md", badge, count }: Props) {
           {card.title && <span className="gcard-vertical">{card.title}</span>}
         </div>
         <div className="gcard-bottom">
+          {(card.level ?? 1) > 1 && (
+            <div className="gcard-level" aria-label={`Niveau ${card.level} sur ${MAX_LEVEL}`} title={`Niveau ${card.level} : ATK et DEF augmentées`}>
+              {"★".repeat(card.level!)}
+              <span className="lvl-empty">{"★".repeat(MAX_LEVEL - card.level!)}</span>
+            </div>
+          )}
           <div className="gcard-name">{card.name}</div>
           <div className="gcard-stats">
             <span>

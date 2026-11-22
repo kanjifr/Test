@@ -6,6 +6,7 @@ import { CardGrid, type GridItem } from "@/components/CardGrid";
 import { RARITIES, RARITY_ORDER } from "@/lib/game";
 import { badgeView } from "@/lib/achievements";
 import { NameWithBadge } from "@/components/Badge";
+import { boosted } from "@/lib/evolution";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,15 @@ export default async function CollectionPage({
   // Une carte possédée en version brillante s'affiche brillante
   const items: GridItem[] = cards.map((c) => {
     const o = rows.get(c.id);
-    return { card: { ...toCardView(c), shiny: (o?.shiny ?? 0) > 0 }, count: o?.count ?? 0, shiny: o?.shiny ?? 0, seriesId: c.seriesId };
+    const v = toCardView(c);
+    const level = o?.level ?? 1;
+    return {
+      card: { ...v, shiny: (o?.shiny ?? 0) > 0, level, attack: boosted(v.attack, level), defense: boosted(v.defense, level) },
+      base: { attack: v.attack, defense: v.defense },
+      count: o?.count ?? 0,
+      shiny: o?.shiny ?? 0,
+      seriesId: c.seriesId,
+    };
   });
   const shinyTotal = owned.filter((o) => o.shiny > 0).length;
   const have = items.filter((i) => i.count > 0).length;
@@ -114,7 +123,7 @@ export default async function CollectionPage({
       {cards.length === 0 ? (
         <p className="muted">Aucune carte pour le moment.</p>
       ) : (
-        <CardGrid items={items} series={perSeries.map(({ id, name }) => ({ id, name }))} />
+        <CardGrid items={items} series={perSeries.map(({ id, name }) => ({ id, name }))} canEvolve={isMe} />
       )}
     </section>
   );

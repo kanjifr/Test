@@ -1,11 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { evolveCard } from "@/app/collection/actions";
+import { levelCost, LEVEL_BONUS, MAX_LEVEL } from "@/lib/evolution";
+import { play } from "@/lib/sfx";
 import type { Rarity } from "@prisma/client";
 import { CardBack, GameCard } from "@/components/GameCard";
 import { ELEMENTS, RARITIES, RARITY_ORDER, type CardView } from "@/lib/game";
 
-export type GridItem = { card: CardView; count: number; shiny?: number; seriesId?: string | null };
+export type GridItem = {
+  card: CardView;
+  count: number;
+  shiny?: number;
+  seriesId?: string | null;
+  /** Statistiques de base, avant le bonus de niveau */
+  base?: { attack: number; defense: number };
+};
 export type SeriesOption = { id: string; name: string };
 
 type Sort = "number" | "rarity-desc" | "rarity-asc" | "count";
@@ -46,8 +57,28 @@ const matchSeries = (it: GridItem, f: string | undefined) =>
           ? !it.seriesId
           : it.seriesId === f;
 
-export function CardGrid({ items, series = [] }: { items: GridItem[]; series?: SeriesOption[] }) {
-  const [open, setOpen] = useState<GridItem | null>(null);
+export function CardGrid({ items, series = [], canEvolve = false }: { items: GridItem[]; series?: SeriesOption[]; canEvolve?: boolean }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = openId ? (items.find((it) => it.card.id === openId) ?? null) : null;
+  const setOpen = (it: GridItem | null) => {
+    setOpenId(it?.card.id ?? null);
+    setEvolveMsg(null);
+  };
+  const router = useRouter();
+  const [evolving, startEvolve] = useTransition();
+  const [evolveMsg, setEvolveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [flash, setFlash] = useState(0);
+  function evolve(id: string) {
+    startEvolve(async () => {
+      const res = await evolveCard(id);
+      if (res.ok) {
+        play("legendary");
+        setFlash((f) => f + 1);
+        setEvolveMsg({ ok: true, text: `✨ Ta carte passe au niveau ${res.level} !` });
+        router.refresh();
+      } else setEvolveMsg({ ok: false, text: res.error });
+    });
+  }
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
 
   // Les préférences de tri sont mémorisées dans ce navigateur uniquement
@@ -188,7 +219,9 @@ export function CardGrid({ items, series = [] }: { items: GridItem[]; series?: S
       {open && (
         <div className="modal" onClick={() => setOpen(null)} role="dialog" aria-modal="true">
           <div className="modal-body" onClick={(e) => e.stopPropagation()}>
-            <GameCard card={open.card} size="lg" />
+            <div key={flash} className={flash ? "evolve-flash" : undefined}>
+              <GameCard card={open.card} size="lg" />
+            </div>
             <div className="modal-info">
               <h2>{open.card.name}</h2>
               {open.card.title && <p className="muted">{open.card.title}</p>}
@@ -201,6 +234,44 @@ export function CardGrid({ items, series = [] }: { items: GridItem[]; series?: S
                 </span>
               </p>
               {open.card.description && <p className="desc">{open.card.description}</p>}
+              {open.count > 0 && (() => {
+                const level = open.card.level ?? 1;
+                const normal = open.count - (open.shiny ?? 0);
+                const cost = levelCost(level);
+                // On garde toujours un exemplaire : avec une brillante, tous les normaux sont fusionnables
+                const usable = (open.shiny ?? 0) > 0 ? normal : normal - 1;
+                return (
+                  <div className="evolve-box">
+                    <p>
+                      <span className="lvl-stars" aria-label={`Niveau ${level} sur ${MAX_LEVEL}`}>
+                        {"★".repeat(level)}
+                        <span className="muted">{"☆".repeat(MAX_LEVEL - level)}</span>
+                      </span>{" "}
+                      <b>Niveau {level}</b>
+                      {level > 1 && open.base && (
+                        <span className="muted small-text">
+                          {" "}
+                          · ATK {open.base.attack} → <b>{open.card.attack}</b>, DEF {open.base.defense} → <b>{open.card.defense}</b> en duel
+                        </span>
+                      )}
+                    </p>
+                    {level >= MAX_LEVEL ? (
+                      <p className="small-text">🏆 Forme ultime atteinte !</p>
+                    ) : canEvolve ? (
+                      <>
+                        <p className="small-text muted">
+                          Fusionne {cost} doublon{cost > 1 ? "s" : ""} pour passer au niveau {level + 1} (+{Math.round(LEVEL_BONUS * 100)} % d&apos;ATK et de
+                          DEF). Tu as {Math.max(0, usable)} doublon{usable > 1 ? "s" : ""} utilisable{usable > 1 ? "s" : ""}. Les brillantes ne sont jamais fusionnées.
+                        </p>
+                        <button type="button" className="btn btn-sm" disabled={evolving || usable < cost} onClick={() => evolve(open.card.id)}>
+                          ⬆ Faire évoluer ({cost} doublon{cost > 1 ? "s" : ""})
+                        </button>
+                      </>
+                    ) : null}
+                    {evolveMsg && <p className={evolveMsg.ok ? "success" : "error"}>{evolveMsg.text}</p>}
+                  </div>
+                );
+              })()}
               <p className="muted">
                 Exemplaires possédés : {open.count}
                 {(open.shiny ?? 0) > 0 && ` (dont ${open.shiny} brillante${(open.shiny ?? 0) > 1 ? "s" : ""} ✦)`}

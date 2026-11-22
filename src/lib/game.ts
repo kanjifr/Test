@@ -83,6 +83,8 @@ export type CardView = {
   event?: string | null;
   /** Version alternative d'une autre carte */
   alt?: boolean;
+  /** Niveau d'évolution du membre qui la possède (ATK/DEF déjà augmentées) */
+  level?: number;
 };
 
 /** Tirage pondéré d'une rareté. `minRarity` permet de garantir une carte rare+. */
