@@ -1,6 +1,7 @@
 "use server";
 
 import { recordProgress } from "@/lib/quests";
+import { notifyUser } from "@/lib/push";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
@@ -106,6 +107,13 @@ export async function proposeTrade(input: ProposeInput): Promise<ActionResult> {
     if (e instanceof TradeError) return { ok: false, error: e.message };
     throw e;
   }
+  const toId = String(input?.toId ?? "");
+  await notifyUser(toId, "trade", {
+    title: input.parentId ? "⇄ Contre-proposition d'échange" : "⇄ Nouvelle proposition d'échange",
+    body: `${me.name ?? "Un membre"} te propose un échange.`,
+    url: "/echanges",
+    tag: "trade",
+  });
   revalidatePath("/echanges");
   return { ok: true };
 }

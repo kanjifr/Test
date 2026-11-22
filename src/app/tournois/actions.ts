@@ -8,6 +8,7 @@ import { MAX_PLAYERS, runTournament } from "@/lib/tournaments";
 import { DUEL_TEAM_SIZE } from "@/lib/duel-server";
 import { announceText } from "@/lib/announce";
 import { siteUrl } from "@/lib/discord";
+import { notifyAll } from "@/lib/push";
 
 const back = (msg: string, ok = false) => redirect(`/tournois?${ok ? "ok" : "err"}=${encodeURIComponent(msg)}`);
 
@@ -54,6 +55,7 @@ export async function createTournament(fd: FormData) {
   if (fd.get("announce") === "on") {
     const when = t.startsAt.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
     const link = siteUrl("/tournois");
+    await notifyAll("tournament", { title: `🏆 Nouveau tournoi : ${t.name}`, body: `Inscriptions ouvertes jusqu'au ${when}.`, url: "/tournois" });
     await announceText(`🏆 **Nouveau tournoi : ${t.name} !** Inscriptions ouvertes jusqu'au ${when}. Le vainqueur gagne ${t.reward} booster${t.reward > 1 ? "s" : ""} bonus et un titre.${link ? ` Inscris-toi : ${link}` : ""}`);
   }
   revalidatePath("/tournois");

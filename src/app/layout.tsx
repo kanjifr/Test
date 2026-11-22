@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { M_PLUS_Rounded_1c, Mochiy_Pop_One } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { AchievementNotifier } from "@/components/AchievementNotifier";
 import { SITE_NAME } from "@/lib/game";
 import { getSiteTheme } from "@/lib/theme";
 import { SeasonalDecor } from "@/components/SeasonalDecor";
+import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
 const display = Mochiy_Pop_One({
@@ -23,7 +24,11 @@ export const metadata: Metadata = {
   metadataBase: process.env.AUTH_URL ? new URL(process.env.AUTH_URL) : undefined,
   title: `${SITE_NAME} · Cartes de la communauté`,
   description: "Ouvre des boosters et collectionne les cartes des membres de la communauté.",
+  // Application installée sur iPhone (écran d'accueil)
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "black-translucent" },
 };
+
+export const viewport: Viewport = { themeColor: "#140f3a", viewportFit: "cover" };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = await getSiteTheme();
@@ -35,6 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Nav />
         <main className="main">{children}</main>
         <AchievementNotifier />
+        <PwaRegister />
       </body>
     </html>
   );

@@ -8,6 +8,7 @@ import { siteUrl } from "@/lib/discord";
 import { checkAchievements } from "@/lib/achievements-server";
 import type { CardView } from "@/lib/game";
 import { addCoins, getShopConfig } from "@/lib/coins";
+import { notifyUser } from "@/lib/push";
 
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 64;
@@ -130,7 +131,14 @@ export async function runTournament(id: string) {
       if (finalistReward > 0) await tx.user.update({ where: { id: finalistId }, data: { bonusPacks: { increment: finalistReward } } });
     }
   });
-  for (const pid of players) await checkAchievements(pid);
+  for (const pid of players) {
+    await checkAchievements(pid);
+    await notifyUser(pid, "tournament", {
+      title: pid === winnerId ? `🥇 Tu remportes ${t.name} !` : `🏆 ${t.name} est terminé`,
+      body: pid === winnerId ? "Bravo ! Viens revoir tes combats." : `Vainqueur : ${names.get(winnerId)}. Revois tes combats.`,
+      url: `/tournois/${id}`,
+    });
+  }
 
   const link = siteUrl(`/tournois/${id}`);
   await announceText(

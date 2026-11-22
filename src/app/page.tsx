@@ -20,6 +20,7 @@ import { BIRTHDAY_BOOST, parisToday } from "@/lib/birthday";
 import { boosterWhere, EVENT_BOOST, frDate } from "@/lib/series";
 import { QUEST_REWARD, questStatus, weekEnd } from "@/lib/quests";
 import { QuestBoard } from "@/components/QuestBoard";
+import { InstallHint } from "@/components/InstallHint";
 import { AdventCalendar, type AdventTile } from "@/components/AdventCalendar";
 import { adventToday, adventVisible, getAdventConfig, GRID_ORDER } from "@/lib/advent";
 
@@ -199,6 +200,7 @@ export default async function Home({
           </div>
         </section>
       )}
+      <InstallHint />
       {advent && <AdventCalendar tiles={advent.tiles} grandMin={advent.grandMin} openedCount={advent.opened} today={at.day} />}
       {latestSeries && (
         <section className="panel series-banner" aria-label="Nouvelle série">

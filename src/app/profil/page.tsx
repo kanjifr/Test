@@ -3,6 +3,9 @@ import { requireUser } from "@/lib/session";
 import { prestigeReset, setBirthday, setConsent, setFeaturedBadge, setShowcase } from "@/app/actions";
 import { prestigeProgress, PRESTIGE_REWARD } from "@/lib/prestige";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { AppSettings } from "@/components/AppSettings";
+import { PUSH_KINDS, vapidPublicKey } from "@/lib/push";
+import { setPushPrefs } from "@/app/push-actions";
 import Link from "next/link";
 import { CopyLink } from "@/components/CopyLink";
 import { MONTHS } from "@/lib/birthday";
@@ -16,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function Profile({ searchParams }: { searchParams: Promise<{ ok?: string; err?: string }> }) {
   const me = await requireUser();
   const { ok, err } = await searchParams;
-  const prestige = await prestigeProgress(me.id);
+  const [prestige, vapidKey] = await Promise.all([prestigeProgress(me.id), vapidPublicKey().catch(() => "")]);
   // Débloque aussi les succès déjà mérités avant leur ajout au site
   const stats = await checkAchievements(me.id);
   const unlocked = new Map(
@@ -52,6 +55,26 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
             {ACHIEVEMENTS.length} succès
           </p>
         </div>
+      </div>
+
+      <div className="consent" id="appli">
+        <h3>Application et notifications</h3>
+        <p className="muted">
+          Installe Kizuna sur ton téléphone comme une vraie application, et reçois une notification quand ton booster est prêt.
+        </p>
+        <AppSettings vapidKey={vapidKey} />
+        <form action={setPushPrefs} className="push-prefs" key={user.pushOff.join(",")}>
+          <p className="small-text">
+            <b>Me prévenir quand :</b>
+          </p>
+          {(Object.entries(PUSH_KINDS) as [keyof typeof PUSH_KINDS, string][]).map(([k, label]) => (
+            <label key={k} className="switch">
+              <input type="checkbox" name={k} defaultChecked={!user.pushOff.includes(k)} />
+              <span>{label}</span>
+            </label>
+          ))}
+          <button className="btn btn-ghost btn-sm">Enregistrer</button>
+        </form>
       </div>
 
       <div className={`consent prestige-box ${prestige.ready ? "ready" : ""}`} id="prestige">

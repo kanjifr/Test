@@ -1148,3 +1148,13 @@ label.inline select { width: auto; }
 .coin-history .minus { color: #ff9aa8; font-weight: 800; }
 @media (max-width: 560px) { .coin-history li { grid-template-columns: 60px 1fr; } .coin-history time { grid-column: 2; } .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .shop-admin .row label { flex: 1 1 150px; }
+
+/* ---- Application installable ---- */
+.app-settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem; margin: 0.6rem 0; }
+.app-block { padding: 0.7rem 0.9rem; border-radius: 14px; background: rgba(255, 255, 255, 0.06); }
+.app-block h4 { margin: 0 0 0.4rem; }
+.install-steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.push-prefs { display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start; }
+/* Application installée : on laisse la place à l'encoche de l'iPhone */
+@media (display-mode: standalone) { body { padding-top: env(safe-area-inset-top); } }
+.install-hint { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 1rem; padding: 0.8rem 1rem; }

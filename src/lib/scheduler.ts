@@ -8,7 +8,21 @@ import { runDueTournaments } from "@/lib/tournaments";
 import { adventToday, getAdventConfig, rewardText } from "@/lib/advent";
 import { announceText } from "@/lib/announce";
 import { siteUrl } from "@/lib/discord";
-import { notifyAll } from "@/lib/push";
+import { notifyAll, notifyUser } from "@/lib/push";
+import { PACK_COOLDOWN_MS } from "@/lib/game";
+
+/** Prévient les membres dont le booster vient d'être prêt (une seule fois par booster). */
+async function boosterReady() {
+  const due = await prisma.user.findMany({
+    where: { lastPackAt: { lte: new Date(Date.now() - PACK_COOLDOWN_MS) }, pushSubscriptions: { some: {} }, NOT: { pushOff: { has: "booster" } } },
+    select: { id: true, lastPackAt: true, notifiedPackAt: true },
+  });
+  for (const u of due) {
+    if (u.notifiedPackAt && u.lastPackAt && u.notifiedPackAt >= u.lastPackAt) continue;
+    await prisma.user.update({ where: { id: u.id }, data: { notifiedPackAt: u.lastPackAt } });
+    await notifyUser(u.id, "booster", { title: "🎴 Ton booster est prêt !", body: "Viens découvrir tes nouvelles cartes.", url: "/", tag: "booster" });
+  }
+}
 
 /** Chaque matin de l'Avent (à partir de 8 h), annonce la nouvelle case sur Discord et en notification. */
 async function advent() {
@@ -47,12 +61,12 @@ async function backup() {
   if (!last || Date.now() - last.getTime() > 23 * 3600_000) await sendBackupToDiscord("auto");
 }
 
-/** Tâches de fond, vérifiées toutes les 15 minutes. */
+/** Tâches de fond, vérifiées toutes les 5 minutes. */
 export function startScheduler() {
   const g = globalThis as unknown as { __kizunaTimer?: NodeJS.Timeout };
   if (g.__kizunaTimer) return;
   const tick = async () => {
-    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays], ["saison de duel", finalizeDuelSeason], ["tournois", runDueTournaments], ["calendrier de l'Avent", advent]] as const) {
+    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays], ["saison de duel", finalizeDuelSeason], ["tournois", runDueTournaments], ["calendrier de l'Avent", advent], ["booster prêt", boosterReady]] as const) {
       try {
         await job();
       } catch (e) {
@@ -61,5 +75,6 @@ export function startScheduler() {
     }
   };
   setTimeout(tick, 60_000);
-  g.__kizunaTimer = setInterval(tick, 15 * 60_000);
+  // Toutes les 5 minutes : assez précis pour « ton booster est prêt »
+  g.__kizunaTimer = setInterval(tick, 5 * 60_000);
 }
