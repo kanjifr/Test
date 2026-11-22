@@ -19,6 +19,8 @@ import { announceConfigured } from "@/lib/announce";
 import { getAnnounceSettings } from "@/lib/settings";
 import { deleteCard, resetCollection, resetCooldown, saveCard, seedDemo, setRole, toggleCard } from "./actions";
 import { createSeries, deleteSeries, updateSeries } from "./series-actions";
+import { setTheme } from "./theme-actions";
+import { getThemeChoice, seasonalTheme, THEMES } from "@/lib/theme";
 import { eventOver, frDate, inWindow, toParisDay } from "@/lib/series";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +52,9 @@ export default async function AdminPage({
     log: can(me.role, "viewLog"),
     roles: can(me.role, "manageRoles"),
     series: can(me.role, "manageSeries"),
+    theme: can(me.role, "manageTheme"),
   };
+  const themeChoice = await getThemeChoice();
   const series = await prisma.series.findMany({
     orderBy: { createdAt: "asc" },
     include: { _count: { select: { cards: true } } },
@@ -333,6 +337,26 @@ export default async function AdminPage({
           ))}
         </div>
       </div>
+
+      {allow.theme && (
+        <form action={setTheme} className="panel theme-panel" id="theme">
+          <h2>🎨 Thème du site</h2>
+          <p className="muted small-text">
+            Change l&apos;apparence du site pour tout le monde (couleurs, ciel, flocons ou pétales). En automatique, Noël
+            s&apos;active du 1er décembre au 6 janvier et Halloween du 20 au 31 octobre
+            {themeChoice === "auto" && ` (en ce moment : ${THEMES[seasonalTheme()].label})`}.
+          </p>
+          <div className="theme-options">
+            {(Object.keys(THEMES) as (keyof typeof THEMES)[]).map((k) => (
+              <label key={k} className={`theme-option theme-${k}`}>
+                <input type="radio" name="theme" value={k} defaultChecked={themeChoice === k} />
+                <span>{THEMES[k].label}</span>
+              </label>
+            ))}
+          </div>
+          <button className="btn">Appliquer le thème</button>
+        </form>
+      )}
 
       {allow.series && (
         <div className="panel admin-series" id="saisons">

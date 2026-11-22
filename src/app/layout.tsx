@@ -3,6 +3,8 @@ import { M_PLUS_Rounded_1c, Mochiy_Pop_One } from "next/font/google";
 import { Nav } from "@/components/Nav";
 import { AchievementNotifier } from "@/components/AchievementNotifier";
 import { SITE_NAME } from "@/lib/game";
+import { getSiteTheme } from "@/lib/theme";
+import { SeasonalDecor } from "@/components/SeasonalDecor";
 import "./globals.css";
 
 const display = Mochiy_Pop_One({
@@ -23,20 +25,13 @@ export const metadata: Metadata = {
   description: "Ouvre des boosters et collectionne les cartes des membres de la communauté.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const theme = await getSiteTheme();
   return (
-    <html lang="fr" className={`${display.variable} ${body.variable}`}>
+    <html lang="fr" className={`${display.variable} ${body.variable}`} data-site-theme={theme}>
       <body>
         <div className="sky" aria-hidden />
-        <div className="petals" aria-hidden>
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
+        <SeasonalDecor theme={theme} />
         <Nav />
         <main className="main">{children}</main>
         <AchievementNotifier />

@@ -39,6 +39,7 @@ export const PERMISSIONS = {
   importCards: FULL,
   manageSeries: FULL,
   manageTournaments: FULL,
+  manageTheme: FULL,
   managePolls: FULL,
   moderateAnecdotes: ["OWNER", "ADMIN", "MODERATOR"],
   manageBackups: ["OWNER"],
