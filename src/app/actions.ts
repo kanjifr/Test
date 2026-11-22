@@ -12,6 +12,7 @@ import { checkAchievements } from "@/lib/achievements-server";
 import { ACHIEVEMENT_BY_ID } from "@/lib/achievements";
 import { announcePull } from "@/lib/announce";
 import { boosterWhere, seriesWeight } from "@/lib/series";
+import { currentWeek, QUEST_REWARD, questsOfWeek, recordProgress } from "@/lib/quests";
 
 const rand = () => randomInt(0, 1_000_000) / 1_000_000;
 
@@ -94,6 +95,7 @@ export async function openPack(): Promise<OpenResult> {
     return out;
   });
 
+  await recordProgress(user.id, "packs", 1);
   const lucky = drawn.filter((c) => c.rarity === "EPIQUE" || c.rarity === "LEGENDAIRE" || c.rarity === "MYTHIQUE").length >= 2;
   await checkAchievements(user.id, { luckyPack: lucky });
   await announcePull({ discordId: user.discordId, name: user.name }, result).catch(() => {});
@@ -160,4 +162,30 @@ export async function setShowcase(formData: FormData) {
   const ok = new Set(owned.map((o) => o.cardId));
   await prisma.user.update({ where: { id: user.id }, data: { showcase: ids.filter((id) => ok.has(id)) } });
   revalidatePath("/", "layout");
+}
+
+export type ClaimResult = { ok: true; bonus: number } | { ok: false; error: string };
+
+/** Récupère la récompense d'une quête de la semaine terminée. */
+export async function claimQuest(questId: string): Promise<ClaimResult> {
+  const user = await requireUser();
+  const id = String(questId ?? "");
+  const week = currentWeek();
+  const quest = questsOfWeek(week).find((q) => q.id === id);
+  if (!quest) return { ok: false, error: "Cette quête n'est plus disponible." };
+  const row = await prisma.weeklyProgress.findUnique({ where: { userId_week: { userId: user.id, week } } });
+  if (!row || row[quest.field] < quest.target) return { ok: false, error: "Quête pas encore terminée." };
+  const bonus = await prisma.$transaction(async (tx) => {
+    // Une seule récompense par quête, même en cas de double clic
+    const marked = await tx.weeklyProgress.updateMany({
+      where: { userId: user.id, week, NOT: { claimed: { has: id } } },
+      data: { claimed: { push: id } },
+    });
+    if (marked.count === 0) return null;
+    const u = await tx.user.update({ where: { id: user.id }, data: { bonusPacks: { increment: QUEST_REWARD } }, select: { bonusPacks: true } });
+    return u.bonusPacks;
+  });
+  if (bonus === null) return { ok: false, error: "Récompense déjà récupérée." };
+  revalidatePath("/");
+  return { ok: true, bonus };
 }

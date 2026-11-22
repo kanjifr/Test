@@ -98,6 +98,12 @@ export function PackOpener({
   const [leaving, setLeaving] = useState(false);
   const [pity, setPity] = useState(initialPity);
   const [bonus, setBonus] = useState(initialBonus);
+  // Boosters bonus gagnés ailleurs sur la page (quêtes de la semaine)
+  useEffect(() => {
+    const on = (e: Event) => setBonus(Number((e as CustomEvent).detail) || 0);
+    window.addEventListener("kizuna:bonus", on);
+    return () => window.removeEventListener("kizuna:bonus", on);
+  }, []);
   const [mythicOn, setMythicOn] = useState(mythicAvailable);
   const [cinema, setCinema] = useState<Pulled | null>(null);
   const played = useRef(new Set<number>());

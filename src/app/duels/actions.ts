@@ -18,6 +18,7 @@ import {
 } from "@/lib/duel-server";
 import { checkAchievements } from "@/lib/achievements-server";
 import { announceDuel } from "@/lib/announce";
+import { recordProgress } from "@/lib/quests";
 
 export type DuelStart = { ok: true; id: string } | { ok: false; error: string };
 
@@ -48,8 +49,8 @@ export async function startDuel(input: { opponent: string; team: string[] }): Pr
       if (!defenderId || defenderId === me.id) throw new Error("Adversaire invalide.");
       const since = parisDayStart();
       const [today, againstHim, exists] = await Promise.all([
-        prisma.duel.count({ where: { attackerId: me.id, defenderId: { not: null }, createdAt: { gte: since } } }),
-        prisma.duel.count({ where: { attackerId: me.id, defenderId, createdAt: { gte: since } } }),
+        prisma.duel.count({ where: { attackerId: me.id, defenderId: { not: null }, tournamentId: null, createdAt: { gte: since } } }),
+        prisma.duel.count({ where: { attackerId: me.id, defenderId, tournamentId: null, createdAt: { gte: since } } }),
         prisma.user.findUnique({ where: { id: defenderId }, select: { id: true } }),
       ]);
       if (!exists) throw new Error("Membre introuvable.");
@@ -86,6 +87,8 @@ export async function startDuel(input: { opponent: string; team: string[] }): Pr
       }
       return d;
     });
+    await recordProgress(me.id, "duels", 1);
+    if (defenderId && result === "ATTACKER") await recordProgress(me.id, "duelWins", 1);
     await Promise.all([checkAchievements(me.id), defenderId ? checkAchievements(defenderId) : null]);
     if (defenderId && result !== "DRAW") {
       const people = await prisma.user.findMany({ where: { id: { in: [me.id, defenderId] } }, select: { id: true, name: true, discordId: true } });

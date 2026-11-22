@@ -14,6 +14,7 @@ import {
 } from "@/lib/duel-server";
 import { DuelLobby } from "@/components/DuelLobby";
 import { NameWithBadge } from "@/components/Badge";
+import { deMonth, MEDALS, monthKey, monthRange, previousMonth, SEASON_REWARDS, seasonRanking } from "@/lib/seasons";
 
 export const dynamic = "force-dynamic";
 
@@ -37,13 +38,13 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
       },
       orderBy: { duelWins: "desc" },
     }),
-    prisma.duel.findMany({ where: { attackerId: me.id, defenderId: { not: null }, createdAt: { gte: since } }, select: { defenderId: true } }),
+    prisma.duel.findMany({ where: { attackerId: me.id, defenderId: { not: null }, tournamentId: null, createdAt: { gte: since } }, select: { defenderId: true } }),
     prisma.duel.count({ where: { attackerId: me.id, rewarded: true, createdAt: { gte: since } } }),
     prisma.duel.findMany({
       where: { OR: [{ attackerId: me.id }, { defenderId: me.id }] },
       orderBy: { createdAt: "desc" },
       take: 15,
-      include: { attacker: { select: { name: true } }, defender: { select: { name: true } } },
+      include: { attacker: { select: { name: true } }, defender: { select: { name: true } }, tournament: { select: { name: true } } },
     }),
     prisma.user.findMany({
       where: { duelWins: { gt: 0 } },
@@ -52,6 +53,22 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
       select: { id: true, name: true, duelWins: true, duelLosses: true, featuredBadge: true },
     }),
   ]);
+  const openTournaments = await prisma.tournament.findMany({
+    where: { status: "REGISTRATION" },
+    orderBy: { startsAt: "asc" },
+    select: { id: true, name: true, startsAt: true, entries: { where: { userId: me.id }, select: { userId: true } } },
+  });
+  const season = monthKey();
+  const [seasonTop, lastPodium] = await Promise.all([
+    seasonRanking(season, 10),
+    prisma.seasonAward.findMany({
+      where: { kind: "DUEL_MONTH", period: previousMonth(season) },
+      orderBy: { rank: "asc" },
+      include: { user: { select: { id: true, name: true, featuredBadge: true } } },
+    }),
+  ]);
+  const seasonEnd = monthRange(season)[1];
+  const daysLeft = Math.max(1, Math.ceil((seasonEnd.getTime() - Date.now()) / 86400_000));
   const fought = new Map<string, number>();
   for (const d of todayDuels) fought.set(d.defenderId!, (fought.get(d.defenderId!) ?? 0) + 1);
   const opponents = members
@@ -76,10 +93,24 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
     <section className="duels">
       <div className="page-head">
         <h1>⚔ Duels</h1>
+        <Link href="/tournois" className="btn btn-ghost btn-sm">
+          🏆 Tournois
+        </Link>
         <span className="muted">
           Ton palmarès : <b>{user?.duelWins ?? 0}</b> victoire(s) · <b>{user?.duelLosses ?? 0}</b> défaite(s)
         </span>
       </div>
+
+      {openTournaments.map((t) => (
+        <Link key={t.id} href="/tournois" className="panel tournament-banner">
+          <b>🏆 {t.name}</b>
+          <span>
+            {t.startsAt.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
+            {" · "}
+            {t.entries.length ? "✓ Tu es inscrit" : "Inscriptions ouvertes →"}
+          </span>
+        </Link>
+      ))}
 
       <DuelLobby
         cards={cards}
@@ -101,7 +132,7 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
             <ul className="duel-history">
               {history.map((d) => {
                 const o = outcome(d);
-                const vs = d.defenderId === null ? "Entraînement" : d.attackerId === me.id ? `contre ${d.defender?.name}` : `${d.attacker.name} t'a défié`;
+                const vs = d.tournament ? `🏆 ${d.tournament.name} : ${d.attackerId === me.id ? `contre ${d.defender?.name}` : `contre ${d.attacker.name}`}` : d.defenderId === null ? "Entraînement" : d.attackerId === me.id ? `contre ${d.defender?.name}` : `${d.attacker.name} t'a défié`;
                 return (
                   <li key={d.id}>
                     <span className={`result ${o.cls}`}>{o.label}</span>
@@ -120,22 +151,55 @@ export default async function DuelsPage({ searchParams }: { searchParams: Promis
           )}
         </div>
         <div className="panel">
-          <h2>Classement des duellistes</h2>
-          {top.length === 0 ? (
-            <p className="muted">Personne n&apos;a encore gagné de duel.</p>
+          <h2>⚔ Saison {deMonth(season)}</h2>
+          <p className="muted small-text">
+            Fin dans {daysLeft} jour{daysLeft > 1 ? "s" : ""}. Le podium gagne un titre et {SEASON_REWARDS.join(", ")} boosters bonus. Victoires en
+            attaque et en défense, contre des membres.
+          </p>
+          {seasonTop.length === 0 ? (
+            <p className="muted">Personne n&apos;a encore gagné de duel ce mois-ci. À toi de jouer !</p>
           ) : (
             <ol className="duel-top">
-              {top.map((t, i) => (
-                <li key={t.id} className={t.id === me.id ? "me" : ""}>
-                  <span className="rank">{i + 1}</span>
+              {seasonTop.map((t, i) => (
+                <li key={t.userId} className={t.userId === me.id ? "me" : ""}>
+                  <span className="rank">{i < 3 ? MEDALS[i] : i + 1}</span>
                   <NameWithBadge name={t.name} badge={badgeView(t.featuredBadge)} />
                   <span className="muted">
-                    {t.duelWins} V · {t.duelLosses} D
+                    {t.wins} V · {t.losses} D
                   </span>
                 </li>
               ))}
             </ol>
           )}
+          {lastPodium.length > 0 && (
+            <p className="small-text last-podium">
+              Podium {deMonth(previousMonth(season))} :{" "}
+              {lastPodium.map((a, i) => (
+                <span key={a.id}>
+                  {i > 0 && " · "}
+                  {MEDALS[a.rank - 1]} <Link href={`/membre/${a.user.id}`}>{a.user.name}</Link>
+                </span>
+              ))}
+            </p>
+          )}
+          <details className="all-time">
+            <summary>Classement de tous les temps</summary>
+            {top.length === 0 ? (
+              <p className="muted">Personne n&apos;a encore gagné de duel.</p>
+            ) : (
+              <ol className="duel-top">
+                {top.map((t, i) => (
+                  <li key={t.id} className={t.id === me.id ? "me" : ""}>
+                    <span className="rank">{i + 1}</span>
+                    <NameWithBadge name={t.name} badge={badgeView(t.featuredBadge)} />
+                    <span className="muted">
+                      {t.duelWins} V · {t.duelLosses} D
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </details>
           <h3>Les éléments</h3>
           <ul className="elements-chart">
             {Object.entries(BEATS).map(([a, b]) => (

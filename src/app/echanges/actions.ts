@@ -1,5 +1,6 @@
 "use server";
 
+import { recordProgress } from "@/lib/quests";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
@@ -148,6 +149,7 @@ export async function acceptTrade(fd: FormData): Promise<void> {
       fromId = trade.fromId;
     });
     if (fromId) {
+      await Promise.all([recordProgress(me.id, "trades", 1), recordProgress(fromId, "trades", 1)]);
       await Promise.all([checkAchievements(me.id), checkAchievements(fromId)]);
       const t = await prisma.trade.findUnique({
         where: { id },

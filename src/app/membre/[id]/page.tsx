@@ -29,7 +29,8 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
     where: { id },
     select: {
       id: true, name: true, image: true, discordId: true, role: true, featuredBadge: true, showcase: true, consent: true,
-      packsOpened: true, duelWins: true, duelLosses: true, createdAt: true,
+      packsOpened: true, duelWins: true, duelLosses: true, createdAt: true, prestige: true,
+      seasonAwards: { orderBy: { createdAt: "desc" }, take: 12 },
       achievements: { select: { achievementId: true } },
       cards: { where: { card: { active: true } }, include: { card: { include: { subject: subjectSelect } } } },
       featuredIn: { where: { active: true }, include: { subject: subjectSelect }, orderBy: { number: "asc" } },
@@ -61,6 +62,20 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           <h1>
             <NameWithBadge name={user.name} badge={badgeView(user.featuredBadge)} />
           </h1>
+          {(user.prestige > 0 || user.seasonAwards.length > 0) && (
+            <p className="titles">
+              {user.prestige > 0 && (
+                <span className="title-chip prestige-chip" title={`A remis sa collection complète à zéro ${user.prestige} fois`}>
+                  {"✪".repeat(Math.min(user.prestige, 5))} Prestige {user.prestige}
+                </span>
+              )}
+              {user.seasonAwards.map((a) => (
+                <span key={a.id} className={`title-chip rank-${a.rank}`}>
+                  {a.rank <= 3 ? ["🥇", "🥈", "🥉"][a.rank - 1] : "🏅"} {a.label}
+                </span>
+              ))}
+            </p>
+          )}
           <p className="muted">
             {role && <span className="role-chip">{ROLE_LABELS[role]}</span>} Membre depuis le{" "}
             {user.createdAt.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}

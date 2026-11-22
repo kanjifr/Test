@@ -16,6 +16,10 @@ export async function Nav() {
   const toVote = user?.id
     ? await prisma.poll.count({ where: { closesAt: { gt: new Date() }, votes: { none: { userId: user.id } } } })
     : 0;
+  // Tournois ouverts auxquels le membre n'est pas encore inscrit
+  const toJoin = user?.id
+    ? await prisma.tournament.count({ where: { status: "REGISTRATION", startsAt: { gt: new Date() }, entries: { none: { userId: user.id } } } })
+    : 0;
   return (
     <header className="nav">
       <Link href="/" className="brand">
@@ -31,7 +35,10 @@ export async function Nav() {
             Échanges
             {incoming > 0 && <span className="nav-badge">{incoming}</span>}
           </NavLink>
-          <NavLink href="/duels">Duels</NavLink>
+          <NavLink href="/duels" className="nav-trades">
+            Duels
+            {toJoin > 0 && <span className="nav-badge" title="Tournoi ouvert aux inscriptions">🏆</span>}
+          </NavLink>
           <NavLink href="/votes" className="nav-trades">
             Votes
             {toVote > 0 && <span className="nav-badge">{toVote}</span>}

@@ -35,6 +35,10 @@ export type Stats = {
   maxedCards: number;
   prestige: number;
   shinyComplete: boolean;
+  podiums: number;
+  championships: number;
+  tournamentWins: number;
+  tournamentsPlayed: number;
 };
 
 export type Achievement = {
@@ -71,6 +75,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "trade_10", name: "Marchand du quartier", description: "Réaliser 10 échanges.", kanji: "商", tier: "ARGENT", progress: (s) => [s.tradesDone, 10] },
   { id: "duel_1", name: "Premier sang", description: "Gagner un duel contre un membre.", kanji: "刃", tier: "BRONZE", progress: (s) => [s.duelWins, 1] },
   { id: "duel_25", name: "Gladiateur", description: "Gagner 25 duels contre des membres.", kanji: "闘", tier: "ARGENT", progress: (s) => [s.duelWins, 25] },
+  { id: "season_podium", name: "Sur le podium", description: "Finir dans le top 3 d'une saison de duel.", kanji: "台", tier: "ARGENT", progress: (s) => [s.podiums, 1] },
+  { id: "season_champion", name: "Champion du mois", description: "Finir premier d'une saison de duel.", kanji: "王", tier: "OR", progress: (s) => [s.championships, 1] },
+  { id: "tournament_1", name: "Dans l'arène", description: "Participer à un tournoi.", kanji: "陣", tier: "BRONZE", progress: (s) => [s.tournamentsPlayed, 1] },
+  { id: "tournament_win", name: "Vainqueur du tournoi", description: "Remporter un tournoi.", kanji: "冠", tier: "OR", progress: (s) => [s.tournamentWins, 1] },
   { id: "vote_1", name: "Voix du peuple", description: "Participer à un vote de la communauté.", kanji: "票", tier: "BRONZE", progress: (s) => [s.votes, 1] },
   { id: "story_1", name: "Conteur", description: "Voir une de tes anecdotes publiée dans un livre d'or.", kanji: "話", tier: "BRONZE", progress: (s) => [s.anecdotes, 1] },
   { id: "series_1", name: "Saison bouclée", description: "Compléter une série entière (3 cartes minimum).", kanji: "季", tier: "ARGENT", progress: (s) => [s.seriesCompleted, 1] },

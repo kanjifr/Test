@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ACHIEVEMENTS, type Stats } from "@/lib/achievements";
 
 export async function computeStats(userId: string, extra: { luckyPack?: boolean } = {}): Promise<Stats> {
-  const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes] = await Promise.all([
+  const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes, awards, tournamentsPlayed] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true, prestige: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
@@ -18,6 +18,8 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
           .then(Boolean),
     prisma.pollVote.count({ where: { userId } }),
     prisma.anecdote.count({ where: { authorId: userId, status: "APPROVED" } }),
+    prisma.seasonAward.findMany({ where: { userId }, select: { kind: true, rank: true } }),
+    prisma.tournamentEntry.count({ where: { userId, tournament: { status: "FINISHED" } } }),
   ]);
 
   const elementTotals = new Map<string, number>();
@@ -53,6 +55,10 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     maxLevel: owned.reduce((m, o) => Math.max(m, o.level), 1),
     maxedCards: owned.filter((o) => o.level >= 5).length,
     prestige: user?.prestige ?? 0,
+    podiums: awards.filter((a) => a.kind === "DUEL_MONTH" && a.rank <= 3).length,
+    championships: awards.filter((a) => a.kind === "DUEL_MONTH" && a.rank === 1).length,
+    tournamentWins: awards.filter((a) => a.kind === "TOURNAMENT" && a.rank === 1).length,
+    tournamentsPlayed,
     shinyComplete: cards.length > 0 && owned.filter((o) => o.shiny > 0).length >= cards.length,
     packsOpened: user?.packsOpened ?? 0,
     uniqueCards: owned.length,

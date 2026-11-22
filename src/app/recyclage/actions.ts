@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/session";
 import { RECYCLE_COST } from "@/lib/game";
 import { checkAchievements } from "@/lib/achievements-server";
 import { takeCopies } from "@/lib/copies";
+import { recordProgress } from "@/lib/quests";
 
 export type RecycleResult = { ok: true; boosters: number; bonus: number } | { ok: false; error: string };
 
@@ -40,6 +41,7 @@ export async function recycleDuplicates(lines: { cardId: string; qty: number }[]
         select: { bonusPacks: true },
       });
     });
+    await recordProgress(me.id, "recycled", total);
     await checkAchievements(me.id);
     revalidatePath("/", "layout");
     return { ok: true, boosters, bonus: user.bonusPacks };

@@ -84,6 +84,8 @@ model User {
   duelsAttacked     Duel[]            @relation("DuelAttacker")
   duelsDefended     Duel[]            @relation("DuelDefender")
   weeklyProgresses  WeeklyProgress[]
+  seasonAwards      SeasonAward[]
+  tournamentEntries TournamentEntry[]
 }
 
 model Account {
@@ -280,16 +282,19 @@ enum DuelResult {
 }
 
 model Duel {
-  id         String     @id @default(cuid())
-  attackerId String
+  id           String      @id @default(cuid())
+  attackerId   String
   // Vide pour un entraînement contre l'ordinateur
-  defenderId String?
-  result     DuelResult
+  defenderId   String?
+  result       DuelResult
   // Déroulé complet du combat (cartes, coups, points de vie) pour la rediffusion
-  log        Json
+  log          Json
   // Booster bonus gagné grâce à ce duel
-  rewarded   Boolean    @default(false)
-  createdAt  DateTime   @default(now())
+  rewarded     Boolean     @default(false)
+  // Match de tournoi (hors palmarès, saisons et limites quotidiennes)
+  tournamentId String?
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
 
   attacker User  @relation("DuelAttacker", fields: [attackerId], references: [id], onDelete: Cascade)
   defender User? @relation("DuelDefender", fields: [defenderId], references: [id], onDelete: Cascade)
@@ -410,4 +415,63 @@ model WeeklyProgress {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, week])
+}
+
+/**
+ * Titres gagnés : podium d'une saison de duel (mois) ou d'un tournoi.
+ */
+model SeasonAward {
+  id        String   @id @default(cuid())
+  // « DUEL_MONTH » (saison de duel mensuelle) ou « TOURNAMENT »
+  kind      String
+  // Mois « 2026-11 » ou identifiant du tournoi
+  period    String
+  rank      Int
+  userId    String
+  // Titre affiché, ex : « Champion de novembre 2026 »
+  label     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([kind, period, rank])
+  @@index([userId])
+}
+
+enum TournamentStatus {
+  // Inscriptions ouvertes jusqu'à startsAt
+  REGISTRATION
+  FINISHED
+  CANCELLED
+}
+
+/**
+ * Tournoi à élimination directe, joué automatiquement avec les équipes de défense.
+ */
+model Tournament {
+  id        String           @id @default(cuid())
+  name      String
+  status    TournamentStatus @default(REGISTRATION)
+  // Tirage au sort et combats à cette date
+  startsAt  DateTime
+  // Boosters bonus du vainqueur (le finaliste en gagne la moitié)
+  reward    Int              @default(3)
+  // Tableau : [{ matches: [{ a, b, duelId, winner }] }] (identifiants de membres)
+  bracket   Json?
+  winnerId  String?
+  createdAt DateTime         @default(now())
+
+  entries TournamentEntry[]
+  duels   Duel[]
+}
+
+model TournamentEntry {
+  tournamentId String
+  userId       String
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tournamentId, userId])
 }

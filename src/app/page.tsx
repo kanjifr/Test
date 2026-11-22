@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth, signIn, DEV_LOGIN_ENABLED } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PackOpener } from "@/components/PackOpener";
@@ -17,6 +18,8 @@ import { toCardView } from "@/lib/cards";
 import { checkAchievements } from "@/lib/achievements-server";
 import { BIRTHDAY_BOOST, parisToday } from "@/lib/birthday";
 import { boosterWhere, EVENT_BOOST, frDate } from "@/lib/series";
+import { QUEST_REWARD, questStatus, weekEnd } from "@/lib/quests";
+import { QuestBoard } from "@/components/QuestBoard";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +92,7 @@ export default async function Home({
   await checkAchievements(session.user.id);
   const today = parisToday();
   const now = new Date();
-  const [user, mythics, recent, birthdays, liveEvents, newSeries] = await Promise.all([
+  const [user, mythics, recent, birthdays, liveEvents, newSeries, quests, tournament] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { lastPackAt: true, pityCount: true, bonusPacks: true } }),
     prisma.card.count({ where: { ...boosterWhere(now), rarity: "MYTHIQUE" } }),
     prisma.pull.findMany({
@@ -120,6 +123,13 @@ export default async function Home({
       where: { action: "series.update", details: { contains: "ajoutée aux boosters" }, createdAt: { gte: new Date(now.getTime() - 14 * 86400_000) } },
       orderBy: { createdAt: "desc" },
       take: 1,
+    }),
+    questStatus(session.user.id),
+    // Prochain tournoi ouvert auquel le membre n'est pas inscrit
+    prisma.tournament.findFirst({
+      where: { status: "REGISTRATION", startsAt: { gt: now }, entries: { none: { userId: session.user.id } } },
+      orderBy: { startsAt: "asc" },
+      select: { name: true, startsAt: true, reward: true },
     }),
   ]);
   const events = new Map<string, { until: Date | null; cards: typeof liveEvents }>();
@@ -175,6 +185,16 @@ export default async function Home({
           </p>
         </section>
       )}
+      {tournament && (
+        <Link href="/tournois" className="panel tournament-banner">
+          <b>🏆 Tournoi : {tournament.name}</b>
+          <span>
+            {tournament.startsAt.toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}
+            {" · "}
+            {tournament.reward} booster{tournament.reward > 1 ? "s" : ""} pour le vainqueur · Inscris-toi →
+          </span>
+        </Link>
+      )}
       {[...events].map(([name, e]) => (
         <section key={name} className="panel event-banner" aria-label={`Événement ${name}`}>
           <div style={{ flex: "1 1 260px" }}>
@@ -204,6 +224,7 @@ export default async function Home({
         mythicAvailable={mythics > 0}
         rates={rates}
       >
+        {QUEST_REWARD > 0 && <QuestBoard quests={quests} reward={QUEST_REWARD} endsAt={weekEnd(now).getTime()} />}
         {recent.length > 0 && (
           <section className="panel feed" aria-label="Derniers grands tirages">
             <h2>Derniers grands tirages</h2>

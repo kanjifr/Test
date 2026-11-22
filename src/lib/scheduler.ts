@@ -3,6 +3,8 @@ import { lastBackupSent, sendBackupToDiscord, webhookConfigured } from "@/lib/ba
 import { finalizePolls } from "@/lib/polls";
 import { announceBirthday } from "@/lib/announce";
 import { parisToday } from "@/lib/birthday";
+import { finalizeDuelSeason } from "@/lib/seasons";
+import { runDueTournaments } from "@/lib/tournaments";
 
 /** Souhaite les anniversaires du jour sur Discord, une fois par jour, à partir de 9 h (Paris). */
 async function birthdays() {
@@ -30,7 +32,7 @@ export function startScheduler() {
   const g = globalThis as unknown as { __kizunaTimer?: NodeJS.Timeout };
   if (g.__kizunaTimer) return;
   const tick = async () => {
-    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays]] as const) {
+    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays], ["saison de duel", finalizeDuelSeason], ["tournois", runDueTournaments]] as const) {
       try {
         await job();
       } catch (e) {

@@ -1,5 +1,6 @@
 "use server";
 
+import { recordProgress } from "@/lib/quests";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +35,10 @@ export async function submitAnecdote(fd: FormData) {
   await prisma.anecdote.create({
     data: { cardId, authorId: me.id, text, status: staff ? "APPROVED" : "PENDING", reviewedById: staff ? me.id : null },
   });
-  if (staff) await checkAchievements(me.id);
+  if (staff) {
+    await recordProgress(me.id, "anecdotes", 1);
+    await checkAchievements(me.id);
+  }
   revalidatePath(`/carte/${cardId}`);
   revalidatePath("/admin");
   back(staff ? "ok=publiee" : "ok=attente");
@@ -50,7 +54,10 @@ export async function approveAnecdote(fd: FormData) {
     include: { card: { select: { name: true } }, author: { select: { name: true } } },
   });
   await logAdmin(me, "anecdote.approve", `a validé une anecdote de ${a.author?.name ?? "?"} sur la carte ${a.card.name}`);
-  if (a.authorId) await checkAchievements(a.authorId);
+  if (a.authorId) {
+    await recordProgress(a.authorId, "anecdotes", 1);
+    await checkAchievements(a.authorId);
+  }
   revalidatePath(`/carte/${a.cardId}`);
   revalidatePath("/admin");
 }
