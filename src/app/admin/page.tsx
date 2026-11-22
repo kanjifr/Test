@@ -53,6 +53,8 @@ export default async function AdminPage({
     roles: can(me.role, "manageRoles"),
     series: can(me.role, "manageSeries"),
     theme: can(me.role, "manageTheme"),
+    advent: can(me.role, "manageAdvent"),
+    shop: can(me.role, "manageShop"),
   };
   const themeChoice = await getThemeChoice();
   const series = await prisma.series.findMany({
@@ -198,6 +200,10 @@ export default async function AdminPage({
                 <input type="date" name="availableUntil" defaultValue={toParisDay(editing?.availableUntil)} />
               </label>
             </div>
+            <label className="switch">
+              <input type="checkbox" name="exclusive" defaultChecked={editing?.exclusive ?? false} />
+              <span>Exclusive : ne sort jamais des boosters (cartes de Noël du calendrier de l&apos;Avent…)</span>
+            </label>
             <small className="muted">
               En dehors de ces dates, la carte ne sort plus des boosters : elle ne s&apos;obtient que par échange. Pendant
               l&apos;événement, elle sort 3 fois plus souvent que les autres cartes de sa rareté.
@@ -309,6 +315,7 @@ export default async function AdminPage({
                   {c.eventName &&
                     ` · ✿ ${c.eventName}${c.availableUntil ? (eventOver(c) ? " (terminé)" : inWindow(c) ? ` (jusqu'au ${frDate(c.availableUntil)})` : " (à venir)") : ""}`}
                   {c.variantOfId && " · ALT"}
+                  {c.exclusive && " · exclusive"}
                 </span>
                 <div className="row">
                   <Link href={`/admin?edit=${c.id}`} className="btn btn-sm">
@@ -337,6 +344,21 @@ export default async function AdminPage({
           ))}
         </div>
       </div>
+
+      {(allow.advent || allow.shop) && (
+        <div className="panel admin-links">
+          {allow.advent && (
+            <Link href="/admin/avent" className="btn">
+              🎄 Calendrier de l&apos;Avent
+            </Link>
+          )}
+          {allow.shop && (
+            <Link href="/admin/boutique" className="btn btn-ghost">
+              🪙 Boutique et pièces
+            </Link>
+          )}
+        </div>
+      )}
 
       {allow.theme && (
         <form action={setTheme} className="panel theme-panel" id="theme">

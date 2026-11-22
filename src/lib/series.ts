@@ -22,6 +22,8 @@ export const eventOver = (c: Window & { eventName: string | null }, now = new Da
 export function boosterWhere(now = new Date()): Prisma.CardWhereInput {
   return {
     active: true,
+    // Les cartes exclusives (calendrier de l'Avent…) ne sortent jamais des boosters
+    exclusive: false,
     OR: [
       { seriesId: null },
       { series: { inBoosters: true } },

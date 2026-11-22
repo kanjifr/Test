@@ -34,38 +34,44 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  discordId     String?   @unique
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  discordId      String?   @unique
   // Le membre accepte d'apparaître sur une carte
-  consent       Boolean   @default(false)
-  lastPackAt    DateTime?
-  packsOpened   Int       @default(0)
+  consent        Boolean   @default(false)
+  lastPackAt     DateTime?
+  packsOpened    Int       @default(0)
   // Boosters ouverts depuis la dernière carte Mythique (système de pity)
-  pityCount     Int       @default(0)
+  pityCount      Int       @default(0)
   // Boosters bonus à ouvrir sans attendre (recyclage, cadeaux des admins)
-  bonusPacks    Int       @default(0)
+  bonusPacks     Int       @default(0)
   // Nombre total de doublons recyclés
-  recycledCount Int       @default(0)
+  recycledCount  Int       @default(0)
   // Duels : équipe de défense (3 identifiants de cartes, dans l'ordre) et palmarès
-  defenseTeam   String[]  @default([])
-  duelWins      Int       @default(0)
-  duelLosses    Int       @default(0)
+  defenseTeam    String[]  @default([])
+  duelWins       Int       @default(0)
+  duelLosses     Int       @default(0)
   // Anniversaire (jour et mois seulement, jamais l'année), renseigné par le membre
-  birthMonth    Int?
+  birthMonth     Int?
   // Vitrine du profil public : jusqu'à 3 identifiants de cartes, dans l'ordre
-  showcase      String[]  @default([])
-  birthDay      Int?
+  showcase       String[]  @default([])
+  birthDay       Int?
+  // Pièces à dépenser dans la boutique
+  coins          Int       @default(0)
+  // Dernier booster pour lequel la notification « booster prêt » a été envoyée
+  notifiedPackAt DateTime?
+  // Types de notifications désactivés par le membre
+  pushOff        String[]  @default([])
   // Prestige : nombre de fois où le membre a remis sa collection complète à zéro
-  prestige      Int       @default(0)
+  prestige       Int       @default(0)
   // Badge choisi pour être affiché à côté du pseudo
-  featuredBadge String?
+  featuredBadge  String?
   // Rôle attribué depuis le site (le propriétaire est défini par OWNER_DISCORD_IDS)
-  role          Role      @default(MEMBER)
-  createdAt     DateTime  @default(now())
+  role           Role      @default(MEMBER)
+  createdAt      DateTime  @default(now())
 
   accounts   Account[]
   sessions   Session[]
@@ -73,19 +79,22 @@ model User {
   pulls      Pull[]
   featuredIn Card[]     @relation("CardSubject")
 
-  tradesSent        Trade[]           @relation("TradeFrom")
-  tradesReceived    Trade[]           @relation("TradeTo")
+  tradesSent        Trade[]            @relation("TradeFrom")
+  tradesReceived    Trade[]            @relation("TradeTo")
   achievements      UserAchievement[]
   adminLogs         AdminLog[]
   pollVotes         PollVote[]
-  anecdotes         Anecdote[]        @relation("AnecdoteAuthor")
-  anecdotesReviewed Anecdote[]        @relation("AnecdoteReviewer")
+  anecdotes         Anecdote[]         @relation("AnecdoteAuthor")
+  anecdotesReviewed Anecdote[]         @relation("AnecdoteReviewer")
   pollOptions       PollOption[]
-  duelsAttacked     Duel[]            @relation("DuelAttacker")
-  duelsDefended     Duel[]            @relation("DuelDefender")
+  duelsAttacked     Duel[]             @relation("DuelAttacker")
+  duelsDefended     Duel[]             @relation("DuelDefender")
   weeklyProgresses  WeeklyProgress[]
   seasonAwards      SeasonAward[]
   tournamentEntries TournamentEntry[]
+  adventClaims      AdventClaim[]
+  coinLogs          CoinLog[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Account {
@@ -142,6 +151,8 @@ model Card {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 
+  // Carte exclusive : ne sort jamais des boosters (calendrier de l'Avent, récompenses spéciales)
+  exclusive      Boolean   @default(false)
   // Série (saison) de la carte
   seriesId       String?
   series         Series?   @relation(fields: [seriesId], references: [id], onDelete: SetNull)
@@ -474,4 +485,52 @@ model TournamentEntry {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([tournamentId, userId])
+}
+
+/**
+ * Case du calendrier de l'Avent ouverte par un membre.
+ */
+model AdventClaim {
+  userId    String
+  year      Int
+  day       Int
+  // Texte du cadeau reçu, pour l'affichage
+  label     String
+  cardId    String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, year, day])
+}
+
+/**
+ * Historique des pièces gagnées et dépensées.
+ */
+model CoinLog {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+/**
+ * Abonnement aux notifications du téléphone ou du navigateur (Web Push).
+ */
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

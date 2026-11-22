@@ -5,6 +5,26 @@ import { announceBirthday } from "@/lib/announce";
 import { parisToday } from "@/lib/birthday";
 import { finalizeDuelSeason } from "@/lib/seasons";
 import { runDueTournaments } from "@/lib/tournaments";
+import { adventToday, getAdventConfig, rewardText } from "@/lib/advent";
+import { announceText } from "@/lib/announce";
+import { siteUrl } from "@/lib/discord";
+import { notifyAll } from "@/lib/push";
+
+/** Chaque matin de l'Avent (à partir de 8 h), annonce la nouvelle case sur Discord et en notification. */
+async function advent() {
+  const t = adventToday();
+  if (!t.day) return;
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", hour: "numeric", hour12: false }).format(new Date()));
+  if (hour < 8) return;
+  const key = `advent:${t.year}-${t.day}`;
+  if (await prisma.setting.findUnique({ where: { key } })) return;
+  await prisma.setting.create({ data: { key, value: "1" } });
+  const cfg = await getAdventConfig();
+  const link = siteUrl("/");
+  const teaser = t.day === 24 ? "🌟 C'est le grand jour : le cadeau final t'attend !" : `Aujourd'hui : ${rewardText(cfg.days[t.day - 1])}.`;
+  await announceText(`🎄 **La case ${t.day} du calendrier de l'Avent est ouverte !** ${teaser}${link ? ` ${link}` : ""}`);
+  await notifyAll("advent", { title: `🎄 Case ${t.day} ouverte !`, body: teaser, url: "/" });
+}
 
 /** Souhaite les anniversaires du jour sur Discord, une fois par jour, à partir de 9 h (Paris). */
 async function birthdays() {
@@ -32,7 +52,7 @@ export function startScheduler() {
   const g = globalThis as unknown as { __kizunaTimer?: NodeJS.Timeout };
   if (g.__kizunaTimer) return;
   const tick = async () => {
-    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays], ["saison de duel", finalizeDuelSeason], ["tournois", runDueTournaments]] as const) {
+    for (const [name, job] of [["sauvegarde", backup], ["votes", finalizePolls], ["anniversaires", birthdays], ["saison de duel", finalizeDuelSeason], ["tournois", runDueTournaments], ["calendrier de l'Avent", advent]] as const) {
       try {
         await job();
       } catch (e) {

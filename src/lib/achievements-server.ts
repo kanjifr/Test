@@ -2,13 +2,13 @@ import { prisma } from "@/lib/prisma";
 import { ACHIEVEMENTS, type Stats } from "@/lib/achievements";
 
 export async function computeStats(userId: string, extra: { luckyPack?: boolean } = {}): Promise<Stats> {
-  const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes, awards, tournamentsPlayed] = await Promise.all([
+  const [user, owned, cards, tradesDone, featuredIn, lucky, votes, anecdotes, awards, tournamentsPlayed, advent] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { packsOpened: true, recycledCount: true, duelWins: true, prestige: true } }),
     prisma.userCard.findMany({
       where: { userId, card: { active: true } },
       select: { count: true, shiny: true, level: true, card: { select: { rarity: true, element: true, seriesId: true, eventName: true, variantOfId: true } } },
     }),
-    prisma.card.findMany({ where: { active: true }, select: { rarity: true, element: true, seriesId: true } }),
+    prisma.card.findMany({ where: { active: true, exclusive: false }, select: { rarity: true, element: true, seriesId: true } }),
     prisma.trade.count({ where: { status: "ACCEPTED", OR: [{ fromId: userId }, { toId: userId }] } }),
     prisma.card.count({ where: { subjectId: userId, subject: { consent: true } } }),
     extra.luckyPack
@@ -20,6 +20,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     prisma.anecdote.count({ where: { authorId: userId, status: "APPROVED" } }),
     prisma.seasonAward.findMany({ where: { userId }, select: { kind: true, rank: true } }),
     prisma.tournamentEntry.count({ where: { userId, tournament: { status: "FINISHED" } } }),
+    prisma.adventClaim.groupBy({ by: ["year"], where: { userId }, _count: true }),
   ]);
 
   const elementTotals = new Map<string, number>();
@@ -59,6 +60,7 @@ export async function computeStats(userId: string, extra: { luckyPack?: boolean 
     championships: awards.filter((a) => a.kind === "DUEL_MONTH" && a.rank === 1).length,
     tournamentWins: awards.filter((a) => a.kind === "TOURNAMENT" && a.rank === 1).length,
     tournamentsPlayed,
+    adventBest: advent.reduce((m, a) => Math.max(m, a._count), 0),
     shinyComplete: cards.length > 0 && owned.filter((o) => o.shiny > 0).length >= cards.length,
     packsOpened: user?.packsOpened ?? 0,
     uniqueCards: owned.length,

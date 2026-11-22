@@ -20,6 +20,8 @@ import { BIRTHDAY_BOOST, parisToday } from "@/lib/birthday";
 import { boosterWhere, EVENT_BOOST, frDate } from "@/lib/series";
 import { QUEST_REWARD, questStatus, weekEnd } from "@/lib/quests";
 import { QuestBoard } from "@/components/QuestBoard";
+import { AdventCalendar, type AdventTile } from "@/components/AdventCalendar";
+import { adventToday, adventVisible, getAdventConfig, GRID_ORDER } from "@/lib/advent";
 
 export const dynamic = "force-dynamic";
 
@@ -142,6 +144,27 @@ export default async function Home({
   const latestSeries = newSeries.length
     ? await prisma.series.findFirst({ where: { inBoosters: true }, orderBy: { createdAt: "desc" }, include: { _count: { select: { cards: { where: { active: true } } } } } })
     : null;
+  // Calendrier de l'Avent (du 1er au 26 décembre)
+  const at = adventToday();
+  let advent: { tiles: AdventTile[]; grandMin: number; opened: number } | null = null;
+  if (adventVisible(at)) {
+    const [claims, cfg] = await Promise.all([
+      prisma.adventClaim.findMany({ where: { userId: session.user.id, year: at.year } }),
+      getAdventConfig(),
+    ]);
+    const byDay = new Map(claims.map((c) => [c.day, c]));
+    const current = at.day ?? 25;
+    advent = {
+      grandMin: cfg.grandMin,
+      opened: claims.length,
+      tiles: GRID_ORDER.map((day) => {
+        const c = byDay.get(day);
+        if (c) return { day, state: "opened", label: c.label };
+        if (day === at.day) return { day, state: "today" };
+        return { day, state: day < current ? "missed" : "locked" };
+      }),
+    };
+  }
   const nextAt = user?.lastPackAt ? user.lastPackAt.getTime() + PACK_COOLDOWN_MS : 0;
 
   const fmt = (n: number) => `${n.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`;
@@ -176,6 +199,7 @@ export default async function Home({
           </div>
         </section>
       )}
+      {advent && <AdventCalendar tiles={advent.tiles} grandMin={advent.grandMin} openedCount={advent.opened} today={at.day} />}
       {latestSeries && (
         <section className="panel series-banner" aria-label="Nouvelle série">
           <h2>🌸 Nouvelle série : {latestSeries.name}</h2>

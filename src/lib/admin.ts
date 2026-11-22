@@ -40,6 +40,8 @@ export const PERMISSIONS = {
   manageSeries: FULL,
   manageTournaments: FULL,
   manageTheme: FULL,
+  manageAdvent: FULL,
+  manageShop: FULL,
   managePolls: FULL,
   moderateAnecdotes: ["OWNER", "ADMIN", "MODERATOR"],
   manageBackups: ["OWNER"],

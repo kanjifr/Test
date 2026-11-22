@@ -101,6 +101,7 @@ export async function saveCard(fd: FormData) {
   }
 
   const data = {
+    exclusive: fd.get("exclusive") === "on",
     seriesId,
     eventName,
     availableFrom,
