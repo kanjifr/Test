@@ -1133,3 +1133,18 @@ label.inline select { width: auto; }
 @media (max-width: 760px) { .advent-table small { display: none; } .advent-table select { max-width: 150px; } }
 .advent-tile.today .advent-label { white-space: nowrap; }
 @media (max-width: 560px) { .advent-tile.today .advent-label { font-size: 0.6rem; padding: 1px 5px; } .advent-tile { min-height: 64px; } }
+
+/* ---- Pièces et boutique ---- */
+.nav-links a.nav-coins { font-weight: 800; border: 1.5px solid rgba(255, 209, 102, 0.6); background: rgba(255, 209, 102, 0.12); white-space: nowrap; }
+.coin-balance { font-size: 1.2rem; padding: 0.4rem 1rem; border-radius: 999px; background: rgba(255, 209, 102, 0.15); border: 1.5px solid rgba(255, 209, 102, 0.6); }
+.shop-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.shop-top .panel { margin: 0; }
+.shop-earn ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.shop-item { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.coin-history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.coin-history li { display: grid; grid-template-columns: 70px 1fr auto; gap: 0.6rem; align-items: center; padding: 0.35rem 0.6rem; border-radius: 10px; background: rgba(255, 255, 255, 0.05); }
+.coin-history .plus { color: var(--ok); font-weight: 800; }
+.coin-history .minus { color: #ff9aa8; font-weight: 800; }
+@media (max-width: 560px) { .coin-history li { grid-template-columns: 60px 1fr; } .coin-history time { grid-column: 2; } .shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.shop-admin .row label { flex: 1 1 150px; }

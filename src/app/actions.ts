@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prestigeProgress, PRESTIGE_REWARD } from "@/lib/prestige";
 import { siteUrl } from "@/lib/discord";
+import { addCoins, getShopConfig } from "@/lib/coins";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
 import { drawBooster, PACK_COOLDOWN_MS, PACK_SIZE, PITY_HARD, SHINY_CHANCE, type CardView } from "@/lib/game";
@@ -178,6 +179,7 @@ export async function claimQuest(questId: string): Promise<ClaimResult> {
   if (!quest) return { ok: false, error: "Cette quête n'est plus disponible." };
   const row = await prisma.weeklyProgress.findUnique({ where: { userId_week: { userId: user.id, week } } });
   if (!row || row[quest.field] < quest.target) return { ok: false, error: "Quête pas encore terminée." };
+  const shop = await getShopConfig();
   const bonus = await prisma.$transaction(async (tx) => {
     // Une seule récompense par quête, même en cas de double clic
     const marked = await tx.weeklyProgress.updateMany({
@@ -186,6 +188,7 @@ export async function claimQuest(questId: string): Promise<ClaimResult> {
     });
     if (marked.count === 0) return null;
     const u = await tx.user.update({ where: { id: user.id }, data: { bonusPacks: { increment: QUEST_REWARD } }, select: { bonusPacks: true } });
+    if (shop.quest) await addCoins(tx, user.id, shop.quest, `Quête : ${quest.label}`);
     return u.bonusPacks;
   });
   if (bonus === null) return { ok: false, error: "Récompense déjà récupérée." };

@@ -20,6 +20,7 @@ export async function Nav() {
   const toJoin = user?.id
     ? await prisma.tournament.count({ where: { status: "REGISTRATION", startsAt: { gt: new Date() }, entries: { none: { userId: user.id } } } })
     : 0;
+  const coins = user?.id ? ((await prisma.user.findUnique({ where: { id: user.id }, select: { coins: true } }))?.coins ?? 0) : 0;
   return (
     <header className="nav">
       <Link href="/" className="brand">
@@ -51,6 +52,9 @@ export async function Nav() {
               {toModerate > 0 && <span className="nav-badge">{toModerate}</span>}
             </NavLink>
           )}
+          <NavLink href="/boutique" className="nav-coins">
+            🪙 {coins.toLocaleString("fr-FR")}
+          </NavLink>
           <SoundToggle />
           <form
             action={async () => {

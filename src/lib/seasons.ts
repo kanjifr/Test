@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { announceText } from "@/lib/announce";
 import { siteUrl } from "@/lib/discord";
 import { checkAchievements } from "@/lib/achievements-server";
+import { addCoins, getShopConfig } from "@/lib/coins";
 
 /** Boosters bonus pour le podium d'une saison de duel (1er, 2e, 3e). */
 export const SEASON_REWARDS = [3, 2, 1];
@@ -85,6 +86,7 @@ export async function finalizeDuelSeason(now = new Date()) {
   const done = `season:duel:${key}`;
   if (await prisma.setting.findUnique({ where: { key: done } })) return;
   const podium = (await seasonRanking(key, 3)).slice(0, 3);
+  const shop = await getShopConfig();
   await prisma.$transaction(async (tx) => {
     // Le réglage sert de verrou : une deuxième instance échouerait ici
     await tx.setting.create({ data: { key: done, value: String(podium.length) } });
@@ -93,6 +95,7 @@ export async function finalizeDuelSeason(now = new Date()) {
         data: { kind: "DUEL_MONTH", period: key, rank: i + 1, userId: p.userId, label: i === 0 ? `Champion ${deMonth(key)}` : `${i + 1}e de la saison ${deMonth(key)}` },
       });
       await tx.user.update({ where: { id: p.userId }, data: { bonusPacks: { increment: SEASON_REWARDS[i] } } });
+      if (shop.season[i]) await addCoins(tx, p.userId, shop.season[i], `Podium de la saison de duel ${key}`);
     }
   });
   for (const p of podium) await checkAchievements(p.userId);

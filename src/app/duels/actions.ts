@@ -19,6 +19,7 @@ import {
 import { checkAchievements } from "@/lib/achievements-server";
 import { announceDuel } from "@/lib/announce";
 import { recordProgress } from "@/lib/quests";
+import { addCoins, getShopConfig } from "@/lib/coins";
 
 export type DuelStart = { ok: true; id: string } | { ok: false; error: string };
 
@@ -61,6 +62,7 @@ export async function startDuel(input: { opponent: string; team: string[] }): Pr
     if (opponentTeam.length < DUEL_TEAM_SIZE) throw new Error(`Ton adversaire n'a pas encore ${DUEL_TEAM_SIZE} cartes.`);
 
     const log = simulateDuel(team, opponentTeam, seed);
+    const shop = await getShopConfig();
     const result = log.winner === 0 ? "ATTACKER" : log.winner === 1 ? "DEFENDER" : "DRAW";
 
     const duel = await prisma.$transaction(async (tx) => {
@@ -72,6 +74,11 @@ export async function startDuel(input: { opponent: string; team: string[] }): Pr
       const d = await tx.duel.create({
         data: { attackerId: me.id, defenderId, result, rewarded, log: log as unknown as Prisma.InputJsonValue },
       });
+      // Pièces pour l'attaquant (duels contre des membres uniquement)
+      if (defenderId) {
+        const gain = result === "ATTACKER" ? shop.duelWin : shop.duelLoss;
+        if (gain) await addCoins(tx, me.id, gain, result === "ATTACKER" ? "Victoire en duel" : "Duel livré");
+      }
       if (defenderId && result !== "DRAW") {
         const attackerWon = result === "ATTACKER";
         await tx.user.update({

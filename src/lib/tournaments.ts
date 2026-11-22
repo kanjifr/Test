@@ -7,6 +7,7 @@ import { announceText } from "@/lib/announce";
 import { siteUrl } from "@/lib/discord";
 import { checkAchievements } from "@/lib/achievements-server";
 import type { CardView } from "@/lib/game";
+import { addCoins, getShopConfig } from "@/lib/coins";
 
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 64;
@@ -114,7 +115,13 @@ export async function runTournament(id: string) {
   const winnerId = final.winner!;
   const finalistId = final.a === winnerId ? final.b : final.a;
   const finalistReward = Math.floor(t.reward / 2);
+  const shop = await getShopConfig();
   await prisma.$transaction(async (tx) => {
+    // Pièces : participation pour tous, plus le podium
+    for (const pid of players) {
+      const coins = pid === winnerId ? shop.tournamentWin : pid === finalistId ? shop.tournamentFinal : shop.tournamentPlay;
+      if (coins) await addCoins(tx, pid, coins, `Tournoi ${t.name}`);
+    }
     await tx.tournament.update({ where: { id }, data: { bracket: bracket as unknown as Prisma.InputJsonValue, winnerId } });
     await tx.seasonAward.create({ data: { kind: "TOURNAMENT", period: id, rank: 1, userId: winnerId, label: `Vainqueur : ${t.name}` } });
     if (t.reward > 0) await tx.user.update({ where: { id: winnerId }, data: { bonusPacks: { increment: t.reward } } });
