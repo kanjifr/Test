@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/session";
 import { toCardView } from "@/lib/cards";
 import { parisDayStart } from "@/lib/duel-server";
 import { weekEnd } from "@/lib/quests";
-import { ARENA_ENTRY_COST, ARENA_MAX_LOSSES, ARENA_MAX_WINS, ARENA_REWARDS, rewardLabel } from "@/lib/arena";
+import { ARENA_ENTRY_COST, ARENA_MAX_LOSSES, ARENA_MAX_WINS, ARENA_REWARDS, arenaReward, rewardLabel } from "@/lib/arena";
 import { ArenaGame } from "@/components/ArenaGame";
 import type { DuelLog } from "@/lib/duel";
 
@@ -65,7 +65,8 @@ export default async function ArenaPage() {
         coins={coins?.coins ?? 0}
         maxWins={ARENA_MAX_WINS}
         maxLosses={ARENA_MAX_LOSSES}
-        rewards={ARENA_REWARDS.map(rewardLabel)}
+        rewards={ARENA_REWARDS.map((_, i) => rewardLabel(arenaReward(i, run?.paid ?? false)))}
+        paid={run?.paid ?? false}
         lastResult={last ? { wins: last.wins, reward: (last.reward as { coins: number; boosters: number; cardName?: string | null } | null) ?? null } : null}
       />
       <div className="lobby-cols">
@@ -82,7 +83,8 @@ export default async function ArenaPage() {
             ))}
           </ol>
           <p className="muted small-text">
-            Première partie du jour gratuite, puis {ARENA_ENTRY_COST} pièces la partie. Tu peux aussi t&apos;arrêter à tout moment pour encaisser.
+            Boosters et cartes : seulement avec la <b>partie gratuite du jour</b>. Les parties suivantes ({ARENA_ENTRY_COST} pièces) ne
+            rapportent que des pièces. Tu peux t&apos;arrêter à tout moment pour encaisser.
           </p>
         </div>
         <div className="panel">

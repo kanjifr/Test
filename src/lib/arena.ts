@@ -10,17 +10,26 @@ export const ARENA_MAX_LOSSES = 3;
 export const ARENA_ENTRY_COST = 100;
 
 export type ArenaReward = { coins: number; boosters: number; card: Rarity | null };
-/** Récompense selon le nombre de victoires (0 à 7). */
+/**
+ * Récompense selon le nombre de victoires (0 à 7).
+ * Boosters et cartes seulement pour la partie gratuite du jour, et seulement à partir de 6 victoires.
+ */
 export const ARENA_REWARDS: ArenaReward[] = [
+  { coins: 5, boosters: 0, card: null },
   { coins: 10, boosters: 0, card: null },
   { coins: 20, boosters: 0, card: null },
-  { coins: 35, boosters: 0, card: null },
-  { coins: 50, boosters: 0, card: null },
-  { coins: 70, boosters: 1, card: null },
-  { coins: 90, boosters: 1, card: null },
-  { coins: 120, boosters: 1, card: "RARE" },
-  { coins: 150, boosters: 2, card: "EPIQUE" },
+  { coins: 30, boosters: 0, card: null },
+  { coins: 45, boosters: 0, card: null },
+  { coins: 60, boosters: 0, card: null },
+  { coins: 80, boosters: 1, card: null },
+  { coins: 100, boosters: 1, card: "RARE" },
 ];
+
+/** Récompense réelle : une partie payante ne rapporte que des pièces. */
+export const arenaReward = (wins: number, paid: boolean): ArenaReward => {
+  const r = ARENA_REWARDS[Math.min(Math.max(0, wins), ARENA_REWARDS.length - 1)];
+  return paid ? { coins: r.coins, boosters: 0, card: null } : r;
+};
 
 export const rewardLabel = (r: ArenaReward) =>
   [`🪙 ${r.coins}`, r.boosters ? `🎁 ${r.boosters} booster${r.boosters > 1 ? "s" : ""}` : "", r.card ? `🃏 carte ${RARITIES[r.card].label}+` : ""].filter(Boolean).join(" · ");

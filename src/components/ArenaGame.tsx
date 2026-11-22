@@ -21,6 +21,7 @@ export function ArenaGame({
   maxLosses,
   rewards,
   lastResult,
+  paid = false,
 }: {
   run: Run | null;
   freeAvailable: boolean;
@@ -30,6 +31,8 @@ export function ArenaGame({
   maxLosses: number;
   rewards: string[];
   lastResult: { wins: number; reward: { coins: number; boosters: number; cardName?: string | null } | null } | null;
+  /** Partie payante : pièces seulement */
+  paid?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -107,6 +110,7 @@ export function ArenaGame({
         <div className="arena-now">
           <span className="arena-label">Si tu t&apos;arrêtes</span>
           <b>{rewards[run.wins]}</b>
+          {paid && <small className="muted">partie payante : pièces seulement</small>}
         </div>
       </div>
       {error && <p className="error">{error}</p>}

@@ -19,8 +19,8 @@ import {
   ARENA_MAX_LOSSES,
   ARENA_MAX_WINS,
   ARENA_PICKS,
-  ARENA_REWARDS,
   ARENA_TEAM,
+  arenaReward,
   arenaOffer,
   arenaOpponent,
   OPPONENT_NAMES,
@@ -70,8 +70,8 @@ export async function pickArena(runId: string, cardId: string): Promise<ArenaAct
 }
 
 /** Fin de partie : récompense selon le nombre de victoires. */
-async function finish(runId: string, userId: string, wins: number) {
-  const r = ARENA_REWARDS[Math.min(wins, ARENA_MAX_WINS)];
+async function finish(runId: string, userId: string, wins: number, paid: boolean) {
+  const r = arenaReward(Math.min(wins, ARENA_MAX_WINS), paid);
   await prisma.$transaction(async (tx) => {
     const closed = await tx.arenaRun.updateMany({ where: { id: runId, status: { not: "DONE" } }, data: { status: "DONE", endedAt: new Date() } });
     if (closed.count === 0) return;
@@ -123,7 +123,7 @@ export async function fightArena(runId: string, team: string[]): Promise<ArenaAc
   const wins = run.wins + (won ? 1 : 0);
   const losses = run.losses + (lost ? 1 : 0);
   const finished = wins >= ARENA_MAX_WINS || losses >= ARENA_MAX_LOSSES;
-  if (finished) await finish(run.id, me.id, wins);
+  if (finished) await finish(run.id, me.id, wins, run.paid);
   revalidatePath("/arene");
   return { ok: true, log, names, finished };
 }
@@ -133,7 +133,7 @@ export async function stopArena(runId: string): Promise<ArenaAction> {
   const me = await requireUser();
   const run = await prisma.arenaRun.findFirst({ where: { id: String(runId), userId: me.id, status: { not: "DONE" } } });
   if (!run) return { ok: false, error: "Partie introuvable." };
-  await finish(run.id, me.id, run.wins);
+  await finish(run.id, me.id, run.wins, run.paid);
   revalidatePath("/arene");
   return { ok: true, finished: true };
 }
